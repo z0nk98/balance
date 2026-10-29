@@ -133,6 +133,9 @@
     $('remaining').textContent = money(t.remaining);
     $('overdue').textContent = money(t.overdue);
     $('overdue').classList.toggle('danger', t.overdue > 0);
+    $('dueSoon').textContent = money(t.dueSoon);
+    $('dueSoon').classList.toggle('warn', t.dueSoon > 0);
+    $('dueSoonLabel').textContent = `Due soon (next ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'})`;
     $('nextDue').textContent = t.nextDue ? money(t.nextDue.remaining) : '—';
     $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';
 

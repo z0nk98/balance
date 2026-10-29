@@ -144,3 +144,17 @@ test('loan names come from notes and can be renamed keeping the part number', ()
   assert.strictEqual(Core.loanName('Phone – 2/6 (paid late)'), 'Phone');
   assert.strictEqual(Core.renameLoanNote('Phone – 2/6 (paid late)', 'iPhone'), 'iPhone – 2/6 (paid late)');
 });
+
+test('due-soon total counts unpaid payments within the reminder window', () => {
+  const s = sampleState(); // reminderDays = 3
+  s.installments.push(
+    { id: 'a', borrowerId: 'b1', amount: 100, paid: 0, dueDate: shift(0), note: '' },
+    { id: 'b', borrowerId: 'b1', amount: 50, paid: 20, dueDate: shift(3), note: '' },
+    { id: 'c', borrowerId: 'b1', amount: 70, paid: 0, dueDate: shift(4), note: '' },
+    { id: 'd', borrowerId: 'b1', amount: 40, paid: 0, dueDate: shift(-1), note: '' },
+    { id: 'e', borrowerId: 'b1', amount: 60, paid: 60, dueDate: shift(1), note: '' },
+  );
+  const t = Core.totals(Core.installmentsFor(s, 'b1'));
+  assert.strictEqual(t.dueSoon, 130);
+  assert.strictEqual(t.overdue, 40);
+});

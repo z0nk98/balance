@@ -129,3 +129,13 @@ tr:last-child td { border-bottom: 0; }
 .loans-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
 .loan-tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 4px 3px 12px; font-size: 0.85rem; }
 .loan-tag button { padding: 2px 10px; font-size: 0.8rem; border-radius: 999px; }
+
+.stats.five { grid-template-columns: repeat(5, 1fr); }
+.stat-value.warn { color: var(--warn); }
+@media (max-width: 900px) {
+  .stats.five { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 720px) {
+  .stats.five { grid-template-columns: 1fr 1fr; }
+  .stats.five .stat:first-child { grid-column: 1 / -1; }
+}

@@ -41,6 +41,10 @@
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
+  function dueSoonLabel(days) {
+    return `Due soon (next ${days} day${days === 1 ? '' : 's'})`;
+  }
+
   function show(view) {
     for (const v of ['connectView', 'unlockView', 'mainView']) $(v).hidden = v !== view;
     $('lock').hidden = view !== 'mainView';
@@ -220,6 +224,9 @@
     $('sumRemaining').textContent = money(sum('remaining'));
     $('sumOverdue').textContent = money(sum('overdue'));
     $('sumOverdue').classList.toggle('danger', sum('overdue') > 0);
+    $('sumDueSoon').textContent = money(sum('dueSoon'));
+    $('sumDueSoon').classList.toggle('warn', sum('dueSoon') > 0);
+    $('dueSoonLabel').textContent = dueSoonLabel(state.settings.reminderDays);
     $('sumPaid').textContent = money(sum('paid'));
     $('sumBorrowers').textContent = rows.length;
 
@@ -239,6 +246,7 @@
     const summary = [
       `${money(t.remaining)} outstanding`,
       t.overdue > 0 ? `${money(t.overdue)} overdue` : null,
+      t.dueSoon > 0 ? `${money(t.dueSoon)} due soon` : null,
       t.nextDue ? `next ${money(t.nextDue.remaining)} on ${dateLabel(t.nextDue.dueDate)}` : 'nothing due',
     ].filter(Boolean).join(' · ');
 
