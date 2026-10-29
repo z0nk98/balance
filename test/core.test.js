@@ -164,3 +164,37 @@ test('pages load the current version of every script and stylesheet', () => {
   const { stale } = run({ check: true });
   assert.deepStrictEqual(stale, [], 'run `node scripts/stamp.js` after changing a .js or .css file');
 });
+
+test('payment methods are validated and shared only inside borrower files', () => {
+  assert.deepStrictEqual(
+    Core.cleanPaymentMethod({ kind: 'gcash', accountName: ' Juan D. ', accountNumber: '0917 123 4567' }),
+    { kind: 'gcash', label: 'GCash', accountName: 'Juan D.', accountNumber: '0917 123 4567', details: '' },
+  );
+  assert.strictEqual(Core.cleanPaymentMethod({ kind: 'weird', details: 'PayPal me' }).kind, 'other');
+  assert.strictEqual(Core.cleanPaymentMethod({ kind: 'cash' }).label, 'Cash');
+  assert.throws(() => Core.cleanPaymentMethod({ kind: 'bank', label: 'BDO' }), /account number/);
+
+  const s = sampleState();
+  s.settings.paymentMethods = [{ id: 'p1', ...Core.cleanPaymentMethod({ kind: 'maya', accountNumber: '0918 000 0000' }) }];
+  const p = Core.borrowerPayload(s, s.borrowers[0]);
+  assert.deepStrictEqual(p.paymentMethods, [{ kind: 'maya', label: 'Maya', accountName: '', accountNumber: '0918 000 0000', details: '' }]);
+  // Older data without the field still works.
+  delete s.settings.paymentMethods;
+  assert.deepStrictEqual(Core.borrowerPayload(s, s.borrowers[0]).paymentMethods, []);
+});
+
+test('QR codes: shared key is sent to borrowers only when a method has one', async () => {
+  const s = sampleState();
+  s.settings.paymentsKey = Core.newSharedKey();
+  s.settings.paymentMethods = [{ id: 'p1', ...Core.cleanPaymentMethod({ kind: 'maya', hasQr: true }) }];
+  assert.strictEqual(Core.borrowerPayload(s, s.borrowers[0]).paymentsKey, undefined);
+  s.settings.paymentMethods[0].qrFile = 'abc';
+  const p = Core.borrowerPayload(s, s.borrowers[0]);
+  assert.strictEqual(p.paymentsKey, s.settings.paymentsKey);
+  assert.strictEqual(p.paymentMethods[0].qrFile, 'abc');
+
+  // A borrower can open a QR file with the key from their payload.
+  const key = await Core.importSharedKey(p.paymentsKey);
+  const file = await Core.encryptJson(key, { type: 'image/png', data: 'iVBORw0KGgo=' });
+  assert.deepStrictEqual(await Core.decryptJson(await Core.importSharedKey(s.settings.paymentsKey), file), { type: 'image/png', data: 'iVBORw0KGgo=' });
+});

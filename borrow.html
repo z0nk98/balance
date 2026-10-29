@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self'">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <link rel="stylesheet" href="style.css?v=0414b00109">
-  <link rel="stylesheet" href="lending.css?v=0414b00109">
+  <link rel="stylesheet" href="style.css?v=add3f42285">
+  <link rel="stylesheet" href="lending.css?v=add3f42285">
 </head>
 <body>
   <header class="topbar">
@@ -49,6 +49,11 @@
         </div>
       </section>
 
+      <section class="card" id="paySection" hidden>
+        <h2>How to pay</h2>
+        <div id="payMethods" class="pay-list"></div>
+      </section>
+
       <section class="card">
         <h2>My payments</h2>
         <div class="filters">
@@ -82,7 +87,8 @@
     </div>
   </main>
 
-  <script src="lib/core.js?v=0414b00109"></script>
-  <script src="borrow.js?v=0414b00109"></script>
+  <script src="lib/icons.js?v=add3f42285"></script>
+  <script src="lib/core.js?v=add3f42285"></script>
+  <script src="borrow.js?v=add3f42285"></script>
 </body>
 </html>

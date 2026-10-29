@@ -17,6 +17,7 @@
   const derived = new Map(); // code -> { key, fileId }
   const published = new Map(); // fileId -> payload JSON last written this session
   const pendingDeletes = new Set(); // borrower files to remove on next save
+  const pendingQr = new Map(); // QR file id -> encrypted content, or null to delete
   const openPanels = new Set();
 
   // ---- Helpers --------------------------------------------------------
@@ -188,6 +189,8 @@
     }
     const deletes = [...pendingDeletes];
     for (const id of deletes) files.push([`data/b/${id}.json`, null]);
+    const qrChanges = [...pendingQr];
+    for (const [id, content] of qrChanges) files.push([`data/pay/${id}.json`, content]);
     files.push([OWNER_FILE, JSON.stringify(await Core.sealOwnerFile(state, ownerKey, ownerSalt))]);
 
     await gh.commit(COMMIT_MESSAGE, files);
@@ -196,6 +199,9 @@
     for (const id of deletes) {
       pendingDeletes.delete(id);
       published.delete(id);
+    }
+    for (const [id, content] of qrChanges) {
+      if (pendingQr.get(id) === content) pendingQr.delete(id);
     }
   }
 
@@ -232,6 +238,7 @@
 
     $('borrowers').replaceChildren(...rows.map(borrowerCard));
     $('borrowersEmpty').hidden = rows.length > 0;
+    renderPayMethods();
 
     if (document.activeElement?.form !== $('settingsForm')) {
       $('ownerName').value = state.settings.ownerName;
@@ -516,6 +523,205 @@
     });
   }
 
+  // ---- Payment methods ------------------------------------------------
+
+  let editingPayId = null;
+  let chosenQr = null; // { blob, url } picked in the form, not yet saved
+  const qrUrls = new Map(); // QR file id -> object URL for display
+
+  function payMethods() {
+    if (!state.settings.paymentMethods) state.settings.paymentMethods = [];
+    return state.settings.paymentMethods;
+  }
+
+  // Shrink a photo or screenshot of a QR code to a small, still scannable image.
+  async function prepareQr(file) {
+    if (!file.type.startsWith('image/')) throw new Error('Choose an image file for the QR code');
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+    const canvas = el('canvas', { width: Math.round(bmp.width * scale), height: Math.round(bmp.height * scale) });
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const toBlob = (type, q) => new Promise((resolve) => canvas.toBlob(resolve, type, q));
+    let blob = await toBlob('image/png');
+    if (blob.size > 350000) blob = await toBlob('image/jpeg', 0.92);
+    if (blob.size > 900000) throw new Error('That image is too large. Try a tighter screenshot of just the QR code.');
+    return blob;
+  }
+
+  async function sharedKey() {
+    if (!state.settings.paymentsKey) state.settings.paymentsKey = Core.newSharedKey();
+    return Core.importSharedKey(state.settings.paymentsKey);
+  }
+
+  async function sealQr(blob) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    return JSON.stringify(await Core.encryptJson(await sharedKey(), { type: blob.type, data: Core.toB64(bytes) }));
+  }
+
+  function dropQr(fileId) {
+    if (!fileId) return;
+    // Never committed yet: just forget it. Otherwise delete it on next save.
+    if (pendingQr.has(fileId) && pendingQr.get(fileId) !== null) pendingQr.delete(fileId);
+    else pendingQr.set(fileId, null);
+    if (qrUrls.has(fileId)) URL.revokeObjectURL(qrUrls.get(fileId));
+    qrUrls.delete(fileId);
+  }
+
+  async function qrUrl(fileId) {
+    if (qrUrls.has(fileId)) return qrUrls.get(fileId);
+    const text = await gh.readText(`data/pay/${fileId}.json`);
+    if (!text) return null;
+    const { type, data } = await Core.decryptJson(await sharedKey(), JSON.parse(text));
+    const url = URL.createObjectURL(new Blob([Core.fromB64(data)], { type }));
+    qrUrls.set(fileId, url);
+    return url;
+  }
+
+  function qrThumb(fileId) {
+    const img = el('img', { className: 'qr-thumb', alt: 'QR code' });
+    qrUrl(fileId).then((url) => { if (url) img.src = url; }).catch(() => { img.alt = 'QR code (couldn’t load)'; });
+    return img;
+  }
+
+  function renderPayMethods() {
+    const list = payMethods();
+    $('payMethodsList').replaceChildren(
+      ...list.map((m, idx) =>
+        el('div', { className: 'pay-item' }, [
+          PayIcons.paymentIcon(m.kind),
+          el('div', { className: 'pay-body' }, [
+            el('div', { className: 'pay-label', textContent: m.label }),
+            el('div', { className: 'sub', textContent: [m.accountName, m.accountNumber].filter(Boolean).join(' · ') }),
+            m.details ? el('div', { className: 'sub', textContent: m.details }) : '',
+            m.qrFile ? qrThumb(m.qrFile) : '',
+          ]),
+          el('div', { className: 'btn-row' }, [
+            el('button', { textContent: '↑', title: 'Move up', disabled: idx === 0, onclick: () => change(() => {
+              list.splice(idx - 1, 0, list.splice(idx, 1)[0]);
+            }) }),
+            el('button', { textContent: 'Edit', onclick: () => startEditPay(m) }),
+            m.qrFile ? el('button', { textContent: 'Remove QR', onclick: () => {
+              if (confirm(`Remove the QR code from ${m.label}?`)) change(() => { dropQr(m.qrFile); delete m.qrFile; });
+            } }) : '',
+            el('button', { className: 'danger', textContent: 'Remove', onclick: () => {
+              if (confirm(`Remove ${m.label}?`)) change(() => {
+                dropQr(m.qrFile);
+                state.settings.paymentMethods = list.filter((x) => x.id !== m.id);
+              });
+            } }),
+          ]),
+        ]))
+    );
+    $('payMethodsEmpty').hidden = list.length > 0;
+  }
+
+  function showChosenQr(url) {
+    $('payQrPreview').replaceChildren(...(url ? [el('img', { className: 'qr-thumb', src: url, alt: 'QR code preview' })] : []));
+    $('payQrPreview').hidden = !url;
+  }
+
+  function resetPayForm() {
+    editingPayId = null;
+    if (chosenQr) URL.revokeObjectURL(chosenQr.url);
+    chosenQr = null;
+    showChosenQr(null);
+    $('payForm').reset();
+    $('payKind').value = 'gcash';
+    updatePayPlaceholder();
+    $('paySubmit').textContent = 'Add';
+    $('payCancel').hidden = true;
+  }
+
+  function updatePayPlaceholder() {
+    const kind = $('payKind').value;
+    $('payLabel').placeholder = kind === 'bank' ? 'e.g. BDO Savings' : Core.PAYMENT_KINDS[kind];
+    $('payAccountNumber').placeholder = kind === 'bank' ? 'Account number' : kind === 'cash' ? '' : 'e.g. 0917 123 4567';
+    $('payDetails').placeholder = kind === 'cash' ? 'e.g. Hand it to me on payday' : 'e.g. Send a screenshot after paying';
+  }
+
+  function startEditPay(m) {
+    editingPayId = m.id;
+    $('payKind').value = m.kind;
+    updatePayPlaceholder();
+    $('payLabel').value = m.label;
+    $('payAccountName').value = m.accountName;
+    $('payAccountNumber').value = m.accountNumber;
+    $('payDetails').value = m.details;
+    $('paySubmit').textContent = 'Save';
+    $('payCancel').hidden = false;
+    $('payLabel').focus();
+  }
+
+  for (const [value, label] of Object.entries(Core.PAYMENT_KINDS)) {
+    $('payKind').append(el('option', { value, textContent: label }));
+  }
+  $('payKind').addEventListener('change', updatePayPlaceholder);
+  $('payCancel').addEventListener('click', resetPayForm);
+  $('payQr').addEventListener('change', async (ev) => {
+    const file = ev.target.files[0];
+    if (chosenQr) URL.revokeObjectURL(chosenQr.url);
+    chosenQr = null;
+    showChosenQr(null);
+    if (!file) return;
+    try {
+      const blob = await prepareQr(file);
+      chosenQr = { blob, url: URL.createObjectURL(blob) };
+      showChosenQr(chosenQr.url);
+    } catch (err) {
+      ev.target.value = '';
+      alert(err.message);
+    }
+  });
+  $('payForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const id = editingPayId;
+    const existing = id && payMethods().find((x) => x.id === id);
+    let method;
+    try {
+      method = Core.cleanPaymentMethod({
+        kind: $('payKind').value,
+        label: $('payLabel').value,
+        accountName: $('payAccountName').value,
+        accountNumber: $('payAccountNumber').value,
+        details: $('payDetails').value,
+        hasQr: Boolean(chosenQr || existing?.qrFile),
+      });
+    } catch (err) {
+      alert(err.message);
+      return;
+    }
+    // Encrypt a newly chosen QR before applying the change.
+    let qr = null;
+    if (chosenQr) {
+      $('paySubmit').disabled = true;
+      try {
+        qr = { fileId: Core.newId() + Core.newId(), content: await sealQr(chosenQr.blob), url: chosenQr.url };
+      } catch (err) {
+        alert(`Couldn’t add the QR code: ${err.message}`);
+        return;
+      } finally {
+        $('paySubmit').disabled = false;
+      }
+      chosenQr = null; // its URL now belongs to qrUrls
+    }
+    change(() => {
+      const target = existing || { id: Core.newId() };
+      Object.assign(target, method);
+      if (qr) {
+        dropQr(target.qrFile);
+        pendingQr.set(qr.fileId, qr.content);
+        qrUrls.set(qr.fileId, qr.url);
+        target.qrFile = qr.fileId;
+      }
+      if (!existing) payMethods().push(target);
+    });
+    resetPayForm();
+  });
+  resetPayForm();
+
   // ---- Start-up -------------------------------------------------------
 
   async function loadConfig() {
@@ -652,7 +858,7 @@
       const days = Number($('reminderDays').value);
       if (!/^[A-Z]{3}$/.test(currency)) throw new Error('Currency must be a 3-letter code, like USD');
       if (!Number.isInteger(days) || days < 1 || days > 30) throw new Error('Reminder days must be between 1 and 30');
-      state.settings = { ownerName: $('ownerName').value.trim().slice(0, 40), currency, reminderDays: days };
+      Object.assign(state.settings, { ownerName: $('ownerName').value.trim().slice(0, 40), currency, reminderDays: days });
     });
     document.activeElement.blur();
   });

@@ -139,3 +139,39 @@ tr:last-child td { border-bottom: 0; }
   .stats.five { grid-template-columns: 1fr 1fr; }
   .stats.five .stat:first-child { grid-column: 1 / -1; }
 }
+
+/* Payment methods */
+.pay-list { display: flex; flex-direction: column; }
+.pay-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.pay-item:last-child { border-bottom: 0; }
+#payMethods .pay-item { grid-template-columns: auto 1fr; }
+.pay-body { min-width: 0; }
+.pay-body .sub { color: var(--muted); font-size: 0.88rem; overflow-wrap: anywhere; }
+.pay-label { font-weight: 600; }
+.pay-number { display: flex; align-items: center; gap: 8px; margin: 2px 0; font: 600 1.05rem/1.3 ui-monospace, Menlo, monospace; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.copy-btn { font: 500 0.78rem/1 system-ui, sans-serif; letter-spacing: 0; padding: 5px 10px; border-radius: 999px; }
+.pay-icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: var(--muted); flex: none; }
+.pay-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pay-gcash { background: #1d6fe8; }
+.pay-maya { background: #14a36e; }
+.pay-bank { background: #6b4fd1; }
+.pay-cash { background: #2f9e5b; }
+.pay-other { background: #8a8f98; }
+.pay-form { margin-top: 12px; }
+.pay-form select { color: var(--text); }
+.btn-row button:disabled { opacity: 0.4; cursor: default; }
+@media (max-width: 720px) {
+  .pay-item { grid-template-columns: auto 1fr; }
+  .pay-item > .btn-row { grid-column: 2; }
+}
+
+/* QR codes */
+.qr-thumb { display: block; width: 96px; height: 96px; object-fit: contain; margin-top: 8px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.qr-preview { margin-top: 10px; }
+.qr-wrap { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.qr-open { padding: 6px; background: #fff; border-radius: 12px; line-height: 0; }
+.qr-img { width: 180px; height: 180px; object-fit: contain; }
+.qr-save { font-size: 0.85rem; color: var(--accent); }
+.qr-overlay { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px; }
+.qr-overlay img { width: min(92vw, 520px); max-height: 75vh; object-fit: contain; background: #fff; border-radius: 12px; padding: 10px; }
+.qr-overlay-title { color: #fff; font-weight: 600; font-size: 1.1rem; }

@@ -127,7 +127,86 @@
     return true;
   }
 
+  async function copy(text, button) {
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = 'Copied!';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+    } catch {
+      prompt('Copy this:', text);
+    }
+  }
+
+  const qrUrls = new Map(); // QR file id -> object URL
+
+  async function qrUrl(fileId) {
+    if (!qrUrls.has(fileId)) {
+      qrUrls.set(fileId, (async () => {
+        const file = await fetchJson(`data/pay/${fileId}.json`);
+        if (!file || !me.paymentsKey) return null;
+        const { type, data } = await Core.decryptJson(await Core.importSharedKey(me.paymentsKey), file);
+        return URL.createObjectURL(new Blob([Core.fromB64(data)], { type }));
+      })());
+    }
+    return qrUrls.get(fileId);
+  }
+
+  function qrBlock(m) {
+    const img = el('img', { className: 'qr-img', alt: `${m.label} QR code` });
+    const save = el('a', { className: 'qr-save', textContent: 'Save QR', download: `${m.label.replace(/[^\w-]+/g, '-')}-QR.png` });
+    const wrap = el('div', { className: 'qr-wrap' }, [
+      el('button', { type: 'button', className: 'qr-open', title: 'Tap to enlarge' }, [img]),
+      el('div', { className: 'hint', textContent: 'Tap to enlarge · scan with your banking app' }),
+      save,
+    ]);
+    save.hidden = true;
+    wrap.querySelector('.qr-open').addEventListener('click', () => { if (img.src) openQr(img.src, m.label); });
+    qrUrl(m.qrFile)
+      .then((url) => {
+        if (!url) throw new Error('missing');
+        img.src = url;
+        save.href = url;
+        save.hidden = false;
+      })
+      .catch(() => { wrap.replaceChildren(el('div', { className: 'hint', textContent: 'QR code couldn’t load. Please refresh.' })); });
+    return wrap;
+  }
+
+  function openQr(src, label) {
+    const overlay = el('div', { className: 'qr-overlay', role: 'dialog', ariaLabel: `${label} QR code` }, [
+      el('div', { className: 'qr-overlay-title', textContent: label }),
+      el('img', { src, alt: `${label} QR code` }),
+      el('button', { type: 'button', className: 'primary', textContent: 'Close' }),
+    ]);
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (ev) => { if (ev.target === overlay || ev.target.tagName === 'BUTTON') close(); });
+    document.addEventListener('keydown', function onKey(ev) {
+      if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+    });
+    document.body.append(overlay);
+  }
+
+  function renderPayMethods() {
+    const methods = me.paymentMethods || [];
+    $('paySection').hidden = methods.length === 0;
+    $('payMethods').replaceChildren(
+      ...methods.map((m) => {
+        const lines = [el('div', { className: 'pay-label', textContent: m.label })];
+        if (m.accountName) lines.push(el('div', { className: 'sub', textContent: m.accountName }));
+        if (m.accountNumber) {
+          const btn = el('button', { type: 'button', className: 'copy-btn', textContent: 'Copy' });
+          btn.addEventListener('click', () => copy(m.accountNumber, btn));
+          lines.push(el('div', { className: 'pay-number' }, [el('span', { textContent: m.accountNumber }), btn]));
+        }
+        if (m.details) lines.push(el('div', { className: 'sub', textContent: m.details }));
+        if (m.qrFile) lines.push(qrBlock(m));
+        return el('div', { className: 'pay-item' }, [PayIcons.paymentIcon(m.kind), el('div', { className: 'pay-body' }, lines)]);
+      })
+    );
+  }
+
   function render() {
+    renderPayMethods();
     const t = me.totals;
     $('greeting').textContent = `Hi ${me.name}` + (me.ownerName ? ` — here's what you owe ${me.ownerName}.` : '.');
     $('remaining').textContent = money(t.remaining);

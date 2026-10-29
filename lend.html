@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <meta name="referrer" content="no-referrer">
   <title>Money Lent</title>
-  <link rel="stylesheet" href="style.css?v=0414b00109">
-  <link rel="stylesheet" href="lending.css?v=0414b00109">
+  <link rel="stylesheet" href="style.css?v=add3f42285">
+  <link rel="stylesheet" href="lending.css?v=add3f42285">
 </head>
 <body>
   <header class="topbar">
@@ -79,6 +79,26 @@
       <p id="borrowersEmpty" class="empty card" hidden>No borrowers yet. Add one above to get an access code.</p>
 
       <section class="card">
+        <h2>Where borrowers can pay you</h2>
+        <p class="hint">Shown to every borrower under “How to pay”. Only people with a code can see these details.</p>
+        <div id="payMethodsList" class="pay-list"></div>
+        <p id="payMethodsEmpty" class="empty" hidden>No payment methods yet.</p>
+        <form id="payForm" class="inline-form pay-form" autocomplete="off">
+          <label>Type
+            <select id="payKind"></select>
+          </label>
+          <label>Name shown <input id="payLabel" maxlength="40" placeholder="GCash"></label>
+          <label>Account name <input id="payAccountName" maxlength="60" placeholder="e.g. Juan D."></label>
+          <label>Number <input id="payAccountNumber" maxlength="40" placeholder="e.g. 0917 123 4567" inputmode="text"></label>
+          <label>Note <input id="payDetails" maxlength="200" class="grow" placeholder="e.g. Send a screenshot after paying"></label>
+          <label>QR code (optional) <input id="payQr" type="file" accept="image/*"></label>
+          <button type="submit" class="primary" id="paySubmit">Add</button>
+          <button type="button" id="payCancel" hidden>Cancel</button>
+        </form>
+        <div id="payQrPreview" class="qr-preview" hidden></div>
+      </section>
+
+      <section class="card">
         <h2>Settings</h2>
         <form id="settingsForm" class="inline-form">
           <label>Your name (shown to borrowers) <input id="ownerName" maxlength="40" class="grow"></label>
@@ -94,7 +114,8 @@
     </div>
   </main>
 
-  <script src="lib/core.js?v=0414b00109"></script>
-  <script src="lend.js?v=0414b00109"></script>
+  <script src="lib/icons.js?v=add3f42285"></script>
+  <script src="lib/core.js?v=add3f42285"></script>
+  <script src="lend.js?v=add3f42285"></script>
 </body>
 </html>
