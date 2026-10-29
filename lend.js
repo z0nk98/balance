@@ -394,10 +394,10 @@
     const c = b.contact;
     const reminders = [c.notifyEmail && `email ${c.email}`, c.notifySms && `text ${c.phone}`].filter(Boolean);
     const summary = [
-      `${money(t.remaining)} outstanding`,
-      t.overdue > 0 ? `${money(t.overdue)} overdue` : null,
-      t.dueSoon > 0 ? `${money(t.dueSoon)} due soon` : null,
-      t.nextDue ? `next ${money(t.nextDue.remaining)} on ${dateLabel(t.nextDue.dueDate)}` : 'nothing due',
+      `${maskedMoney(t.remaining)} outstanding`,
+      t.overdue > 0 ? `${maskedMoney(t.overdue)} overdue` : null,
+      t.dueSoon > 0 ? `${maskedMoney(t.dueSoon)} due soon` : null,
+      t.nextDue ? `next ${maskedMoney(t.nextDue.remaining)} on ${dateLabel(t.nextDue.dueDate)}` : 'nothing due',
     ].filter(Boolean).join(' · ');
 
     // With a filter on, show only matching payments and open the list.
@@ -409,7 +409,7 @@
       scheduleForm(b),
       installmentForm(b),
       loansRow(b, installments),
-      filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${money(ft.owed)} total · ${money(ft.paid)} paid · ${money(ft.remaining)} left` }) : '',
+      filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` }) : '',
       installmentTable(sortPayments(filtered ? shown : installments)),
       contactForm(b),
     ]);
