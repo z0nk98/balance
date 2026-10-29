@@ -669,17 +669,17 @@
         el('td', { className: 'num', textContent: money(i.remaining) }),
         el('td', {}, [el('span', { className: `badge ${i.status}`, textContent: STATUS_LABEL[i.status] })]),
         el('td', {}, [
-          el('div', { className: 'btn-row' }, [
+          el('div', { className: 'btn-row row-actions' }, [
             i.remaining > 0
-              ? el('button', { textContent: 'Mark paid', onclick: () => change(() => { findInstallment(i.id).paid = i.amount; }) })
-              : el('button', { textContent: 'Undo paid', onclick: () => change(() => { findInstallment(i.id).paid = 0; }) }),
-            el('button', { textContent: 'Record payment', hidden: i.remaining <= 0, onclick: () => recordPayment(i) }),
-            el('button', { textContent: 'Edit', onclick: () => editInstallment(i) }),
-            el('button', { className: 'danger', textContent: 'Delete', onclick: () => {
+              ? iconButton('paid', 'Mark paid', () => change(() => { findInstallment(i.id).paid = i.amount; }), 'good')
+              : iconButton('undo', 'Undo paid', () => change(() => { findInstallment(i.id).paid = 0; })),
+            i.remaining > 0 ? iconButton('record', 'Record payment', () => recordPayment(i)) : '',
+            iconButton('edit', 'Edit payment', () => editInstallment(i)),
+            iconButton('delete', 'Delete payment', () => {
               if (confirm(`Delete the ${money(i.amount)} payment due ${dateLabel(i.dueDate)}?`)) {
                 change(() => { state.installments = state.installments.filter((x) => x.id !== i.id); });
               }
-            } }),
+            }, 'danger'),
           ]),
         ]),
       ])
