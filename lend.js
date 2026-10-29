@@ -425,11 +425,11 @@
           el('div', { className: 'sub', textContent: summary }),
           el('div', { className: 'sub', textContent: reminders.length ? `Reminders: ${reminders.join(', ')}` : 'Reminders: off (add their email or phone below)' }),
         ]),
-        el('div', { className: 'btn-row' }, [
-          el('button', { textContent: 'Show code', onclick: () => showCode(b) }),
-          el('button', { textContent: 'Change code', onclick: () => newCode(b) }),
-          el('button', { textContent: 'Rename', onclick: () => rename(b) }),
-          el('button', { className: 'danger', textContent: 'Delete', onclick: () => removeBorrower(b) }),
+        el('div', { className: 'btn-row row-actions' }, [
+          iconButton('key', `Show code for ${b.name}`, () => showCode(b)),
+          iconButton('newKey', `Change code for ${b.name}`, () => newCode(b)),
+          iconButton('edit', `Rename ${b.name}`, () => rename(b)),
+          iconButton('delete', `Delete ${b.name}`, () => removeBorrower(b), 'danger'),
         ]),
       ]),
       details,
