@@ -237,3 +237,14 @@ test('inbox job saves only new encrypted messages', () => {
   const fresh = newMessages(msgs, { done: new Set(['a2']), saved: new Set(['a4']) });
   assert.deepStrictEqual(fresh.map((m) => m.id), ['a1']);
 });
+
+test('note search matches every word, in any order and case', () => {
+  const i = { status: 'upcoming', note: 'Car repair – 2/3 (paid late)', dueDate: '2026-11-30' };
+  assert.ok(Core.matchesFilter(i, { text: 'repair' }));
+  assert.ok(Core.matchesFilter(i, { text: '  LATE car ' }));
+  assert.ok(Core.matchesFilter(i, { text: '2/3' }));
+  assert.ok(!Core.matchesFilter(i, { text: 'phone' }));
+  assert.ok(!Core.matchesFilter(i, { text: 'car phone' }));
+  assert.ok(!Core.matchesFilter(i, { text: 'repair', status: 'paid' }), 'combines with other filters');
+  assert.ok(!Core.matchesFilter({ status: 'upcoming', note: '', dueDate: '2026-11-30' }, { text: 'x' }));
+});

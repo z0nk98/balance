@@ -101,7 +101,7 @@
 
   // ---- Filters --------------------------------------------------------
 
-  const filters = { status: 'unpaid', loan: '', month: '' };
+  const filters = { status: 'unpaid', loan: '', month: '', text: '' };
 
   function loanName(i) {
     return Core.loanName(i.note);
@@ -227,7 +227,7 @@
       chip.classList.toggle('active', chip.dataset.status === filters.status);
       chip.setAttribute('aria-pressed', chip.dataset.status === filters.status);
     }
-    $('clearFilters').hidden = filters.status === 'unpaid' && !filters.loan && !filters.month;
+    $('clearFilters').hidden = filters.status === 'unpaid' && !filters.loan && !filters.month && !filters.text.trim();
 
     const shown = me.items.filter(matches);
     const st = Core.totals(shown);
@@ -354,10 +354,12 @@
   });
   $('loanFilter').addEventListener('change', (ev) => { filters.loan = ev.target.value; render(); });
   $('monthFilter').addEventListener('change', (ev) => { filters.month = ev.target.value; render(); });
+  $('noteSearch').addEventListener('input', (ev) => { filters.text = ev.target.value; render(); });
   $('clearFilters').addEventListener('click', () => {
-    Object.assign(filters, { status: 'unpaid', loan: '', month: '' });
+    Object.assign(filters, { status: 'unpaid', loan: '', month: '', text: '' });
     $('loanFilter').value = '';
     $('monthFilter').value = '';
+    $('noteSearch').value = '';
     render();
   });
 

@@ -244,3 +244,5 @@ tr:last-child td { border-bottom: 0; }
 .bill-form input, .bill-form select { width: 100%; min-width: 0; }
 @media (max-width: 720px) { .bill-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .bill-form input[type="checkbox"] { width: auto; }
+.filter-selects input[type="search"] { color: var(--text); min-width: 180px; }
+@media (max-width: 720px) { .filter-selects input[type="search"] { min-width: 0; width: 100%; } }
