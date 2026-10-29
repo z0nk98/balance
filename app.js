@@ -361,6 +361,13 @@
       ev.target.value = '';
     });
 
+    // The Bills page can add expenses from another tab: show them.
+    window.addEventListener('storage', (ev) => {
+      if (ev.key !== STORAGE_KEY) return;
+      Object.assign(state, load());
+      render();
+    });
+
     render();
   }
 

@@ -26,6 +26,7 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 | Page | Who it's for |
 | --- | --- |
 | `index.html` | You: personal expenses (stored in your browser only) |
+| `bills.html` | You: bills tracker (stored in your browser only) |
 | `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
 
@@ -48,6 +49,15 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Add a loan.** Enter the amount, number of months and first due date; it's split into monthly payments. Or add single payments.
 - **Record payments** with *Mark paid* or *Record payment* (partial).
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
+
+## Bills
+
+`bills.html` keeps track of recurring bills: electricity, water, internet, rent, credit cards, subscriptions and so on.
+
+- **Add a bill** with its usual amount (0 if it varies), the day of the month it's due, how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
+- **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
+- **Mark paid** asks for the amount actually paid. With *Add paid bills to Expenses* on (the default), the payment is also added to your Expenses; undoing removes it.
+- Bills are stored in this browser only, like expenses. Use *Download backup* and *Restore backup* to keep a copy or move them to another device.
 
 ## Borrowers sending their contact details
 

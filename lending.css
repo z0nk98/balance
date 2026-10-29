@@ -204,3 +204,43 @@ tr:last-child td { border-bottom: 0; }
 .filter-summary { font-size: 0.92rem; font-weight: 500; margin: 8px 0 0; }
 #borrowers .filter-summary { margin-top: 14px; color: var(--accent); }
 .remember { font-size: 0.9rem; color: var(--muted); }
+
+/* Bills */
+.bill-list { display: flex; flex-direction: column; }
+.bill-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.bill-item:last-child { border-bottom: 0; }
+.bill-item.paused { opacity: 0.55; }
+.bill-main { min-width: 0; }
+.bill-name { font-weight: 600; }
+.bill-main .sub { color: var(--muted); font-size: 0.86rem; overflow-wrap: anywhere; }
+.bill-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.bill-side .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.bill-side button { padding: 5px 12px; font-size: 0.85rem; }
+.bill-form { grid-template-columns: repeat(3, 1fr); }
+.bill-form .check { flex-direction: row; align-items: center; color: var(--text); }
+.bill-form select { color: var(--text); }
+.alert-card.overdue { border-color: var(--danger); }
+.alert-card.overdue h2 { color: var(--danger); }
+.alert-card.soon { border-color: var(--warn); }
+.alert-card.soon h2 { color: var(--warn); }
+#statusFilter + .bill-list, .chips + .bill-list { margin-top: 4px; }
+.bill-electricity { background: #e8a317; }
+.bill-water { background: #2b8fd6; }
+.bill-internet { background: #6b4fd1; }
+.bill-mobile { background: #1d6fe8; }
+.bill-rent { background: #b45f3c; }
+.bill-card { background: #39424e; }
+.bill-loan { background: #8a6d1d; }
+.bill-insurance { background: #2f9e5b; }
+.bill-subscription { background: #d14d8b; }
+.bill-school { background: #3d7a8a; }
+.bill-other { background: #8a8f98; }
+@media (max-width: 720px) {
+  .bill-form { grid-template-columns: 1fr 1fr; }
+  .bill-item { grid-template-columns: auto 1fr; }
+  .bill-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+}
+.bill-form label { min-width: 0; }
+.bill-form input, .bill-form select { width: 100%; min-width: 0; }
+@media (max-width: 720px) { .bill-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bill-form input[type="checkbox"] { width: auto; }

@@ -13,7 +13,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const ROOT = path.join(__dirname, '..');
-const PAGES = ['index.html', 'lend.html', 'borrow.html'];
+const PAGES = ['index.html', 'bills.html', 'lend.html', 'borrow.html'];
 const ASSET_REF = /(<(?:script|link)\b[^>]*?\b(?:src|href)=")([\w./-]+\.(?:js|css))(?:\?v=[\w-]*)?(")/g;
 
 function assetsIn(html) {

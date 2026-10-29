@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <title>Bills</title>
+  <link rel="stylesheet" href="style.css?v=0abd5f262b">
+  <link rel="stylesheet" href="lending.css?v=0abd5f262b">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Bills</h1>
+    <nav>
+      <a href="index.html">Expenses</a>
+      <a href="bills.html" class="active">Bills</a>
+      <a href="lend.html">Money lent</a>
+    </nav>
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="Previous month">&lsaquo;</button>
+      <span id="monthLabel"></span>
+      <button id="nextMonth" aria-label="Next month">&rsaquo;</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="alerts"></div>
+
+    <section class="stats four">
+      <div class="stat"><span class="stat-label">Due this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumCount"></span></div>
+      <div class="stat"><span class="stat-label">Paid</span><span class="stat-value" id="sumPaid"></span></div>
+      <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="sumLeft"></span></div>
+      <div class="stat"><span class="stat-label">Overdue</span><span class="stat-value" id="sumOverdue"></span></div>
+    </section>
+
+    <section class="card">
+      <div class="list-head">
+        <h2 id="monthTitle">This month</h2>
+        <button type="button" id="todayBtn" class="linkish" hidden>Back to this month</button>
+      </div>
+      <div class="chips" id="statusFilter" role="group" aria-label="Filter by status">
+        <button type="button" data-status="all" class="chip active">All</button>
+        <button type="button" data-status="unpaid" class="chip">Unpaid</button>
+        <button type="button" data-status="overdue" class="chip">Overdue</button>
+        <button type="button" data-status="due-soon" class="chip">Due soon</button>
+        <button type="button" data-status="paid" class="chip">Paid</button>
+      </div>
+      <div id="monthList" class="bill-list"></div>
+      <p id="monthEmpty" class="empty" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2 id="formTitle">Add a bill</h2>
+      <form id="billForm" class="bill-form" autocomplete="off">
+        <label>Type <select id="billKind"></select></label>
+        <label>Name <input id="billName" maxlength="60" required placeholder="e.g. Meralco"></label>
+        <label>Usual amount <input id="billAmount" type="number" min="0" step="0.01" required placeholder="0 if it varies"></label>
+        <label>Due day of month <input id="billDueDay" type="number" min="1" max="31" required placeholder="e.g. 15"></label>
+        <label>Repeats <select id="billEvery"></select></label>
+        <label>First month due <input id="billStart" type="month" required></label>
+        <label>Last month (optional) <input id="billEnd" type="month"></label>
+        <label>Account / reference no. <input id="billAccount" maxlength="60" placeholder="Optional"></label>
+        <label class="wide">Note <input id="billNote" maxlength="120" placeholder="e.g. Pay via GCash, due on the 15th"></label>
+        <label class="check wide"><input type="checkbox" id="billAutopay"> Paid automatically (auto-debit)</label>
+        <div class="form-actions wide">
+          <button type="submit" class="primary" id="billSubmit">Add bill</button>
+          <button type="button" id="billCancel" hidden>Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>All bills</h2>
+      <div id="allBills" class="bill-list"></div>
+      <p id="allEmpty" class="empty">No bills yet. Add one above.</p>
+    </section>
+
+    <section class="card tools">
+      <label class="check"><input type="checkbox" id="addToExpenses"> Add paid bills to Expenses</label>
+      <button id="backupBtn">Download backup</button>
+      <label class="file-btn">Restore backup <input id="restoreFile" type="file" accept=".json,application/json" hidden></label>
+      <span class="hint" id="currencyHint"></span>
+    </section>
+  </main>
+
+  <script src="lib/icons.js?v=0abd5f262b"></script>
+  <script src="lib/bills.js?v=0abd5f262b"></script>
+  <script src="bills.js?v=0abd5f262b"></script>
+</body>
+</html>
