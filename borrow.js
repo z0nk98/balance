@@ -81,22 +81,51 @@
     const items = data.installments
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .map((i) => Core.withStatus(i, data.reminderDays, today));
-    const byMonth = new Map();
-    for (const i of items) {
-      const m = i.dueDate.slice(0, 7);
-      if (!byMonth.has(m)) byMonth.set(m, []);
-      byMonth.get(m).push(i);
-    }
-    me = {
-      ...data,
-      totals: Core.totals(items),
-      months: [...byMonth].map(([month, list]) => ({ month, items: list, ...Core.totals(list) })),
-    };
+    me = { ...data, items, totals: Core.totals(items) };
     session('set', Core.normalizeCode(code));
+    fillFilterOptions();
     $('loginView').hidden = true;
     $('mainView').hidden = false;
     $('logout').hidden = false;
     render();
+  }
+
+  // ---- Filters --------------------------------------------------------
+
+  const filters = { status: 'unpaid', loan: '', month: '' };
+
+  // "Phone – 2/6" belongs to the loan "Phone".
+  function loanName(i) {
+    return i.note.replace(/\s+–\s+\d+\/\d+$/, '').replace(/^\d+\/\d+$/, '') || 'Other';
+  }
+
+  function fillFilterOptions() {
+    const loans = [...new Set(me.items.map(loanName))].sort();
+    $('loanFilter').replaceChildren(
+      el('option', { value: '', textContent: 'All loans' }),
+      ...loans.map((l) => el('option', { value: l, textContent: l }))
+    );
+    $('loanFilterWrap').hidden = loans.length < 2;
+
+    const months = [...new Set(me.items.map((i) => i.dueDate.slice(0, 7)))];
+    $('monthFilter').replaceChildren(
+      el('option', { value: '', textContent: 'All months' }),
+      ...months.map((m) => el('option', { value: m, textContent: monthLabel(m) }))
+    );
+
+    // Keep choices that still exist after a reload.
+    if (!loans.includes(filters.loan)) filters.loan = '';
+    if (!months.includes(filters.month)) filters.month = '';
+    $('loanFilter').value = filters.loan;
+    $('monthFilter').value = filters.month;
+  }
+
+  function matches(i) {
+    if (filters.status === 'unpaid' && i.status === 'paid') return false;
+    if (!['all', 'unpaid'].includes(filters.status) && i.status !== filters.status) return false;
+    if (filters.loan && loanName(i) !== filters.loan) return false;
+    if (filters.month && !i.dueDate.startsWith(filters.month)) return false;
+    return true;
   }
 
   function render() {
@@ -108,8 +137,25 @@
     $('nextDue').textContent = t.nextDue ? money(t.nextDue.remaining) : '—';
     $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';
 
-    const hidePaid = $('hidePaid').checked;
-    const months = me.months.filter((m) => !hidePaid || m.remaining > 0);
+    for (const chip of $('statusFilter').children) {
+      chip.classList.toggle('active', chip.dataset.status === filters.status);
+      chip.setAttribute('aria-pressed', chip.dataset.status === filters.status);
+    }
+    $('clearFilters').hidden = filters.status === 'unpaid' && !filters.loan && !filters.month;
+
+    const shown = me.items.filter(matches);
+    const st = Core.totals(shown);
+    $('filterSummary').textContent = shown.length
+      ? `${shown.length} payment${shown.length === 1 ? '' : 's'} · ${money(st.owed)} total · ${money(st.paid)} paid · ${money(st.remaining)} left`
+      : '';
+
+    const byMonth = new Map();
+    for (const i of shown) {
+      const m = i.dueDate.slice(0, 7);
+      if (!byMonth.has(m)) byMonth.set(m, []);
+      byMonth.get(m).push(i);
+    }
+    const months = [...byMonth].map(([month, list]) => ({ month, items: list, ...Core.totals(list) }));
     $('months').replaceChildren(
       ...months.map((m) =>
         el('div', { className: 'month-card' }, [
@@ -167,7 +213,20 @@
     showLogin();
   });
 
-  $('hidePaid').addEventListener('change', render);
+  $('statusFilter').addEventListener('click', (ev) => {
+    const status = ev.target.closest('[data-status]')?.dataset.status;
+    if (!status) return;
+    filters.status = status;
+    render();
+  });
+  $('loanFilter').addEventListener('change', (ev) => { filters.loan = ev.target.value; render(); });
+  $('monthFilter').addEventListener('change', (ev) => { filters.month = ev.target.value; render(); });
+  $('clearFilters').addEventListener('click', () => {
+    Object.assign(filters, { status: 'unpaid', loan: '', month: '' });
+    $('loanFilter').value = '';
+    $('monthFilter').value = '';
+    render();
+  });
 
   const saved = session('get');
   if (saved) signIn(saved).catch(() => { session('clear'); showLogin(); });

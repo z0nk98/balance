@@ -112,3 +112,16 @@ tr:last-child td { border-bottom: 0; }
 .narrow form .check { color: var(--muted); font-size: 0.9rem; }
 .inline-form select { color: var(--text); }
 .schedule-preview { margin-top: 6px; }
+
+.filters { margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { border-radius: 999px; padding: 5px 12px; font-size: 0.85rem; }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filter-selects { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.filter-selects label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+.filter-selects select { color: var(--text); min-width: 150px; }
+.filter-selects .linkish { padding-bottom: 8px; }
+@media (max-width: 720px) {
+  .filter-selects label { flex: 1 1 140px; }
+  .filter-selects select { min-width: 0; width: 100%; }
+}

@@ -46,12 +46,28 @@
       </section>
 
       <section class="card">
-        <div class="list-head">
-          <h2>By month</h2>
-          <label class="check"><input type="checkbox" id="hidePaid" checked> Hide fully paid months</label>
+        <h2>My payments</h2>
+        <div class="filters">
+          <div class="chips" id="statusFilter" role="group" aria-label="Filter by status">
+            <button type="button" data-status="unpaid" class="chip active">Unpaid</button>
+            <button type="button" data-status="overdue" class="chip">Overdue</button>
+            <button type="button" data-status="due-soon" class="chip">Due soon</button>
+            <button type="button" data-status="paid" class="chip">Paid</button>
+            <button type="button" data-status="all" class="chip">All</button>
+          </div>
+          <div class="filter-selects">
+            <label id="loanFilterWrap">Loan
+              <select id="loanFilter"><option value="">All loans</option></select>
+            </label>
+            <label>Month
+              <select id="monthFilter"><option value="">All months</option></select>
+            </label>
+            <button type="button" id="clearFilters" class="linkish" hidden>Clear filters</button>
+          </div>
+          <p id="filterSummary" class="hint"></p>
         </div>
         <div id="months"></div>
-        <p id="monthsEmpty" class="empty" hidden>Nothing owed right now.</p>
+        <p id="monthsEmpty" class="empty" hidden>No payments match these filters.</p>
       </section>
 
       <section class="card">
