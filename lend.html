@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>Money Lent</title>
-  <link rel="stylesheet" href="style.css?v=1572361ec4">
-  <link rel="stylesheet" href="lending.css?v=1572361ec4">
+  <link rel="stylesheet" href="style.css?v=a12949c9cb">
+  <link rel="stylesheet" href="lending.css?v=a12949c9cb">
 </head>
 <body>
   <header class="topbar">
@@ -46,6 +46,13 @@
     </section>
 
     <div id="mainView" hidden>
+      <div id="updateBanner" class="banner update-banner" hidden>
+        <strong>A new version of this page is available.</strong>
+        <div class="row">
+          <span class="hint">Reload to get the latest features. Your saved data isn't affected.</span>
+          <button type="button" id="reloadNow" class="primary">Reload</button>
+        </div>
+      </div>
       <div id="saveStatus" class="save-status" role="status"></div>
 
       <div id="codeBanner" class="banner" hidden>
@@ -123,8 +130,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=1572361ec4"></script>
-  <script src="lib/core.js?v=1572361ec4"></script>
-  <script src="lend.js?v=1572361ec4"></script>
+  <script src="lib/icons.js?v=a12949c9cb"></script>
+  <script src="lib/core.js?v=a12949c9cb"></script>
+  <script src="lend.js?v=a12949c9cb"></script>
 </body>
 </html>

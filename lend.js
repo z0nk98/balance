@@ -2,6 +2,8 @@
   'use strict';
 
   const $ = (id) => document.getElementById(id);
+  // Version stamp this script was loaded with (see scripts/stamp.js).
+  const LOADED_VERSION = new URL(document.currentScript.src).searchParams.get('v');
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due soon', upcoming: 'Upcoming' };
   const TOKEN_KEY = 'balance:github-token';
   const OWNER_FILE = 'data/owner.json';
@@ -874,6 +876,31 @@
   $('inboxRefresh').addEventListener('click', () => loadInbox());
   // Check for new updates while the page is open.
   inboxTimer = setInterval(() => { if (state && !document.hidden) loadInbox(); }, 60000);
+
+  // ---- New version check ---------------------------------------------
+  //
+  // This page is often left open for hours. If a newer version is published,
+  // offer a reload so it doesn't keep running old code.
+
+  async function checkForUpdate() {
+    if (!LOADED_VERSION) return;
+    try {
+      const res = await fetch(`lend.html?check=${Date.now()}`, { cache: 'no-store' });
+      const live = (await res.text()).match(/lend\.js\?v=([\w-]+)/)?.[1];
+      if (live && live !== LOADED_VERSION) $('updateBanner').hidden = false;
+    } catch {
+      // Offline: try again later.
+    }
+  }
+
+  $('reloadNow').addEventListener('click', async () => {
+    await queue;
+    if (saveFailed && !confirm('Your last change wasn’t saved. Reload anyway and lose it?')) return;
+    location.reload();
+  });
+  setInterval(() => { if (!document.hidden) checkForUpdate(); }, 5 * 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+  checkForUpdate();
   document.addEventListener('visibilitychange', () => { if (state && !document.hidden) loadInbox(); });
 
   // ---- Start-up -------------------------------------------------------
