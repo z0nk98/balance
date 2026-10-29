@@ -262,13 +262,60 @@
     $('monthsEmpty').hidden = months.length > 0;
 
     const who = me.ownerName || 'the person you owe';
+    const canSend = Boolean(me.inbox && me.id);
     $('reminderStatus').textContent = me.reminders.length
       ? `Reminders are on: ${me.reminders.join(' and ')}.`
-      : `Reminders are off. To get them, send your email address or phone number to ${who}.`;
+      : canSend
+        ? 'Reminders are off. Add your email or mobile number below to get them.'
+        : `Reminders are off. To get them, send your email address or phone number to ${who}.`;
     $('reminderHint').textContent =
       `Reminders go out ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'} before a payment is due, ` +
-      `on the due date, and the day after if it's still unpaid. To change where they go, contact ${who}.`;
+      `on the due date, and the day after if it's still unpaid.` +
+      (canSend ? ` Your details are sent privately to ${who}, who turns the reminders on.` : ` To change where they go, contact ${who}.`);
+    $('contactForm').hidden = !canSend;
+    $('contactOwner').textContent = me.ownerName || 'lender';
   }
+
+  // ---- Sending contact details ------------------------------------------
+
+  async function sendContact() {
+    const contact = Core.cleanContactUpdate({
+      email: $('contactEmail').value,
+      phone: $('contactPhone').value,
+      notifyEmail: $('wantEmail').checked,
+      notifySms: $('wantSms').checked,
+    });
+    const text = await Core.sealForOwner(me.inbox.publicKey, {
+      type: 'contact',
+      borrowerId: me.id,
+      name: me.name,
+      ...contact,
+      at: new Date().toISOString(),
+    });
+    // Plain-text body with query options keeps this a "simple" request (no preflight).
+    const url = `${Core.NTFY}/${encodeURIComponent(me.inbox.topic)}?title=${encodeURIComponent('New contact details from a borrower')}&tags=bell`;
+    const res = await fetch(url, { method: 'POST', body: text, headers: { 'Content-Type': 'text/plain' } });
+    if (!res.ok) throw new Error('Couldn’t send right now. Please try again in a minute.');
+    return contact;
+  }
+
+  $('contactForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const msg = $('contactMsg');
+    $('contactSend').disabled = true;
+    try {
+      const c = await sendContact();
+      msg.className = 'ok';
+      msg.textContent = `Sent! ${me.ownerName || 'Your lender'} will turn on reminders${c.notifyEmail || c.notifySms ? '' : ' if you ask'} — you’ll see it here once they do.`;
+      $('contactForm').reset();
+    } catch (err) {
+      msg.className = 'error';
+      msg.textContent = err.message === 'Failed to fetch' ? 'Couldn’t send. Check your internet connection and try again.' : err.message;
+    } finally {
+      $('contactSend').disabled = false;
+    }
+    msg.hidden = false;
+  });
 
   $('loginForm').addEventListener('submit', async (ev) => {
     ev.preventDefault();

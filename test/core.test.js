@@ -198,3 +198,42 @@ test('QR codes: shared key is sent to borrowers only when a method has one', asy
   const file = await Core.encryptJson(key, { type: 'image/png', data: 'iVBORw0KGgo=' });
   assert.deepStrictEqual(await Core.decryptJson(await Core.importSharedKey(s.settings.paymentsKey), file), { type: 'image/png', data: 'iVBORw0KGgo=' });
 });
+
+test('borrower updates: encrypted to the owner, validated, local PH numbers accepted', async () => {
+  assert.strictEqual(Core.cleanPhone('0917 123 4567'), '+639171234567');
+  assert.strictEqual(Core.cleanPhone('+63 917-123-4567'), '+639171234567');
+  assert.throws(() => Core.cleanPhone('12345'), /country code/);
+  assert.throws(() => Core.cleanContactUpdate({}), /email address or a phone/);
+  assert.throws(() => Core.cleanContactUpdate({ phone: '09171234567', notifyEmail: true }), /email address/);
+  assert.deepStrictEqual(Core.cleanContactUpdate({ email: ' jo@example.com ', phone: '09171234567', notifySms: 1 }),
+    { email: 'jo@example.com', phone: '+639171234567', notifyEmail: false, notifySms: true });
+
+  const inbox = await Core.newInbox();
+  const s = sampleState();
+  s.settings.inbox = inbox;
+  const p = Core.borrowerPayload(s, s.borrowers[0]);
+  assert.strictEqual(p.id, 'b1');
+  assert.deepStrictEqual(p.inbox, { topic: inbox.topic, publicKey: inbox.publicKey });
+  assert.ok(!JSON.stringify(p).includes(inbox.privateKey.d), 'private key never leaves the owner');
+
+  const text = await Core.sealForOwner(p.inbox.publicKey, { type: 'contact', borrowerId: 'b1', email: 'jo@example.com' });
+  assert.ok(!text.includes('jo@example.com'));
+  assert.ok(text.length < 4096, 'fits in one ntfy message');
+  assert.deepStrictEqual(await Core.openFromBorrower(inbox.privateKey, text), { type: 'contact', borrowerId: 'b1', email: 'jo@example.com' });
+  assert.strictEqual(await Core.openFromBorrower((await Core.newInbox()).privateKey, text), null);
+  assert.strictEqual(await Core.openFromBorrower(inbox.privateKey, 'hello'), null);
+});
+
+test('inbox job saves only new encrypted messages', () => {
+  const { newMessages } = require('../scripts/inbox');
+  const msgs = [
+    { event: 'open', id: 'x' },
+    { event: 'message', id: 'a1', message: 'hi\n\nENC:abc' },
+    { event: 'message', id: 'a2', message: 'ENC:def' },
+    { event: 'message', id: 'a3', message: 'spam without payload' },
+    { event: 'message', id: '../evil', message: 'ENC:x' },
+    { event: 'message', id: 'a4', message: 'ENC:ghi' },
+  ];
+  const fresh = newMessages(msgs, { done: new Set(['a2']), saved: new Set(['a4']) });
+  assert.deepStrictEqual(fresh.map((m) => m.id), ['a1']);
+});

@@ -49,6 +49,15 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Record payments** with *Mark paid* or *Record payment* (partial).
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
 
+## Borrowers sending their contact details
+
+Borrowers can enter their email or mobile number (local numbers like `0917 123 4567` are fine) under **Payment reminders** on their page and tap **Send**.
+
+- The details are encrypted on their phone so that only your owner page can read them. They travel through [ntfy.sh](https://ntfy.sh), a free notification relay that needs no account and only ever sees scrambled text.
+- **To get a phone notification:** install the free **ntfy** app, tap **+**, and subscribe to the topic shown under **Settings** on your owner page. Keep the topic private.
+- **To apply an update:** open your owner page. New updates appear at the top under **Updates from borrowers**, with **Apply** and **Dismiss**. Nothing changes until you apply. **Check for borrower updates** (in Settings) checks right away, and the page also checks every minute while it's open.
+- ntfy keeps messages for about 12 hours. If `OWNER_PASSPHRASE` is set (see below), the hourly **Save borrower updates** workflow copies new messages into `data/inbox/`, still encrypted, so you can apply them later. Applying or dismissing removes the saved copy.
+
 ## Reminders (optional)
 
 A GitHub Action in the site repo (`.github/workflows/reminders.yml`) runs once a day. It emails or texts a borrower:
@@ -57,13 +66,13 @@ A GitHub Action in the site repo (`.github/workflows/reminders.yml`) runs once a
 - on the due date
 - the day after, if it's still unpaid
 
-Borrowers send you their email or phone number. You add it under their name and tick which reminders they want.
+Borrowers send their email or phone from their page (see above), or you can type it in under their name and tick which reminders they want.
 
 To turn reminders on, open the `balance` repo's **Settings → Secrets and variables → Actions** and add:
 
 | Name | Type | Value |
 | --- | --- | --- |
-| `OWNER_PASSPHRASE` | Secret | Your passphrase, so the job can read the data |
+| `OWNER_PASSPHRASE` | Secret | Your passphrase, so the jobs can read the data (also used to save borrower updates) |
 | `TIMEZONE` | Variable | e.g. `America/New_York` (default UTC) |
 | `RESEND_API_KEY` | Secret | For email, from [resend.com](https://resend.com) |
 | `EMAIL_FROM` | Variable | e.g. `Reminders <reminders@yourdomain.com>` (domain verified in Resend) |

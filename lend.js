@@ -18,6 +18,7 @@
   const published = new Map(); // fileId -> payload JSON last written this session
   const pendingDeletes = new Set(); // borrower files to remove on next save
   const pendingQr = new Map(); // QR file id -> encrypted content, or null to delete
+  const pendingPathDeletes = new Set(); // other files to delete on next save (saved borrower updates)
   const openPanels = new Set();
 
   // ---- Helpers --------------------------------------------------------
@@ -122,6 +123,14 @@
         return res.text();
       },
 
+      async listDir(path) {
+        const res = await req('GET', `/contents/${path}?ref=${encodeURIComponent(branch)}`);
+        if (res.status === 404) return [];
+        if (!res.ok) throw new Error(`Couldn’t list ${path} (GitHub error ${res.status})`);
+        const items = await res.json();
+        return Array.isArray(items) ? items.filter((i) => i.type === 'file').map((i) => i.name) : [];
+      },
+
       // One commit with all changes; `content: null` deletes the file.
       async commit(message, files) {
         const ref = await json('GET', `/git/ref/heads/${branch}`);
@@ -189,6 +198,8 @@
     }
     const deletes = [...pendingDeletes];
     for (const id of deletes) files.push([`data/b/${id}.json`, null]);
+    const pathDeletes = [...pendingPathDeletes];
+    for (const p of pathDeletes) files.push([p, null]);
     const qrChanges = [...pendingQr];
     for (const [id, content] of qrChanges) files.push([`data/pay/${id}.json`, content]);
     files.push([OWNER_FILE, JSON.stringify(await Core.sealOwnerFile(state, ownerKey, ownerSalt))]);
@@ -203,6 +214,7 @@
     for (const [id, content] of qrChanges) {
       if (pendingQr.get(id) === content) pendingQr.delete(id);
     }
+    for (const p of pathDeletes) pendingPathDeletes.delete(p);
   }
 
   // Apply a change, redraw, and publish it.
@@ -239,6 +251,8 @@
     $('borrowers').replaceChildren(...rows.map(borrowerCard));
     $('borrowersEmpty').hidden = rows.length > 0;
     renderPayMethods();
+    renderInbox();
+    renderNotifySetup();
 
     if (document.activeElement?.form !== $('settingsForm')) {
       $('ownerName').value = state.settings.ownerName;
@@ -431,12 +445,12 @@
   function contactForm(b) {
     const c = b.contact;
     const email = el('input', { type: 'email', maxLength: 254, value: c.email, placeholder: 'name@example.com', className: 'grow' });
-    const phone = el('input', { type: 'tel', maxLength: 20, value: c.phone, placeholder: '+15551234567' });
+    const phone = el('input', { type: 'tel', maxLength: 20, value: c.phone, placeholder: '0917 123 4567' });
     const byEmail = el('input', { type: 'checkbox', checked: c.notifyEmail });
     const bySms = el('input', { type: 'checkbox', checked: c.notifySms });
     const form = el('form', { className: 'inline-form' }, [
       field('Their email', email),
-      field('Their phone (with country code)', phone),
+      field('Their mobile number', phone),
       el('label', { className: 'check' }, [byEmail, document.createTextNode('Email reminders')]),
       el('label', { className: 'check' }, [bySms, document.createTextNode('Text reminders')]),
       el('button', { type: 'submit', textContent: 'Save reminders' }),
@@ -455,7 +469,7 @@
         b.contact = next;
       });
     });
-    return el('div', { className: 'contact-block' }, [el('div', { className: 'hint', textContent: 'Reminders (borrowers send you their details):' }), form]);
+    return el('div', { className: 'contact-block' }, [el('div', { className: 'hint', textContent: 'Reminders (borrowers can send these from their page; you apply them):' }), form]);
   }
 
   // ---- Actions --------------------------------------------------------
@@ -722,6 +736,146 @@
   });
   resetPayForm();
 
+  // ---- Updates from borrowers -------------------------------------------
+  //
+  // Borrowers post encrypted contact details to a private ntfy.sh topic.
+  // ntfy keeps messages for about 12 hours; the hourly "Save borrower
+  // updates" workflow copies them into data/inbox/ so none are lost.
+
+  let inboxItems = []; // { id, fromRepo, value }
+  let inboxTimer = null;
+
+  // Older data has no inbox yet: create one (borrower files then include it).
+  async function ensureInbox() {
+    if (state.settings.inbox) return false;
+    state.settings.inbox = await Core.newInbox();
+    return true;
+  }
+
+  function inboxDone() {
+    if (!state.inboxDone) state.inboxDone = [];
+    return state.inboxDone;
+  }
+
+  async function fetchNtfy(topic) {
+    try {
+      const res = await fetch(`${Core.NTFY}/${encodeURIComponent(topic)}/json?poll=1&since=all`, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return (await res.text()).split('\n').filter(Boolean).map((l) => JSON.parse(l)).filter((m) => m.event === 'message');
+    } catch {
+      return []; // ntfy unreachable: saved updates still show
+    }
+  }
+
+  async function loadInbox() {
+    if (!state?.settings.inbox) return;
+    const { topic, privateKey } = state.settings.inbox;
+    const done = new Set(inboxDone());
+    const raw = new Map(); // id -> { text, fromRepo }
+
+    const [saved, live] = await Promise.all([
+      gh.listDir('data/inbox').catch(() => []),
+      fetchNtfy(topic),
+    ]);
+    for (const name of saved) {
+      const id = name.replace(/\.json$/, '');
+      if (done.has(id)) {
+        pendingPathDeletes.add(`data/inbox/${name}`); // already handled: tidy up
+        continue;
+      }
+      const text = await gh.readText(`data/inbox/${name}`).catch(() => null);
+      if (text) raw.set(id, { text: JSON.parse(text).message, fromRepo: true });
+    }
+    for (const m of live) {
+      if (!done.has(m.id) && !raw.has(m.id)) raw.set(m.id, { text: m.message, fromRepo: false });
+    }
+
+    const items = [];
+    for (const [id, { text, fromRepo }] of raw) {
+      const value = await Core.openFromBorrower(privateKey, text);
+      if (value?.type === 'contact') items.push({ id, fromRepo, value });
+    }
+    items.sort((a, b) => String(a.value.at).localeCompare(String(b.value.at)));
+    inboxItems = items;
+    renderInbox();
+  }
+
+  function finishInboxItem(item, apply) {
+    change(() => {
+      if (apply) {
+        const b = state.borrowers.find((x) => x.id === item.value.borrowerId);
+        if (!b) throw new Error('That borrower no longer exists.');
+        b.contact = Core.cleanContactUpdate(item.value);
+      }
+      const done = inboxDone();
+      done.push(item.id);
+      if (done.length > 500) done.splice(0, done.length - 500);
+      if (item.fromRepo) pendingPathDeletes.add(`data/inbox/${item.id}.json`);
+      inboxItems = inboxItems.filter((x) => x !== item);
+    });
+  }
+
+  function renderInbox() {
+    $('inboxCard').hidden = inboxItems.length === 0;
+    $('inboxList').replaceChildren(
+      ...inboxItems.map((item) => {
+        const v = item.value;
+        const b = state.borrowers.find((x) => x.id === v.borrowerId);
+        const wants = [v.notifyEmail && 'email', v.notifySms && 'text'].filter(Boolean);
+        const when = v.at ? new Date(v.at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '';
+        return el('div', { className: 'inbox-item' }, [
+          el('div', {}, [
+            el('strong', { textContent: b ? b.name : `${v.name || 'Unknown'} (no longer a borrower)` }),
+            el('div', { textContent: [v.email, v.phone].filter(Boolean).join(' · ') }),
+            el('div', { className: 'sub', textContent: `${wants.length ? `Wants ${wants.join(' and ')} reminders` : 'No reminders chosen'} · sent ${when}` }),
+          ]),
+          el('div', { className: 'btn-row' }, [
+            b ? el('button', { className: 'primary', textContent: 'Apply', onclick: () => finishInboxItem(item, true) }) : '',
+            el('button', { textContent: 'Dismiss', onclick: () => finishInboxItem(item, false) }),
+          ]),
+        ]);
+      })
+    );
+  }
+
+  function renderNotifySetup() {
+    const box = $('notifySetup');
+    const topic = state.settings.inbox?.topic;
+    if (!topic) return box.replaceChildren();
+    const copyBtn = el('button', { type: 'button', textContent: 'Copy' });
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(topic);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+      } catch {
+        prompt('Copy this:', topic);
+      }
+    });
+    box.replaceChildren(
+      el('strong', { textContent: 'Get notified when a borrower sends their details: ' }),
+      document.createTextNode('install the free ntfy app (App Store / Google Play), tap +, and subscribe to this topic. Keep it private.'),
+      el('div', { className: 'btn-row' }, [el('code', { textContent: topic }), copyBtn]),
+      el('div', { className: 'btn-row inbox-check' }, [
+        el('button', { type: 'button', id: 'inboxCheck', textContent: 'Check for borrower updates', onclick: async (ev) => {
+          const btn = ev.currentTarget;
+          btn.disabled = true;
+          btn.textContent = 'Checking…';
+          await loadInbox().catch(() => {});
+          btn.disabled = false;
+          btn.textContent = inboxItems.length ? `${inboxItems.length} update${inboxItems.length === 1 ? '' : 's'} — see top of page` : 'No new updates';
+          setTimeout(() => { btn.textContent = 'Check for borrower updates'; }, 3000);
+          if (inboxItems.length) $('inboxCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } }),
+      ]),
+    );
+  }
+
+  $('inboxRefresh').addEventListener('click', () => loadInbox());
+  // Check for new updates while the page is open.
+  inboxTimer = setInterval(() => { if (state && !document.hidden) loadInbox(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (state && !document.hidden) loadInbox(); });
+
   // ---- Start-up -------------------------------------------------------
 
   async function loadConfig() {
@@ -787,12 +941,15 @@
       $('passphrase2').value = '';
       show('mainView');
       render();
-      if (setupMode) {
+      const addedInbox = await ensureInbox();
+      if (setupMode || addedInbox) {
         setupMode = false;
+        render();
         persist();
       } else {
         setStatus('saved', 'All changes are saved.');
       }
+      loadInbox();
     } catch (e) {
       err.textContent = e.message;
       err.hidden = false;

@@ -175,3 +175,18 @@ tr:last-child td { border-bottom: 0; }
 .qr-overlay { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px; }
 .qr-overlay img { width: min(92vw, 520px); max-height: 75vh; object-fit: contain; background: #fff; border-radius: 12px; padding: 10px; }
 .qr-overlay-title { color: #fff; font-weight: 600; font-size: 1.1rem; }
+
+/* Borrower contact form */
+.contact-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.contact-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.contact-form input { color: var(--text); }
+.contact-form .check { flex-direction: row; color: var(--text); font-size: 0.95rem; }
+@media (max-width: 720px) { .contact-form { grid-template-columns: 1fr; } }
+
+/* Owner: updates from borrowers */
+.inbox-card { border-color: var(--accent); }
+.inbox-item { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.inbox-item:last-child { border-bottom: 0; }
+.inbox-item .sub { color: var(--muted); font-size: 0.88rem; }
+.notify-setup code { user-select: all; }
+.inbox-check { margin-top: 8px; }

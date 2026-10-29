@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>Money Lent</title>
-  <link rel="stylesheet" href="style.css?v=add3f42285">
-  <link rel="stylesheet" href="lending.css?v=add3f42285">
+  <link rel="stylesheet" href="style.css?v=7d15750a62">
+  <link rel="stylesheet" href="lending.css?v=7d15750a62">
 </head>
 <body>
   <header class="topbar">
@@ -59,6 +59,14 @@
         </div>
       </div>
 
+      <section id="inboxCard" class="card inbox-card" hidden>
+        <div class="list-head">
+          <h2>Updates from borrowers</h2>
+          <button type="button" id="inboxRefresh">Check now</button>
+        </div>
+        <div id="inboxList"></div>
+      </section>
+
       <section class="stats five">
         <div class="stat"><span class="stat-label">Outstanding</span><span class="stat-value" id="sumRemaining"></span></div>
         <div class="stat"><span class="stat-label">Overdue</span><span class="stat-value" id="sumOverdue"></span></div>
@@ -106,6 +114,7 @@
           <label>Remind days before due <input id="reminderDays" type="number" min="1" max="30" required></label>
           <button type="submit">Save</button>
         </form>
+        <div class="notify-setup hint" id="notifySetup"></div>
         <p class="hint">Reminders are sent once a day by GitHub Actions in the site repo. See the <a id="actionsLink" target="_blank" rel="noopener">Actions tab</a> for what was sent.</p>
         <div class="btn-row tools-row">
           <button id="downloadBackup">Download backup</button>
@@ -114,8 +123,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=add3f42285"></script>
-  <script src="lib/core.js?v=add3f42285"></script>
-  <script src="lend.js?v=add3f42285"></script>
+  <script src="lib/icons.js?v=7d15750a62"></script>
+  <script src="lib/core.js?v=7d15750a62"></script>
+  <script src="lend.js?v=7d15750a62"></script>
 </body>
 </html>

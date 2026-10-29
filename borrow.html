@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <link rel="stylesheet" href="style.css?v=add3f42285">
-  <link rel="stylesheet" href="lending.css?v=add3f42285">
+  <link rel="stylesheet" href="style.css?v=7d15750a62">
+  <link rel="stylesheet" href="lending.css?v=7d15750a62">
 </head>
 <body>
   <header class="topbar">
@@ -83,12 +83,28 @@
         <h2>Payment reminders</h2>
         <p id="reminderStatus"></p>
         <p class="hint" id="reminderHint"></p>
+        <form id="contactForm" class="contact-form" autocomplete="on" hidden>
+          <label>Email
+            <input id="contactEmail" type="email" maxlength="254" placeholder="you@example.com" autocomplete="email">
+          </label>
+          <label>Mobile number
+            <input id="contactPhone" type="tel" maxlength="20" placeholder="0917 123 4567" autocomplete="tel">
+          </label>
+          <div class="btn-row wide">
+            <label class="check"><input type="checkbox" id="wantEmail"> Email me</label>
+            <label class="check"><input type="checkbox" id="wantSms"> Text me</label>
+          </div>
+          <div class="wide">
+            <button type="submit" class="primary" id="contactSend">Send to <span id="contactOwner">lender</span></button>
+          </div>
+        </form>
+        <p id="contactMsg" hidden></p>
       </section>
     </div>
   </main>
 
-  <script src="lib/icons.js?v=add3f42285"></script>
-  <script src="lib/core.js?v=add3f42285"></script>
-  <script src="borrow.js?v=add3f42285"></script>
+  <script src="lib/icons.js?v=7d15750a62"></script>
+  <script src="lib/core.js?v=7d15750a62"></script>
+  <script src="borrow.js?v=7d15750a62"></script>
 </body>
 </html>
