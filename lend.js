@@ -467,6 +467,13 @@
     return state.installments.find((x) => x.id === id);
   }
 
+  function iconButton(kind, label, onclick, extra = '') {
+    const btn = el('button', { type: 'button', className: `icon-btn ${extra}`.trim(), title: label, onclick });
+    btn.setAttribute('aria-label', label);
+    btn.append(PayIcons.actionIcon(kind));
+    return btn;
+  }
+
   // One entry per loan, with a button to rename all of its payments at once.
   function loansRow(b, items) {
     const loans = new Map();
@@ -482,9 +489,11 @@
         ...[...loans].map(([name, count]) =>
           el('span', { className: `loan-tag${editing === name ? ' editing' : ''}` }, [
             document.createTextNode(`${name} (${count} payment${count === 1 ? '' : 's'})`),
-            el('button', { textContent: 'Edit loan', onclick: () => { editingLoan = { borrowerId: b.id, name }; render(); } }),
-            el('button', { textContent: 'Rename', onclick: () => renameLoan(b, name) }),
-            el('button', { className: 'danger', textContent: 'Delete loan', onclick: () => deleteLoan(b, name) }),
+            el('span', { className: 'loan-actions' }, [
+              iconButton('edit', `Edit loan ${name}`, () => { editingLoan = { borrowerId: b.id, name }; render(); }),
+              iconButton('rename', `Rename loan ${name}`, () => renameLoan(b, name)),
+              iconButton('delete', `Delete loan ${name}`, () => deleteLoan(b, name), 'danger'),
+            ]),
           ])),
       ]),
       editing ? loanEditor(b, editing) : '',
