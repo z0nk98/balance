@@ -286,8 +286,8 @@
     const all = shownRows.flatMap((r) => r.shown);
     const ft = Core.totals(all);
     $('ownerFilterSummary').textContent = all.length
-      ? `${active ? 'Showing ' : ''}${all.length} payment${all.length === 1 ? '' : 's'} · ${money(ft.owed)} total · ${money(ft.paid)} paid · ${money(ft.remaining)} left` +
-        (ft.overdue > 0 ? ` · ${money(ft.overdue)} overdue` : '')
+      ? `${active ? 'Showing ' : ''}${all.length} payment${all.length === 1 ? '' : 's'} · ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` +
+        (ft.overdue > 0 ? ` · ${maskedMoney(ft.overdue)} overdue` : '')
       : active ? 'No payments match these filters.' : '';
 
     $('borrowers').replaceChildren(...shownRows.map((r) => borrowerCard(r, active)));
@@ -307,7 +307,7 @@
   // ---- Owner filters ----------------------------------------------------
 
   const FILTER_KEY = 'balance:owner-filters';
-  const ownerFilters = { status: 'all', borrower: '', loan: '', month: '' };
+  const ownerFilters = { status: 'all', borrower: '', loan: '', month: '', sort: 'date' };
   try {
     Object.assign(ownerFilters, JSON.parse(localStorage.getItem(FILTER_KEY) || '{}'));
   } catch {
@@ -326,6 +326,25 @@
       // Not remembered, but still applied.
     }
     render();
+  }
+
+  // Sorting is kept with the filters but isn't a filter itself ("Clear filters" leaves it).
+  const STATUS_ORDER = { overdue: 0, 'due-soon': 1, upcoming: 2, paid: 3 };
+  const sortText = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+  const byDate = (a, b) => a.dueDate.localeCompare(b.dueDate);
+  const byLoan = (a, b) => sortText.compare(Core.loanName(a.note), Core.loanName(b.note)) || byDate(a, b);
+  const SORTS = {
+    date: byDate,
+    'date-desc': (a, b) => byDate(b, a),
+    'loan-asc': byLoan,
+    'loan-desc': (a, b) => sortText.compare(Core.loanName(b.note), Core.loanName(a.note)) || byDate(a, b),
+    'left-desc': (a, b) => b.remaining - a.remaining || byDate(a, b),
+    'amount-desc': (a, b) => b.amount - a.amount || byDate(a, b),
+    status: (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || byDate(a, b),
+  };
+
+  function sortPayments(items) {
+    return [...items].sort(SORTS[ownerFilters.sort] || byDate);
   }
 
   function fillSelect(select, allLabel, options, current) {
@@ -356,6 +375,8 @@
       chip.classList.toggle('active', chip.dataset.status === ownerFilters.status);
       chip.setAttribute('aria-pressed', chip.dataset.status === ownerFilters.status);
     }
+    if (!SORTS[ownerFilters.sort]) ownerFilters.sort = 'date';
+    $('ownerSort').value = ownerFilters.sort;
     $('ownerClearFilters').hidden = !filtersActive();
   }
 
@@ -366,6 +387,7 @@
   $('ownerBorrowerFilter').addEventListener('change', (ev) => setOwnerFilter({ borrower: ev.target.value }));
   $('ownerLoanFilter').addEventListener('change', (ev) => setOwnerFilter({ loan: ev.target.value }));
   $('ownerMonthFilter').addEventListener('change', (ev) => setOwnerFilter({ month: ev.target.value }));
+  $('ownerSort').addEventListener('change', (ev) => setOwnerFilter({ sort: ev.target.value }));
   $('ownerClearFilters').addEventListener('click', () => setOwnerFilter({ status: 'all', borrower: '', loan: '', month: '' }));
 
   function borrowerCard({ b, installments, totals: t, shown }, filtered) {
@@ -388,7 +410,7 @@
       installmentForm(b),
       loansRow(b, installments),
       filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${money(ft.owed)} total · ${money(ft.paid)} paid · ${money(ft.remaining)} left` }) : '',
-      installmentTable(filtered ? shown : installments),
+      installmentTable(sortPayments(filtered ? shown : installments)),
       contactForm(b),
     ]);
     details.addEventListener('toggle', () => {
