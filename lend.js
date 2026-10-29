@@ -312,14 +312,17 @@
   }
 
   function renderOwnerFilters(rows) {
-    const items = rows.flatMap((r) => r.installments);
     // Drop choices that no longer exist (deleted borrower, renamed loan…).
     ownerFilters.borrower = fillSelect($('ownerBorrowerFilter'), 'All borrowers',
       rows.map((r) => [r.b.id, r.b.name]), ownerFilters.borrower);
+    // Loans and months offered are only those of the chosen borrower (and loan).
+    const items = rows.filter((r) => !ownerFilters.borrower || r.b.id === ownerFilters.borrower).flatMap((r) => r.installments);
+    const byText = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
     ownerFilters.loan = fillSelect($('ownerLoanFilter'), 'All loans',
-      [...new Set(items.map((i) => Core.loanName(i.note)))].sort().map((l) => [l, l]), ownerFilters.loan);
+      [...new Set(items.map((i) => Core.loanName(i.note)))].sort(byText.compare).map((l) => [l, l]), ownerFilters.loan);
+    const loanItems = items.filter((i) => !ownerFilters.loan || Core.loanName(i.note) === ownerFilters.loan);
     ownerFilters.month = fillSelect($('ownerMonthFilter'), 'All months',
-      [...new Set(items.map((i) => i.dueDate.slice(0, 7)))].sort().map((m) => {
+      [...new Set(loanItems.map((i) => i.dueDate.slice(0, 7)))].sort().map((m) => {
         const [y, mo] = m.split('-').map(Number);
         return [m, new Date(y, mo - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })];
       }), ownerFilters.month);
@@ -417,7 +420,7 @@
       field('Number of payments', count),
       field('How often', frequency),
       field('First due date', first),
-      field('Note', note),
+      field('Loan name', note),
       el('button', { type: 'submit', className: 'primary', textContent: 'Add loan' }),
     ]);
     form.addEventListener('submit', (ev) => {
@@ -440,11 +443,11 @@
   function installmentForm(b) {
     const amount = el('input', { type: 'number', min: '0.01', step: '0.01', required: true });
     const due = el('input', { type: 'date', value: Core.todayISO(), required: true });
-    const note = el('input', { maxLength: 120, className: 'grow' });
+    const note = el('input', { maxLength: 120, className: 'grow', placeholder: 'e.g. Car repair' });
     const form = el('form', { className: 'inline-form' }, [
       field('Amount', amount),
       field('Due date', due),
-      field('Note', note),
+      field('Loan name', note),
       el('button', { type: 'submit', textContent: 'Add single payment' }),
     ]);
     form.addEventListener('submit', (ev) => {
@@ -472,13 +475,115 @@
       loans.set(name, (loans.get(name) || 0) + 1);
     }
     if (!loans.size) return el('div');
-    return el('div', { className: 'loans-row' }, [
-      el('span', { className: 'hint', textContent: 'Loans:' }),
-      ...[...loans].map(([name, count]) =>
-        el('span', { className: 'loan-tag' }, [
-          document.createTextNode(`${name} (${count} payment${count === 1 ? '' : 's'})`),
-          el('button', { textContent: 'Rename', onclick: () => renameLoan(b, name) }),
-        ])),
+    const editing = editingLoan?.borrowerId === b.id && loans.has(editingLoan.name) ? editingLoan.name : null;
+    return el('div', {}, [
+      el('div', { className: 'loans-row' }, [
+        el('span', { className: 'hint', textContent: 'Loans:' }),
+        ...[...loans].map(([name, count]) =>
+          el('span', { className: `loan-tag${editing === name ? ' editing' : ''}` }, [
+            document.createTextNode(`${name} (${count} payment${count === 1 ? '' : 's'})`),
+            el('button', { textContent: 'Edit loan', onclick: () => { editingLoan = { borrowerId: b.id, name }; render(); } }),
+            el('button', { textContent: 'Rename', onclick: () => renameLoan(b, name) }),
+            el('button', { className: 'danger', textContent: 'Delete loan', onclick: () => deleteLoan(b, name) }),
+          ])),
+      ]),
+      editing ? loanEditor(b, editing) : '',
+    ]);
+  }
+
+  // ---- Whole-loan edit / delete ---------------------------------------
+
+  let editingLoan = null; // { borrowerId, name }
+
+  function loanItems(b, name) {
+    return state.installments
+      .filter((i) => i.borrowerId === b.id && Core.loanName(i.note) === name)
+      .sort((x, y) => x.dueDate.localeCompare(y.dueDate));
+  }
+
+  function deleteLoan(b, name) {
+    const items = loanItems(b, name);
+    const paid = items.reduce((s, i) => s + i.paid, 0);
+    const total = items.reduce((s, i) => s + i.amount, 0);
+    const extra = paid > 0 ? `\n\n${money(paid)} is recorded as already paid on it; that record will be removed too.` : '';
+    if (!confirm(`Delete the whole "${name}" loan for ${b.name}: ${items.length} payment${items.length === 1 ? '' : 's'}, ${money(total)} in total?${extra}`)) return;
+    if (editingLoan?.borrowerId === b.id && editingLoan.name === name) editingLoan = null;
+    const ids = new Set(items.map((i) => i.id));
+    change(() => { state.installments = state.installments.filter((i) => !ids.has(i.id)); });
+  }
+
+  function loanEditor(b, name) {
+    const items = loanItems(b, name);
+    const total0 = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+    const nameIn = el('input', { value: name === 'Other' ? '' : name, maxLength: 90, className: 'grow', placeholder: 'e.g. Laptop' });
+    const total = el('input', { type: 'number', min: '0.01', step: '0.01', value: total0, required: true });
+    const count = el('input', { type: 'number', min: '1', max: '120', value: items.length, required: true });
+    const frequency = el('select', {}, Object.entries(Core.FREQUENCIES).map(([value, label]) => el('option', { value, textContent: label })));
+    frequency.value = Core.guessFrequency(items.map((i) => i.dueDate));
+    const first = el('input', { type: 'date', value: items[0].dueDate, required: true });
+    const preview = el('div', { className: 'hint schedule-preview' });
+
+    function values() {
+      return {
+        name: nameIn.value.trim().slice(0, 90),
+        total: Core.money(total.value, 'Total'),
+        count: Number(count.value),
+        firstDue: first.value,
+        frequency: frequency.value,
+      };
+    }
+
+    function updatePreview() {
+      try {
+        const v = values();
+        if (!(v.total > 0) || !Number.isInteger(v.count) || v.count < 1 || v.count > 120 || !Core.isValidISO(v.firstDue)) throw new Error();
+        const { items: next } = Core.rebuildLoan(items, v);
+        const shown = next.slice(0, 4).map((p) => `${dateLabel(p.dueDate)}: ${money(p.amount)}`);
+        if (next.length > 4) shown.push(`… last on ${dateLabel(next[next.length - 1].dueDate)}`);
+        preview.textContent = `Will become ${next.length} payment${next.length === 1 ? '' : 's'}: ${shown.join(' · ')}`;
+      } catch {
+        preview.textContent = '';
+      }
+    }
+    for (const input of [total, count, frequency, first]) input.addEventListener('input', updatePreview);
+    updatePreview();
+
+    const form = el('form', { className: 'inline-form' }, [
+      field('Loan name', nameIn),
+      field('Total amount', total),
+      field('Number of payments', count),
+      field('How often', frequency),
+      field('First due date', first),
+      el('button', { type: 'submit', className: 'primary', textContent: 'Save loan' }),
+      el('button', { type: 'button', textContent: 'Cancel', onclick: () => { editingLoan = null; render(); } }),
+    ]);
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      let v;
+      try {
+        v = values();
+        if (!(v.total > 0)) throw new Error('Total must be more than zero');
+        if (!Number.isInteger(v.count) || v.count < 1 || v.count > 120) throw new Error('Number of payments must be between 1 and 120');
+        if (!Core.isValidISO(v.firstDue)) throw new Error('Pick a first due date');
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      const { items: next, lostPaid } = Core.rebuildLoan(items, v);
+      if (lostPaid > 0 && !confirm(`${money(lostPaid)} recorded as paid on this loan doesn't fit the new payments and will be dropped. Save anyway?`)) return;
+      const oldIds = new Set(items.map((i) => i.id));
+      editingLoan = null;
+      change(() => {
+        state.installments = state.installments.filter((i) => !oldIds.has(i.id));
+        for (const p of next) state.installments.push({ id: p.id || Core.newId(), borrowerId: b.id, amount: p.amount, paid: p.paid, dueDate: p.dueDate, note: p.note });
+      });
+    });
+
+    return el('div', { className: 'loan-editor' }, [
+      el('div', { className: 'loan-editor-title', textContent: `Edit the whole "${name}" loan (${items.length} payments, ${money(total0)})` }),
+      form,
+      preview,
+      el('div', { className: 'hint', textContent: 'Saving replaces all of this loan’s payments. Amounts already marked paid are kept, in order.' }),
     ]);
   }
 
@@ -496,7 +601,7 @@
 
   function installmentTable(items) {
     if (!items.length) return el('p', { className: 'empty', textContent: 'No payments yet.' });
-    const head = el('tr', {}, ['Due', 'Note', 'Amount', 'Paid', 'Left', 'Status', ''].map((h, i) =>
+    const head = el('tr', {}, ['Due', 'Loan', 'Amount', 'Paid', 'Left', 'Status', ''].map((h, i) =>
       el('th', { className: i >= 2 && i <= 4 ? 'num' : '', textContent: h })));
     const rows = items.map((i) =>
       el('tr', {}, [
@@ -630,7 +735,7 @@
     if (amount === null) return;
     const dueDate = prompt('Due date (YYYY-MM-DD)', i.dueDate);
     if (dueDate === null) return;
-    const note = prompt('Note', i.note);
+    const note = prompt('Loan name for this payment', i.note);
     if (note === null) return;
     change(() => {
       const a = Core.money(amount, 'Amount');

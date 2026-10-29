@@ -280,3 +280,34 @@ test('exact and loose codes open the right files', async () => {
   const b = await Core.deriveBorrower('sakura 88-blue', 'site');
   assert.strictEqual(a.fileId, b.fileId);
 });
+
+test('editing a whole loan rebuilds its payments and keeps what was paid', () => {
+  const old = Core.splitSchedule(12000, 12, '2026-09-15', 'Laptop').map((p, k) => ({ id: `p${k}`, ...p, paid: 0 }));
+  old[0].paid = 1000;
+  old[1].paid = 400;
+  old[1].note += ' (partial)';
+  assert.strictEqual(Core.guessFrequency(old.map((i) => i.dueDate)), 'monthly');
+  assert.strictEqual(Core.guessFrequency(Core.splitSchedule(100, 3, '2026-11-15', '', 'semimonthly').map((p) => p.dueDate)), 'semimonthly');
+  assert.strictEqual(Core.guessFrequency(Core.splitSchedule(100, 3, '2026-11-15', '', 'biweekly').map((p) => p.dueDate)), 'biweekly');
+  assert.strictEqual(Core.guessFrequency(Core.splitSchedule(100, 3, '2026-11-15', '', 'bimonthly').map((p) => p.dueDate)), 'bimonthly');
+
+  // Fix a typo: it was 6 payments of 2,000 starting October, not 12 from September.
+  const { items, lostPaid } = Core.rebuildLoan(old, { name: 'Laptop', total: 12000, count: 6, firstDue: '2026-10-15', frequency: 'monthly' });
+  assert.strictEqual(items.length, 6);
+  assert.deepStrictEqual(items.map((i) => i.amount), [2000, 2000, 2000, 2000, 2000, 2000]);
+  assert.deepStrictEqual(items.map((i) => i.dueDate), ['2026-10-15', '2026-11-15', '2026-12-15', '2027-01-15', '2027-02-15', '2027-03-15']);
+  assert.deepStrictEqual(items.map((i) => i.paid), [1000, 400, 0, 0, 0, 0]);
+  assert.strictEqual(items[1].note, 'Laptop – 2/6 (partial)');
+  assert.strictEqual(items[0].id, 'p0', 'existing payments keep their ids');
+  assert.strictEqual(lostPaid, 0);
+
+  // Two-digit part numbers aren't mistaken for extra words.
+  const twelve = Core.splitSchedule(1200, 12, '2026-01-10', 'Phone').map((p) => ({ ...p, paid: 0 }));
+  twelve[10].note += ' (late)';
+  const six = Core.rebuildLoan(twelve, { name: 'Phone', total: 1200, count: 12, firstDue: '2026-01-10', frequency: 'monthly' }).items;
+  assert.deepStrictEqual([six[0].note, six[9].note, six[10].note, six[11].note], ['Phone – 1/12', 'Phone – 10/12', 'Phone – 11/12 (late)', 'Phone – 12/12']);
+
+  // Shrinking below what was paid is reported.
+  const small = Core.rebuildLoan(old, { name: 'Laptop', total: 600, count: 1, firstDue: '2026-10-15', frequency: 'monthly' });
+  assert.deepStrictEqual([small.items[0].amount, small.items[0].paid, small.lostPaid], [600, 600, 800]);
+});

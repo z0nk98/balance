@@ -279,3 +279,11 @@ tr:last-child td { border-bottom: 0; }
 .bill-form .check input { flex: none; width: auto; }
 .cat .tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); vertical-align: 1px; }
 .type-toggle.locked { opacity: 0.6; pointer-events: none; }
+
+/* Whole-loan edit */
+.loan-tag { flex-wrap: wrap; }
+.loan-tag button + button { margin-left: 0; }
+.loan-tag.editing { border-color: var(--accent); }
+.loan-editor { margin-top: 10px; padding: 12px; border: 1px solid var(--accent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+.loan-editor-title { font-weight: 600; margin-bottom: 8px; }
+.loan-editor select { color: var(--text); }
