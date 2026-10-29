@@ -234,6 +234,31 @@
 
   // ---- Rendering ------------------------------------------------------
 
+  // ---- Hide / show the totals (eye button) ----------------------------
+
+  const HIDE_KEY = 'balance:hide-amounts';
+  let amountsHidden = false;
+  try { amountsHidden = localStorage.getItem(HIDE_KEY) === '1'; } catch { /* storage blocked */ }
+
+  function maskedMoney(n) {
+    return amountsHidden ? '•••••' : money(n);
+  }
+
+  function renderAmountsToggle() {
+    const btn = $('toggleAmounts');
+    const label = amountsHidden ? 'Show amounts' : 'Hide amounts';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('aria-pressed', String(amountsHidden));
+    btn.replaceChildren(PayIcons.actionIcon(amountsHidden ? 'eyeOff' : 'eye'));
+  }
+
+  $('toggleAmounts').addEventListener('click', () => {
+    amountsHidden = !amountsHidden;
+    try { localStorage.setItem(HIDE_KEY, amountsHidden ? '1' : '0'); } catch { /* storage blocked */ }
+    render();
+  });
+
   function render() {
     const today = Core.todayISO();
     const rows = state.borrowers.map((b) => {
@@ -242,13 +267,14 @@
     });
 
     const sum = (k) => rows.reduce((s, r) => s + r.totals[k], 0);
-    $('sumRemaining').textContent = money(sum('remaining'));
-    $('sumOverdue').textContent = money(sum('overdue'));
-    $('sumOverdue').classList.toggle('danger', sum('overdue') > 0);
-    $('sumDueSoon').textContent = money(sum('dueSoon'));
-    $('sumDueSoon').classList.toggle('warn', sum('dueSoon') > 0);
+    $('sumRemaining').textContent = maskedMoney(sum('remaining'));
+    $('sumOverdue').textContent = maskedMoney(sum('overdue'));
+    $('sumOverdue').classList.toggle('danger', !amountsHidden && sum('overdue') > 0);
+    $('sumDueSoon').textContent = maskedMoney(sum('dueSoon'));
+    $('sumDueSoon').classList.toggle('warn', !amountsHidden && sum('dueSoon') > 0);
     $('dueSoonLabel').textContent = dueSoonLabel(state.settings.reminderDays);
-    $('sumPaid').textContent = money(sum('paid'));
+    $('sumPaid').textContent = maskedMoney(sum('paid'));
+    renderAmountsToggle();
     $('sumBorrowers').textContent = rows.length;
 
     renderOwnerFilters(rows);
