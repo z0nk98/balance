@@ -1,0 +1,13 @@
+{
+  "name": "tracking-app",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Expense tracker and money-lent tracker with an encrypted borrower portal on GitHub Pages",
+  "scripts": {
+    "test": "node --test",
+    "remind": "node scripts/remind.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

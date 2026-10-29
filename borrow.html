@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title>My Balance</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="lending.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>My Balance</h1>
+    <button id="logout" hidden>Sign out</button>
+  </header>
+
+  <main>
+    <section id="loginView" class="card narrow" hidden>
+      <h2>Enter your access code</h2>
+      <p>Use the code you were given to see what you owe and when it's due.</p>
+      <form id="loginForm" autocomplete="off">
+        <input id="code" class="code-input" placeholder="XXXX-XXXX-XXXX" maxlength="16" required autocapitalize="characters" spellcheck="false" aria-label="Access code">
+        <button type="submit" class="primary" id="loginBtn">View my balance</button>
+      </form>
+      <p id="loginError" class="error" hidden></p>
+    </section>
+
+    <div id="mainView" hidden>
+      <p id="greeting"></p>
+
+      <section class="stats">
+        <div class="stat">
+          <span class="stat-label">Total remaining</span>
+          <span class="stat-value" id="remaining"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Overdue</span>
+          <span class="stat-value" id="overdue"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Next payment</span>
+          <span class="stat-value" id="nextDue"></span>
+          <span class="stat-sub" id="nextDueDate"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>By month</h2>
+          <label class="check"><input type="checkbox" id="hidePaid" checked> Hide fully paid months</label>
+        </div>
+        <div id="months"></div>
+        <p id="monthsEmpty" class="empty" hidden>Nothing owed right now.</p>
+      </section>
+
+      <section class="card">
+        <h2>Payment reminders</h2>
+        <p id="reminderStatus"></p>
+        <p class="hint" id="reminderHint"></p>
+      </section>
+    </div>
+  </main>
+
+  <script src="lib/core.js"></script>
+  <script src="borrow.js"></script>
+</body>
+</html>

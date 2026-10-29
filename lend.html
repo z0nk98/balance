@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
+  <meta name="referrer" content="no-referrer">
+  <title>Money Lent</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="lending.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Money Lent</h1>
+    <nav>
+      <a href="index.html">Expenses</a>
+      <a href="lend.html" class="active">Money lent</a>
+      <button id="lock" hidden>Lock</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Step 1: GitHub access key (stored on this device only) -->
+    <section id="connectView" class="card narrow" hidden>
+      <h2>Connect to GitHub</h2>
+      <p>Paste a fine-grained GitHub access key that can read and write the contents of <strong id="repoName"></strong>. Saving uses it to publish your changes.</p>
+      <form id="connectForm" autocomplete="off">
+        <input id="token" type="password" placeholder="github_pat_…" required aria-label="GitHub access key" spellcheck="false">
+        <label class="check"><input type="checkbox" id="rememberToken" checked> Remember on this device</label>
+        <button type="submit" class="primary" id="connectBtn">Connect</button>
+      </form>
+      <p id="connectError" class="error" hidden></p>
+    </section>
+
+    <!-- Step 2: passphrase that encrypts all your loan data -->
+    <section id="unlockView" class="card narrow" hidden>
+      <h2 id="unlockTitle">Unlock</h2>
+      <p id="unlockIntro"></p>
+      <form id="unlockForm" autocomplete="off">
+        <input id="passphrase" type="password" placeholder="Passphrase" required autocomplete="current-password" aria-label="Passphrase">
+        <input id="passphrase2" type="password" placeholder="Repeat passphrase" autocomplete="new-password" aria-label="Repeat passphrase" hidden>
+        <button type="submit" class="primary" id="unlockBtn">Unlock</button>
+      </form>
+      <p id="unlockError" class="error" hidden></p>
+      <p class="hint"><button type="button" id="forgetToken" class="linkish">Use a different GitHub key</button></p>
+    </section>
+
+    <div id="mainView" hidden>
+      <div id="saveStatus" class="save-status" role="status"></div>
+
+      <div id="codeBanner" class="banner" hidden>
+        <strong id="codeFor"></strong>
+        <div class="code" id="codeValue"></div>
+        <p class="hint">Send them the code and the link below. You can see it again anytime with "Show code".</p>
+        <div class="row">
+          <code id="portalUrl"></code>
+          <button id="copyInvite">Copy invite</button>
+          <button id="dismissCode">Done</button>
+        </div>
+      </div>
+
+      <section class="stats four">
+        <div class="stat"><span class="stat-label">Outstanding</span><span class="stat-value" id="sumRemaining"></span></div>
+        <div class="stat"><span class="stat-label">Overdue</span><span class="stat-value" id="sumOverdue"></span></div>
+        <div class="stat"><span class="stat-label">Repaid so far</span><span class="stat-value" id="sumPaid"></span></div>
+        <div class="stat"><span class="stat-label">Borrowers</span><span class="stat-value" id="sumBorrowers"></span></div>
+      </section>
+
+      <section class="card">
+        <h2>Add borrower</h2>
+        <form id="addBorrower" class="inline-form" autocomplete="off">
+          <label>Name <input id="borrowerName" class="grow" maxlength="60" required></label>
+          <button type="submit" class="primary">Add &amp; create code</button>
+        </form>
+      </section>
+
+      <div id="borrowers"></div>
+      <p id="borrowersEmpty" class="empty card" hidden>No borrowers yet. Add one above to get an access code.</p>
+
+      <section class="card">
+        <h2>Settings</h2>
+        <form id="settingsForm" class="inline-form">
+          <label>Your name (shown to borrowers) <input id="ownerName" maxlength="40" class="grow"></label>
+          <label>Currency <input id="currencyCode" maxlength="3" required></label>
+          <label>Remind days before due <input id="reminderDays" type="number" min="1" max="30" required></label>
+          <button type="submit">Save</button>
+        </form>
+        <p class="hint">Reminders are sent once a day by GitHub Actions in the site repo. See the <a id="actionsLink" target="_blank" rel="noopener">Actions tab</a> for what was sent.</p>
+        <div class="btn-row tools-row">
+          <button id="downloadBackup">Download backup</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="lib/core.js"></script>
+  <script src="lend.js"></script>
+</body>
+</html>

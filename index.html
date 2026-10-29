@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="lending.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Expense Tracker</h1>
+    <nav>
+      <a href="index.html" class="active">Expenses</a>
+      <a href="lend.html">Money lent</a>
+    </nav>
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="Previous month">&lsaquo;</button>
+      <span id="monthLabel"></span>
+      <button id="nextMonth" aria-label="Next month">&rsaquo;</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="stats">
+      <div class="stat">
+        <span class="stat-label">Spent this month</span>
+        <span class="stat-value" id="totalSpent">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Budget</span>
+        <span class="stat-value">
+          <input id="budgetInput" type="number" min="0" step="1" placeholder="Set budget">
+        </span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Remaining</span>
+        <span class="stat-value" id="remaining">–</span>
+      </div>
+      <div class="budget-bar" aria-hidden="true"><div id="budgetFill"></div></div>
+    </section>
+
+    <section class="card">
+      <h2 id="formTitle">Add expense</h2>
+      <form id="expenseForm" autocomplete="off">
+        <input type="hidden" id="editId">
+        <label>Amount
+          <input id="amount" type="number" min="0.01" step="0.01" required inputmode="decimal">
+        </label>
+        <label>Category
+          <select id="category" required></select>
+        </label>
+        <label>Date
+          <input id="date" type="date" required>
+        </label>
+        <label class="wide">Note
+          <input id="note" type="text" maxlength="120" placeholder="Optional">
+        </label>
+        <div class="form-actions wide">
+          <button type="submit" class="primary" id="submitBtn">Add</button>
+          <button type="button" id="cancelEdit" hidden>Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>By category</h2>
+        <ul id="breakdown" class="breakdown"></ul>
+        <p id="breakdownEmpty" class="empty">No expenses this month.</p>
+      </section>
+
+      <section class="card">
+        <div class="list-head">
+          <h2>Expenses</h2>
+          <select id="filterCategory" aria-label="Filter by category">
+            <option value="">All categories</option>
+          </select>
+        </div>
+        <input id="search" type="search" placeholder="Search notes…" aria-label="Search notes">
+        <ul id="expenseList" class="expense-list"></ul>
+        <p id="listEmpty" class="empty">Nothing to show.</p>
+      </section>
+    </div>
+
+    <section class="card tools">
+      <button id="exportCsv">Export CSV</button>
+      <label class="file-btn">Import CSV
+        <input id="importCsv" type="file" accept=".csv,text/csv" hidden>
+      </label>
+      <label class="currency">Currency
+        <select id="currency">
+          <option>USD</option><option>EUR</option><option>GBP</option>
+          <option>JPY</option><option>CAD</option><option>AUD</option>
+          <option>INR</option><option>CHF</option>
+        </select>
+      </label>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
