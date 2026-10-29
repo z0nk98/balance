@@ -245,7 +245,7 @@
   function render() {
     renderPayMethods();
     const t = me.totals;
-    $('greeting').textContent = `Hi ${me.name}` + (me.ownerName ? ` — here's what you owe ${me.ownerName}.` : '.');
+    $('greeting').textContent = `Hi ${me.name}! Here's your payment summary` + (me.ownerName ? ` with ${me.ownerName}.` : '.');
     $('remaining').textContent = money(t.remaining);
     $('overdue').textContent = money(t.overdue);
     $('overdue').classList.toggle('danger', t.overdue > 0);
@@ -292,7 +292,7 @@
     );
     $('monthsEmpty').hidden = months.length > 0;
 
-    const who = me.ownerName || 'the person you owe';
+    const who = me.ownerName || 'your lender';
     const canSend = Boolean(me.inbox && me.id);
     $('reminderStatus').textContent = me.reminders.length
       ? `Reminders are on: ${me.reminders.join(' and ')}.`
