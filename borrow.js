@@ -39,11 +39,20 @@
     return `${-d} day${d === -1 ? '' : 's'} overdue`;
   }
 
+  // The code is kept for this tab only, or on this device if the borrower
+  // ticks "Remember my code". Signing out forgets it either way.
   function session(action, value) {
     try {
-      if (action === 'get') return sessionStorage.getItem(SESSION_KEY);
-      if (action === 'set') sessionStorage.setItem(SESSION_KEY, value);
-      if (action === 'clear') sessionStorage.removeItem(SESSION_KEY);
+      if (action === 'get') return localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+      if (action === 'clear') {
+        localStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem(SESSION_KEY);
+      }
+      if (action === 'set') {
+        const remember = $('rememberCode').checked;
+        (remember ? localStorage : sessionStorage).setItem(SESSION_KEY, value);
+        (remember ? sessionStorage : localStorage).removeItem(SESSION_KEY);
+      }
     } catch {
       // Storage unavailable: the borrower just re-enters the code.
     }
@@ -120,11 +129,7 @@
   }
 
   function matches(i) {
-    if (filters.status === 'unpaid' && i.status === 'paid') return false;
-    if (!['all', 'unpaid'].includes(filters.status) && i.status !== filters.status) return false;
-    if (filters.loan && loanName(i) !== filters.loan) return false;
-    if (filters.month && !i.dueDate.startsWith(filters.month)) return false;
-    return true;
+    return Core.matchesFilter(i, filters);
   }
 
   async function copy(text, button) {
@@ -356,6 +361,12 @@
     render();
   });
 
+  try {
+    // Reflect where a saved code lives, so re-saving it keeps it there.
+    $('rememberCode').checked = !sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    // Keep the default.
+  }
   const saved = session('get');
   if (saved) signIn(saved).catch(() => { session('clear'); showLogin(); });
   else showLogin();

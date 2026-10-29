@@ -250,8 +250,22 @@
     $('sumPaid').textContent = money(sum('paid'));
     $('sumBorrowers').textContent = rows.length;
 
-    $('borrowers').replaceChildren(...rows.map(borrowerCard));
+    renderOwnerFilters(rows);
+    const active = filtersActive();
+    const shownRows = rows
+      .filter((r) => !ownerFilters.borrower || r.b.id === ownerFilters.borrower)
+      .map((r) => ({ ...r, shown: r.installments.filter((i) => Core.matchesFilter(i, ownerFilters)) }))
+      .filter((r) => !active || r.shown.length > 0 || ownerFilters.borrower === r.b.id);
+    const all = shownRows.flatMap((r) => r.shown);
+    const ft = Core.totals(all);
+    $('ownerFilterSummary').textContent = all.length
+      ? `${active ? 'Showing ' : ''}${all.length} payment${all.length === 1 ? '' : 's'} · ${money(ft.owed)} total · ${money(ft.paid)} paid · ${money(ft.remaining)} left` +
+        (ft.overdue > 0 ? ` · ${money(ft.overdue)} overdue` : '')
+      : active ? 'No payments match these filters.' : '';
+
+    $('borrowers').replaceChildren(...shownRows.map((r) => borrowerCard(r, active)));
     $('borrowersEmpty').hidden = rows.length > 0;
+    $('viewFilters').hidden = rows.length === 0;
     renderPayMethods();
     renderInbox();
     renderNotifySetup();
@@ -263,7 +277,68 @@
     }
   }
 
-  function borrowerCard({ b, installments, totals: t }) {
+  // ---- Owner filters ----------------------------------------------------
+
+  const FILTER_KEY = 'balance:owner-filters';
+  const ownerFilters = { status: 'all', borrower: '', loan: '', month: '' };
+  try {
+    Object.assign(ownerFilters, JSON.parse(localStorage.getItem(FILTER_KEY) || '{}'));
+  } catch {
+    // Storage unavailable: start with no filters.
+  }
+
+  function filtersActive() {
+    return ownerFilters.status !== 'all' || Boolean(ownerFilters.borrower || ownerFilters.loan || ownerFilters.month);
+  }
+
+  function setOwnerFilter(changes) {
+    Object.assign(ownerFilters, changes);
+    try {
+      localStorage.setItem(FILTER_KEY, JSON.stringify(ownerFilters));
+    } catch {
+      // Not remembered, but still applied.
+    }
+    render();
+  }
+
+  function fillSelect(select, allLabel, options, current) {
+    select.replaceChildren(
+      el('option', { value: '', textContent: allLabel }),
+      ...options.map(([value, label]) => el('option', { value, textContent: label }))
+    );
+    select.value = options.some(([v]) => v === current) ? current : '';
+    return select.value;
+  }
+
+  function renderOwnerFilters(rows) {
+    const items = rows.flatMap((r) => r.installments);
+    // Drop choices that no longer exist (deleted borrower, renamed loan…).
+    ownerFilters.borrower = fillSelect($('ownerBorrowerFilter'), 'All borrowers',
+      rows.map((r) => [r.b.id, r.b.name]), ownerFilters.borrower);
+    ownerFilters.loan = fillSelect($('ownerLoanFilter'), 'All loans',
+      [...new Set(items.map((i) => Core.loanName(i.note)))].sort().map((l) => [l, l]), ownerFilters.loan);
+    ownerFilters.month = fillSelect($('ownerMonthFilter'), 'All months',
+      [...new Set(items.map((i) => i.dueDate.slice(0, 7)))].sort().map((m) => {
+        const [y, mo] = m.split('-').map(Number);
+        return [m, new Date(y, mo - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })];
+      }), ownerFilters.month);
+    for (const chip of $('ownerStatusFilter').children) {
+      chip.classList.toggle('active', chip.dataset.status === ownerFilters.status);
+      chip.setAttribute('aria-pressed', chip.dataset.status === ownerFilters.status);
+    }
+    $('ownerClearFilters').hidden = !filtersActive();
+  }
+
+  $('ownerStatusFilter').addEventListener('click', (ev) => {
+    const status = ev.target.closest('[data-status]')?.dataset.status;
+    if (status) setOwnerFilter({ status });
+  });
+  $('ownerBorrowerFilter').addEventListener('change', (ev) => setOwnerFilter({ borrower: ev.target.value }));
+  $('ownerLoanFilter').addEventListener('change', (ev) => setOwnerFilter({ loan: ev.target.value }));
+  $('ownerMonthFilter').addEventListener('change', (ev) => setOwnerFilter({ month: ev.target.value }));
+  $('ownerClearFilters').addEventListener('click', () => setOwnerFilter({ status: 'all', borrower: '', loan: '', month: '' }));
+
+  function borrowerCard({ b, installments, totals: t, shown }, filtered) {
     const c = b.contact;
     const reminders = [c.notifyEmail && `email ${c.email}`, c.notifySms && `text ${c.phone}`].filter(Boolean);
     const summary = [
@@ -273,12 +348,17 @@
       t.nextDue ? `next ${money(t.nextDue.remaining)} on ${dateLabel(t.nextDue.dueDate)}` : 'nothing due',
     ].filter(Boolean).join(' · ');
 
-    const details = el('details', { open: openPanels.has(b.id) }, [
-      el('summary', { textContent: `Payments & reminders (${installments.length})` }),
+    // With a filter on, show only matching payments and open the list.
+    const ft = filtered ? Core.totals(shown) : null;
+    const details = el('details', { open: filtered || openPanels.has(b.id) }, [
+      el('summary', { textContent: filtered
+        ? `Payments & reminders (showing ${shown.length} of ${installments.length})`
+        : `Payments & reminders (${installments.length})` }),
       scheduleForm(b),
       installmentForm(b),
       loansRow(b, installments),
-      installmentTable(installments),
+      filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${money(ft.owed)} total · ${money(ft.paid)} paid · ${money(ft.remaining)} left` }) : '',
+      installmentTable(filtered ? shown : installments),
       contactForm(b),
     ]);
     details.addEventListener('toggle', () => {

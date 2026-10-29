@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>Money Lent</title>
-  <link rel="stylesheet" href="style.css?v=a12949c9cb">
-  <link rel="stylesheet" href="lending.css?v=a12949c9cb">
+  <link rel="stylesheet" href="style.css?v=010ed6f416">
+  <link rel="stylesheet" href="lending.css?v=010ed6f416">
 </head>
 <body>
   <header class="topbar">
@@ -90,6 +90,32 @@
         </form>
       </section>
 
+      <section class="card" id="viewFilters">
+        <h2>View payments</h2>
+        <div class="filters">
+          <div class="chips" id="ownerStatusFilter" role="group" aria-label="Filter by status">
+            <button type="button" data-status="all" class="chip active">All</button>
+            <button type="button" data-status="unpaid" class="chip">Unpaid</button>
+            <button type="button" data-status="overdue" class="chip">Overdue</button>
+            <button type="button" data-status="due-soon" class="chip">Due soon</button>
+            <button type="button" data-status="paid" class="chip">Paid</button>
+          </div>
+          <div class="filter-selects">
+            <label>Borrower
+              <select id="ownerBorrowerFilter"><option value="">All borrowers</option></select>
+            </label>
+            <label>Loan
+              <select id="ownerLoanFilter"><option value="">All loans</option></select>
+            </label>
+            <label>Month
+              <select id="ownerMonthFilter"><option value="">All months</option></select>
+            </label>
+            <button type="button" id="ownerClearFilters" class="linkish" hidden>Clear filters</button>
+          </div>
+          <p id="ownerFilterSummary" class="filter-summary"></p>
+        </div>
+      </section>
+
       <div id="borrowers"></div>
       <p id="borrowersEmpty" class="empty card" hidden>No borrowers yet. Add one above to get an access code.</p>
 
@@ -130,8 +156,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=a12949c9cb"></script>
-  <script src="lib/core.js?v=a12949c9cb"></script>
-  <script src="lend.js?v=a12949c9cb"></script>
+  <script src="lib/icons.js?v=010ed6f416"></script>
+  <script src="lib/core.js?v=010ed6f416"></script>
+  <script src="lend.js?v=010ed6f416"></script>
 </body>
 </html>

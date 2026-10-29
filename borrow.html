@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <link rel="stylesheet" href="style.css?v=a12949c9cb">
-  <link rel="stylesheet" href="lending.css?v=a12949c9cb">
+  <link rel="stylesheet" href="style.css?v=010ed6f416">
+  <link rel="stylesheet" href="lending.css?v=010ed6f416">
 </head>
 <body>
   <header class="topbar">
@@ -21,6 +21,7 @@
       <p>Use the code you were given to see what you owe and when it's due.</p>
       <form id="loginForm" autocomplete="off">
         <input id="code" class="code-input" placeholder="XXXX-XXXX-XXXX" maxlength="16" required autocapitalize="characters" spellcheck="false" aria-label="Access code">
+        <label class="check remember"><input type="checkbox" id="rememberCode" checked> Remember my code on this device</label>
         <button type="submit" class="primary" id="loginBtn">View my balance</button>
       </form>
       <p id="loginError" class="error" hidden></p>
@@ -103,8 +104,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=a12949c9cb"></script>
-  <script src="lib/core.js?v=a12949c9cb"></script>
-  <script src="borrow.js?v=a12949c9cb"></script>
+  <script src="lib/icons.js?v=010ed6f416"></script>
+  <script src="lib/core.js?v=010ed6f416"></script>
+  <script src="borrow.js?v=010ed6f416"></script>
 </body>
 </html>
