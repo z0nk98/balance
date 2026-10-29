@@ -74,14 +74,21 @@
     return res.json();
   }
 
+  // Codes may be exact (case and symbols count) or loose (older and
+  // generated codes: case, spaces and dashes ignored). Try exact first.
   async function open(code) {
-    if (!Core.isWellFormedCode(code)) throw new Error('That code is not valid');
+    const tries = [];
+    if (Core.isExactCodeShape(code)) tries.push(true);
+    if (Core.isWellFormedCode(code)) tries.push(false);
+    if (!tries.length) throw new Error('That code is not valid');
     const config = await fetchJson('config.json');
     if (!config) throw new Error('This site is not set up yet.');
-    const { key, fileId } = await Core.deriveBorrower(code, config.siteSalt);
-    const file = await fetchJson(`data/b/${fileId}.json`);
-    if (!file) throw new Error('That code is not valid');
-    return Core.decryptJson(key, file);
+    for (const exact of tries) {
+      const { key, fileId } = await Core.deriveBorrower(code, config.siteSalt, exact);
+      const file = await fetchJson(`data/b/${fileId}.json`);
+      if (file) return Core.decryptJson(key, file);
+    }
+    throw new Error('That code is not valid. Check capitals, small letters and symbols.');
   }
 
   async function signIn(code) {
@@ -91,7 +98,7 @@
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .map((i) => Core.withStatus(i, data.reminderDays, today));
     me = { ...data, items, totals: Core.totals(items) };
-    session('set', Core.normalizeCode(code));
+    session('set', code.trim());
     fillFilterOptions();
     $('loginView').hidden = true;
     $('mainView').hidden = false;

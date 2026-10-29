@@ -16,7 +16,7 @@
 .narrow form { grid-template-columns: 1fr; }
 .narrow p { color: var(--muted); margin: 0 0 12px; }
 
-.code-input { font-size: 1.3rem; letter-spacing: 0.15em; text-transform: uppercase; text-align: center; }
+.code-input { font-size: 1.3rem; letter-spacing: 0.08em; text-align: center; font-family: ui-monospace, Menlo, monospace; }
 
 .error { color: var(--danger); font-size: 0.9rem; margin: 8px 0 0; }
 .ok { color: #2f9e5b; font-size: 0.9rem; margin: 8px 0 0; }

@@ -251,20 +251,32 @@ test('note search matches every word, in any order and case', () => {
   assert.ok(!Core.matchesFilter({ status: 'upcoming', note: '', dueDate: '2026-11-30' }, { text: 'x' }));
 });
 
-test('owner-chosen codes: rules and warnings', () => {
-  const ok = Core.checkCustomCode('sakura-88-blue', { name: 'Lang' });
-  assert.deepStrictEqual(ok, { code: 'SAKURA88BLUE', warnings: [] });
-  assert.throws(() => Core.checkCustomCode('ab12', {}), /at least 8/);
-  assert.throws(() => Core.checkCustomCode('onlyletters', {}), /Mix letters and numbers/);
-  assert.throws(() => Core.checkCustomCode('12345678', {}), /Mix/);
-  assert.throws(() => Core.checkCustomCode('Sakura-88-Blue', { taken: ['SAKURA88BLUE'] }), /already has/);
+test('owner-chosen codes are exact: case and symbols count', () => {
+  assert.deepStrictEqual(Core.checkCustomCode('  lang.88!Blue ', { name: 'Sam' }), { code: 'lang.88!Blue', exact: true, warnings: [] });
+  assert.throws(() => Core.checkCustomCode('ab1!', {}), /at least 8/);
+  assert.throws(() => Core.checkCustomCode('lang 88 blue', {}), /spaces/);
+  assert.throws(() => Core.checkCustomCode('onlyletters!', {}), /letter and one number/);
+  assert.throws(() => Core.checkCustomCode('12345678', {}), /letter and one number/);
+  assert.throws(() => Core.checkCustomCode('Password123', {}), /too easy/);
+  assert.throws(() => Core.checkCustomCode('x'.repeat(40) + '1', {}), /at most 40/);
+  assert.throws(() => Core.checkCustomCode('lang.88!Blue', { taken: ['lang.88!Blue'] }), /already has/);
+  // Different case is a different code, so it isn't a duplicate.
+  assert.strictEqual(Core.checkCustomCode('LANG.88!BLUE', { taken: ['lang.88!Blue'] }).code, 'LANG.88!BLUE');
   assert.deepStrictEqual(Core.checkCustomCode('lang2026x', { name: 'Lang' }).warnings, ['it contains their name', 'it’s short']);
-  assert.throws(() => Core.checkCustomCode('a'.repeat(25) + '1', {}), /at most/);
+  assert.deepStrictEqual(Core.checkCustomCode('SAKURA88BLUE', {}).warnings, ['it only has capitals and numbers']);
+  assert.ok(Core.isExactCodeShape('ñandú#2026'), 'non-English letters are fine');
 });
 
-test('custom codes open their borrower file', async () => {
-  const { code } = Core.checkCustomCode('Sakura-88-Blue');
-  const a = await Core.deriveBorrower(code, 'site');
-  const b = await Core.deriveBorrower('sakura 88 blue', 'site');
+test('exact and loose codes open the right files', async () => {
+  const exact1 = await Core.deriveBorrower('lang.88!Blue', 'site', true);
+  const exact2 = await Core.deriveBorrower(' lang.88!Blue ', 'site', true);
+  const otherCase = await Core.deriveBorrower('LANG.88!BLUE', 'site', true);
+  const loose = await Core.deriveBorrower('lang.88!Blue', 'site', false);
+  assert.strictEqual(exact1.fileId, exact2.fileId, 'surrounding spaces are trimmed');
+  assert.notStrictEqual(exact1.fileId, otherCase.fileId, 'case matters for exact codes');
+  assert.notStrictEqual(exact1.fileId, loose.fileId, 'exact and loose never share a file');
+  // Loose (older) codes still ignore case, spaces and dashes.
+  const a = await Core.deriveBorrower('SAKURA88BLUE', 'site');
+  const b = await Core.deriveBorrower('sakura 88-blue', 'site');
   assert.strictEqual(a.fileId, b.fileId);
 });

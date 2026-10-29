@@ -69,9 +69,10 @@
     return null;
   }
 
-  async function derive(code) {
-    if (!derived.has(code)) derived.set(code, await Core.deriveBorrower(code, config.siteSalt));
-    return derived.get(code);
+  async function derive(b) {
+    const key = `${b.codeExact ? 'exact' : 'loose'}:${b.code}`;
+    if (!derived.has(key)) derived.set(key, await Core.deriveBorrower(b.code, config.siteSalt, Boolean(b.codeExact)));
+    return derived.get(key);
   }
 
   // ---- GitHub ---------------------------------------------------------
@@ -189,7 +190,7 @@
     const files = [];
     const written = [];
     for (const b of state.borrowers) {
-      const d = await derive(b.code);
+      const d = await derive(b);
       b.fileId = d.fileId;
       const payload = Core.borrowerPayload(state, b);
       const text = JSON.stringify(payload);
@@ -571,9 +572,9 @@
   // Ask for an owner-chosen code. Returns the code, '' for a random one, or
   // null if cancelled.
   function askForCode(name, exceptId) {
-    const taken = state.borrowers.filter((x) => x.id !== exceptId).map((x) => x.code);
+    const taken = state.borrowers.filter((x) => x.id !== exceptId && x.codeExact).map((x) => x.code);
     for (;;) {
-      const input = prompt(`Type a code for ${name} (at least 8 letters and numbers),\nor leave it blank for a strong random code.`, '');
+      const input = prompt(`Type a code for ${name}: at least 8 characters with letters and numbers. Small letters, capitals and symbols (like ! @ # .) all count, so it must be typed exactly.\nOr leave it blank for a strong random code.`, '');
       if (input === null) return null;
       if (!input.trim()) return '';
       try {
@@ -593,6 +594,7 @@
     change(() => {
       if (b.fileId) pendingDeletes.add(b.fileId);
       b.code = chosen || Core.generateCode();
+      b.codeExact = Boolean(chosen);
       b.fileId = null;
     });
     showCode(b);
@@ -1106,15 +1108,18 @@
     const name = $('borrowerName').value.trim().slice(0, 60);
     if (!name) return;
     let code = Core.generateCode();
+    let exact = false;
     if ($('customCode').checked) {
       const chosen = askForCode(name, null);
       if (chosen === null) return;
       if (chosen) code = chosen;
+      exact = Boolean(chosen);
     }
     const b = {
       id: Core.newId(),
       name,
       code,
+      codeExact: exact,
       fileId: null,
       contact: { email: '', phone: '', notifyEmail: false, notifySms: false },
       createdAt: new Date().toISOString(),
