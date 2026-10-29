@@ -274,6 +274,34 @@
     render();
   });
 
+  // One line per loan: what was lent, the interest, and what each payment is.
+  function renderLoans() {
+    const loans = new Map();
+    for (const i of me.items) {
+      const name = Core.loanName(i.note);
+      if (!loans.has(name)) loans.set(name, []);
+      loans.get(name).push(i);
+    }
+    $('loanList').replaceChildren(...[...loans].map(([name, items]) => {
+      const b = Core.loanBreakdown(items);
+      const left = items.reduce((s, i) => s + i.remaining, 0);
+      const amounts = new Set(items.map((i) => i.amount));
+      const per = amounts.size === 1 ? `${maskedMoney(items[0].amount)} × ${items.length}` : `${items.length} payments`;
+      const perInterest = b.interest > 0 && items.length > 1 ? ` (${maskedMoney(b.interest / items.length)} interest each)` : '';
+      return el('div', { className: 'loan-summary' }, [
+        el('div', { className: 'loan-summary-name', textContent: name }),
+        el('dl', {}, [
+          ['Initial amount', maskedMoney(b.principal)],
+          ['Interest', b.interest > 0 ? maskedMoney(b.interest) : 'None'],
+          ['Total to pay', maskedMoney(b.total)],
+          ['Payments', per + perInterest],
+          ['Left to pay', left > 0 ? maskedMoney(left) : 'Paid in full'],
+        ].map(([k, v]) => el('div', {}, [el('dt', { textContent: k }), el('dd', { textContent: v })]))),
+      ]);
+    }));
+    $('loansSection').hidden = loans.size === 0;
+  }
+
   function render() {
     renderPayMethods();
     const t = me.totals;
@@ -300,6 +328,8 @@
       ? `${shown.length} payment${shown.length === 1 ? '' : 's'} · ${maskedMoney(st.owed)} total · ${maskedMoney(st.paid)} paid · ${maskedMoney(st.remaining)} left`
       : '';
 
+    renderLoans();
+
     const months = groupPayments(shown);
     $('months').replaceChildren(
       ...months.map((m) =>
@@ -313,6 +343,7 @@
               el('div', {}, [
                 el('div', { textContent: dateLabel(i.dueDate) + (i.note ? ` · ${i.note}` : '') }),
                 el('div', { className: 'sub', textContent: dueText(i) + (i.paid > 0 && i.remaining > 0 ? ` · ${money(i.paid)} paid so far` : '') }),
+                i.interest > 0 ? el('div', { className: 'sub', textContent: `${money(i.amount)} = ${money(i.amount - i.interest)} + ${money(i.interest)} interest` }) : '',
               ]),
               el('div', { className: 'amt' }, [
                 el('div', { className: 'amt', textContent: money(i.remaining > 0 ? i.remaining : i.amount) }),

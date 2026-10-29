@@ -294,3 +294,12 @@ tr:last-child td { border-bottom: 0; }
 .loan-editor { margin-top: 10px; padding: 12px; border: 1px solid var(--accent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
 .loan-editor-title { font-weight: 600; margin-bottom: 8px; }
 .loan-editor select { color: var(--text); }
+
+/* Interest breakdown */
+td .sub { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.loan-list { display: grid; gap: 12px; }
+.loan-summary { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.loan-summary-name { font-weight: 600; margin-bottom: 8px; overflow-wrap: anywhere; }
+.loan-summary dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px 16px; margin: 0; }
+.loan-summary dt { font-size: 0.78rem; color: var(--muted); }
+.loan-summary dd { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }

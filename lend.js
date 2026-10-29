@@ -442,6 +442,7 @@
 
   function scheduleForm(b) {
     const total = el('input', { type: 'number', min: '0.01', step: '0.01', required: true });
+    const interest = el('input', { type: 'number', min: '0', step: '0.01', placeholder: '0' });
     const count = el('input', { type: 'number', min: '1', max: '120', value: '1', required: true });
     const frequency = el('select', {}, Object.entries(Core.FREQUENCIES).map(([value, label]) => el('option', { value, textContent: label })));
     const first = el('input', { type: 'date', value: Core.todayISO(), required: true });
@@ -451,20 +452,20 @@
     // Show what the schedule will look like before it's added.
     function updatePreview() {
       const amount = Number(total.value);
+      const extra = Number(interest.value || 0);
       const n = Number(count.value);
-      if (!(amount > 0) || !Number.isInteger(n) || n < 1 || n > 120 || !Core.isValidISO(first.value)) {
+      if (!(amount > 0) || !(extra >= 0) || !Number.isInteger(n) || n < 1 || n > 120 || !Core.isValidISO(first.value)) {
         preview.textContent = '';
         return;
       }
-      const items = Core.splitSchedule(amount, n, first.value, '', frequency.value);
-      const shown = items.slice(0, 4).map((p) => `${dateLabel(p.dueDate)}: ${money(p.amount)}`);
-      if (items.length > 4) shown.push(`… last on ${dateLabel(items[items.length - 1].dueDate)}`);
-      preview.textContent = `${n} payment${n === 1 ? '' : 's'} — ${shown.join(' · ')}`;
+      const items = Core.splitSchedule(amount, n, first.value, '', frequency.value, extra);
+      preview.textContent = schedulePreview(items, `${n} payment${n === 1 ? '' : 's'}`);
     }
-    for (const input of [total, count, frequency, first]) input.addEventListener('input', updatePreview);
+    for (const input of [total, interest, count, frequency, first]) input.addEventListener('input', updatePreview);
 
     const form = el('form', { className: 'inline-form' }, [
-      field('Amount lent', total),
+      field('Initial amount', total),
+      field('Total interest', interest),
       field('Number of payments', count),
       field('How often', frequency),
       field('First due date', first),
@@ -475,17 +476,32 @@
       ev.preventDefault();
       openPanels.add(b.id);
       change(() => {
-        const amount = Core.money(total.value, 'Amount');
+        const amount = Core.money(total.value, 'Initial amount');
+        const extra = interest.value ? Core.money(interest.value, 'Total interest') : 0;
         const n = Number(count.value);
-        if (amount <= 0) throw new Error('Amount must be more than zero');
+        if (amount <= 0) throw new Error('Initial amount must be more than zero');
+        if (extra < 0) throw new Error('Interest can’t be negative');
         if (!Number.isInteger(n) || n < 1 || n > 120) throw new Error('Number of payments must be between 1 and 120');
         if (!Core.isValidISO(first.value)) throw new Error('Pick a first due date');
-        for (const p of Core.splitSchedule(amount, n, first.value, note.value.trim().slice(0, 100), frequency.value)) {
+        for (const p of Core.splitSchedule(amount, n, first.value, note.value.trim().slice(0, 100), frequency.value, extra)) {
           state.installments.push({ id: Core.newId(), borrowerId: b.id, paid: 0, ...p });
         }
       });
     });
     return el('div', {}, [el('div', { className: 'hint', textContent: 'New loan, split into equal payments:' }), form, preview]);
+  }
+
+  // "6 payments of ₱1,833.33 (₱1,666.67 + ₱166.67 interest) — Nov 15: … · …"
+  function schedulePreview(items, lead) {
+    const { principal, interest, total } = Core.loanBreakdown(items);
+    const first = items[0];
+    const per = interest > 0
+      ? `${money(first.amount)} each (${money(first.amount - first.interest)} + ${money(first.interest)} interest)`
+      : `${money(first.amount)} each`;
+    const shown = items.slice(0, 4).map((p) => `${dateLabel(p.dueDate)}: ${money(p.amount)}`);
+    if (items.length > 4) shown.push(`… last on ${dateLabel(items[items.length - 1].dueDate)}`);
+    const sums = interest > 0 ? ` Total ${money(total)} = ${money(principal)} lent + ${money(interest)} interest.` : '';
+    return `${lead}, ${per} — ${shown.join(' · ')}.${sums}`;
   }
 
   function installmentForm(b) {
@@ -571,9 +587,11 @@
 
   function loanEditor(b, name) {
     const items = loanItems(b, name);
-    const total0 = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
+    const before = Core.loanBreakdown(items);
+    const total0 = before.total;
     const nameIn = el('input', { value: name === 'Other' ? '' : name, maxLength: 90, className: 'grow', placeholder: 'e.g. Laptop' });
-    const total = el('input', { type: 'number', min: '0.01', step: '0.01', value: total0, required: true });
+    const total = el('input', { type: 'number', min: '0.01', step: '0.01', value: before.principal, required: true });
+    const interest = el('input', { type: 'number', min: '0', step: '0.01', value: before.interest || '', placeholder: '0' });
     const count = el('input', { type: 'number', min: '1', max: '120', value: items.length, required: true });
     const frequency = el('select', {}, Object.entries(Core.FREQUENCIES).map(([value, label]) => el('option', { value, textContent: label })));
     frequency.value = Core.guessFrequency(items.map((i) => i.dueDate));
@@ -583,7 +601,8 @@
     function values() {
       return {
         name: nameIn.value.trim().slice(0, 90),
-        total: Core.money(total.value, 'Total'),
+        total: Core.money(total.value, 'Initial amount'),
+        interest: interest.value ? Core.money(interest.value, 'Total interest') : 0,
         count: Number(count.value),
         firstDue: first.value,
         frequency: frequency.value,
@@ -593,21 +612,20 @@
     function updatePreview() {
       try {
         const v = values();
-        if (!(v.total > 0) || !Number.isInteger(v.count) || v.count < 1 || v.count > 120 || !Core.isValidISO(v.firstDue)) throw new Error();
+        if (!(v.total > 0) || !(v.interest >= 0) || !Number.isInteger(v.count) || v.count < 1 || v.count > 120 || !Core.isValidISO(v.firstDue)) throw new Error();
         const { items: next } = Core.rebuildLoan(items, v);
-        const shown = next.slice(0, 4).map((p) => `${dateLabel(p.dueDate)}: ${money(p.amount)}`);
-        if (next.length > 4) shown.push(`… last on ${dateLabel(next[next.length - 1].dueDate)}`);
-        preview.textContent = `Will become ${next.length} payment${next.length === 1 ? '' : 's'}: ${shown.join(' · ')}`;
+        preview.textContent = schedulePreview(next, `Will become ${next.length} payment${next.length === 1 ? '' : 's'}`);
       } catch {
         preview.textContent = '';
       }
     }
-    for (const input of [total, count, frequency, first]) input.addEventListener('input', updatePreview);
+    for (const input of [total, interest, count, frequency, first]) input.addEventListener('input', updatePreview);
     updatePreview();
 
     const form = el('form', { className: 'inline-form' }, [
       field('Loan name', nameIn),
-      field('Total amount', total),
+      field('Initial amount', total),
+      field('Total interest', interest),
       field('Number of payments', count),
       field('How often', frequency),
       field('First due date', first),
@@ -619,7 +637,8 @@
       let v;
       try {
         v = values();
-        if (!(v.total > 0)) throw new Error('Total must be more than zero');
+        if (!(v.total > 0)) throw new Error('Initial amount must be more than zero');
+        if (v.interest < 0) throw new Error('Interest can’t be negative');
         if (!Number.isInteger(v.count) || v.count < 1 || v.count > 120) throw new Error('Number of payments must be between 1 and 120');
         if (!Core.isValidISO(v.firstDue)) throw new Error('Pick a first due date');
       } catch (err) {
@@ -632,12 +651,12 @@
       editingLoan = null;
       change(() => {
         state.installments = state.installments.filter((i) => !oldIds.has(i.id));
-        for (const p of next) state.installments.push({ id: p.id || Core.newId(), borrowerId: b.id, amount: p.amount, paid: p.paid, dueDate: p.dueDate, note: p.note });
+        for (const p of next) state.installments.push({ id: p.id || Core.newId(), borrowerId: b.id, amount: p.amount, ...(p.interest ? { interest: p.interest } : {}), paid: p.paid, dueDate: p.dueDate, note: p.note });
       });
     });
 
     return el('div', { className: 'loan-editor' }, [
-      el('div', { className: 'loan-editor-title', textContent: `Edit the whole "${name}" loan (${items.length} payments, ${money(total0)})` }),
+      el('div', { className: 'loan-editor-title', textContent: `Edit the whole "${name}" loan (${items.length} payments, ${money(total0)}${before.interest > 0 ? ` incl. ${money(before.interest)} interest` : ''})` }),
       form,
       preview,
       el('div', { className: 'hint', textContent: 'Saving replaces all of this loan’s payments. Amounts already marked paid are kept, in order.' }),
@@ -664,7 +683,10 @@
       el('tr', {}, [
         el('td', { textContent: dateLabel(i.dueDate) }),
         el('td', { textContent: i.note }),
-        el('td', { className: 'num', textContent: money(i.amount) }),
+        el('td', { className: 'num' }, [
+          document.createTextNode(money(i.amount)),
+          i.interest > 0 ? el('div', { className: 'sub', textContent: `incl. ${money(i.interest)} interest` }) : '',
+        ]),
         el('td', { className: 'num', textContent: money(i.paid) }),
         el('td', { className: 'num', textContent: money(i.remaining) }),
         el('td', {}, [el('span', { className: `badge ${i.status}`, textContent: STATUS_LABEL[i.status] })]),
@@ -800,6 +822,7 @@
       if (!Core.isValidISO(dueDate)) throw new Error('Due date must look like 2026-12-31');
       const inst = findInstallment(i.id);
       Object.assign(inst, { amount: a, dueDate, note: note.trim().slice(0, 120), paid: Math.min(inst.paid, a) });
+      if (inst.interest > a) inst.interest = a;
     });
   }
 
