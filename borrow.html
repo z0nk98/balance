@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <link rel="stylesheet" href="style.css?v=5a31d6018b">
-  <link rel="stylesheet" href="lending.css?v=5a31d6018b">
+  <link rel="stylesheet" href="style.css?v=59ec2e5d3a">
+  <link rel="stylesheet" href="lending.css?v=59ec2e5d3a">
 </head>
 <body>
   <header class="topbar">
@@ -72,6 +72,13 @@
             <label>Month
               <select id="monthFilter"><option value="">All months</option></select>
             </label>
+            <label>Sort by
+              <select id="sortBy">
+                <option value="date">Due date</option>
+                <option value="note-asc">Note A–Z</option>
+                <option value="note-desc">Note Z–A</option>
+              </select>
+            </label>
             <label>Search notes
               <input id="noteSearch" type="search" maxlength="60" placeholder="e.g. phone, 2/6, paid late" autocomplete="off">
             </label>
@@ -107,8 +114,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=5a31d6018b"></script>
-  <script src="lib/core.js?v=5a31d6018b"></script>
-  <script src="borrow.js?v=5a31d6018b"></script>
+  <script src="lib/icons.js?v=59ec2e5d3a"></script>
+  <script src="lib/core.js?v=59ec2e5d3a"></script>
+  <script src="borrow.js?v=59ec2e5d3a"></script>
 </body>
 </html>

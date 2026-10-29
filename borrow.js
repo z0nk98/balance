@@ -128,6 +128,38 @@
     $('monthFilter').value = filters.month;
   }
 
+  // ---- Sorting ----------------------------------------------------------
+
+  const SORT_KEY = 'balance:sort';
+  let sortBy = 'date';
+  try {
+    sortBy = localStorage.getItem(SORT_KEY) || 'date';
+  } catch {
+    // Keep the default.
+  }
+  const byText = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+  // Groups of payments to show: by month (due date order), or by loan/note
+  // (A–Z or Z–A), with each loan's payments in due-date order.
+  function groupPayments(items) {
+    const groups = new Map();
+    const byNote = sortBy !== 'date';
+    for (const i of items) {
+      const key = byNote ? loanName(i) : i.dueDate.slice(0, 7);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(i);
+    }
+    let keys = [...groups.keys()];
+    if (byNote) {
+      keys.sort(byText.compare);
+      if (sortBy === 'note-desc') keys.reverse();
+    }
+    return keys.map((key) => {
+      const list = groups.get(key).sort((a, b) => a.dueDate.localeCompare(b.dueDate) || byText.compare(a.note, b.note));
+      return { title: byNote ? key : monthLabel(key), items: list, ...Core.totals(list) };
+    });
+  }
+
   function matches(i) {
     return Core.matchesFilter(i, filters);
   }
@@ -235,18 +267,12 @@
       ? `${shown.length} payment${shown.length === 1 ? '' : 's'} · ${money(st.owed)} total · ${money(st.paid)} paid · ${money(st.remaining)} left`
       : '';
 
-    const byMonth = new Map();
-    for (const i of shown) {
-      const m = i.dueDate.slice(0, 7);
-      if (!byMonth.has(m)) byMonth.set(m, []);
-      byMonth.get(m).push(i);
-    }
-    const months = [...byMonth].map(([month, list]) => ({ month, items: list, ...Core.totals(list) }));
+    const months = groupPayments(shown);
     $('months').replaceChildren(
       ...months.map((m) =>
         el('div', { className: 'month-card' }, [
           el('h3', {}, [
-            document.createTextNode(monthLabel(m.month)),
+            document.createTextNode(m.title),
             el('span', { textContent: m.remaining > 0 ? `${money(m.remaining)} left` : 'Paid' }),
           ]),
           ...m.items.map((i) =>
@@ -354,6 +380,16 @@
   });
   $('loanFilter').addEventListener('change', (ev) => { filters.loan = ev.target.value; render(); });
   $('monthFilter').addEventListener('change', (ev) => { filters.month = ev.target.value; render(); });
+  $('sortBy').value = sortBy;
+  $('sortBy').addEventListener('change', (ev) => {
+    sortBy = ev.target.value;
+    try {
+      localStorage.setItem(SORT_KEY, sortBy);
+    } catch {
+      // Not remembered, but still applied.
+    }
+    render();
+  });
   $('noteSearch').addEventListener('input', (ev) => { filters.text = ev.target.value; render(); });
   $('clearFilters').addEventListener('click', () => {
     Object.assign(filters, { status: 'unpaid', loan: '', month: '', text: '' });

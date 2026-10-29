@@ -51,7 +51,9 @@ test('owner file round-trips and rejects a wrong passphrase', async () => {
   const key = await Core.deriveOwnerKey('correct horse battery', salt);
   const state = sampleState();
   const file = await Core.sealOwnerFile(state, key, salt);
-  assert.ok(!JSON.stringify(file).includes('Jo'));
+  // Long, distinctive strings only: short ones like "Jo" turn up in random ciphertext.
+  const sealed = JSON.stringify(file);
+  for (const secret of ['jo@example.com', '+15551234567', state.borrowers[0].code]) assert.ok(!sealed.includes(secret), secret);
   const opened = await Core.openOwnerFile(file, 'correct horse battery');
   assert.deepStrictEqual(opened.data, state);
   await assert.rejects(Core.openOwnerFile(file, 'wrong passphrase!'), /Wrong passphrase/);
