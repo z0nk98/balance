@@ -278,12 +278,31 @@
 
   function scheduleForm(b) {
     const total = el('input', { type: 'number', min: '0.01', step: '0.01', required: true });
-    const months = el('input', { type: 'number', min: '1', max: '120', value: '1', required: true });
+    const count = el('input', { type: 'number', min: '1', max: '120', value: '1', required: true });
+    const frequency = el('select', {}, Object.entries(Core.FREQUENCIES).map(([value, label]) => el('option', { value, textContent: label })));
     const first = el('input', { type: 'date', value: Core.todayISO(), required: true });
     const note = el('input', { maxLength: 100, placeholder: 'e.g. Car repair', className: 'grow' });
+    const preview = el('div', { className: 'hint schedule-preview' });
+
+    // Show what the schedule will look like before it's added.
+    function updatePreview() {
+      const amount = Number(total.value);
+      const n = Number(count.value);
+      if (!(amount > 0) || !Number.isInteger(n) || n < 1 || n > 120 || !Core.isValidISO(first.value)) {
+        preview.textContent = '';
+        return;
+      }
+      const items = Core.splitSchedule(amount, n, first.value, '', frequency.value);
+      const shown = items.slice(0, 4).map((p) => `${dateLabel(p.dueDate)}: ${money(p.amount)}`);
+      if (items.length > 4) shown.push(`… last on ${dateLabel(items[items.length - 1].dueDate)}`);
+      preview.textContent = `${n} payment${n === 1 ? '' : 's'} — ${shown.join(' · ')}`;
+    }
+    for (const input of [total, count, frequency, first]) input.addEventListener('input', updatePreview);
+
     const form = el('form', { className: 'inline-form' }, [
       field('Amount lent', total),
-      field('Repay over (months)', months),
+      field('Number of payments', count),
+      field('How often', frequency),
       field('First due date', first),
       field('Note', note),
       el('button', { type: 'submit', className: 'primary', textContent: 'Add loan' }),
@@ -293,16 +312,16 @@
       openPanels.add(b.id);
       change(() => {
         const amount = Core.money(total.value, 'Amount');
-        const n = Number(months.value);
+        const n = Number(count.value);
         if (amount <= 0) throw new Error('Amount must be more than zero');
-        if (!Number.isInteger(n) || n < 1 || n > 120) throw new Error('Months must be between 1 and 120');
+        if (!Number.isInteger(n) || n < 1 || n > 120) throw new Error('Number of payments must be between 1 and 120');
         if (!Core.isValidISO(first.value)) throw new Error('Pick a first due date');
-        for (const p of Core.splitSchedule(amount, n, first.value, note.value.trim().slice(0, 100))) {
+        for (const p of Core.splitSchedule(amount, n, first.value, note.value.trim().slice(0, 100), frequency.value)) {
           state.installments.push({ id: Core.newId(), borrowerId: b.id, paid: 0, ...p });
         }
       });
     });
-    return el('div', {}, [el('div', { className: 'hint', textContent: 'New loan, split into monthly payments:' }), form]);
+    return el('div', {}, [el('div', { className: 'hint', textContent: 'New loan, split into equal payments:' }), form, preview]);
   }
 
   function installmentForm(b) {

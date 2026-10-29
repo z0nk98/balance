@@ -113,3 +113,19 @@ test('portal URL comes from the repository name', () => {
   assert.strictEqual(portalUrl({ GITHUB_REPOSITORY: 'Z0nk98/balance' }), 'https://z0nk98.github.io/balance/borrow.html');
   assert.strictEqual(portalUrl({ PUBLIC_URL: 'https://example.com/b' }), 'https://example.com/b');
 });
+
+test('payment frequencies', () => {
+  const dates = (first, n, f) => Core.splitSchedule(100, n, first, '', f).map((p) => p.dueDate);
+  // Twice a month from the 15th: 15th and 30th, clamped to month end in February.
+  assert.deepStrictEqual(dates('2027-01-15', 5, 'semimonthly'), ['2027-01-15', '2027-01-30', '2027-02-15', '2027-02-28', '2027-03-15']);
+  // Starting at month end pairs with the 15th.
+  assert.deepStrictEqual(dates('2026-11-30', 3, 'semimonthly'), ['2026-11-30', '2026-12-15', '2026-12-30']);
+  // Starting on the 5th: 5th and 20th.
+  assert.deepStrictEqual(dates('2026-11-05', 3, 'semimonthly'), ['2026-11-05', '2026-11-20', '2026-12-05']);
+  assert.deepStrictEqual(dates('2026-12-24', 3, 'biweekly'), ['2026-12-24', '2027-01-07', '2027-01-21']);
+  assert.deepStrictEqual(dates('2026-12-31', 3, 'bimonthly'), ['2026-12-31', '2027-02-28', '2027-04-30']);
+  assert.deepStrictEqual(dates('2026-01-31', 2, undefined), ['2026-01-31', '2026-02-28'], 'monthly is the default');
+  const six = Core.splitSchedule(1000, 6, '2026-11-15', 'Phone', 'semimonthly');
+  assert.deepStrictEqual(six.map((p) => p.amount), [166.66, 166.66, 166.66, 166.66, 166.66, 166.7]);
+  assert.strictEqual(six[5].note, 'Phone – 6/6');
+});

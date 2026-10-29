@@ -110,3 +110,5 @@ tr:last-child td { border-bottom: 0; }
 .contact-block { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
 .tools-row { margin-top: 10px; }
 .narrow form .check { color: var(--muted); font-size: 0.9rem; }
+.inline-form select { color: var(--text); }
+.schedule-preview { margin-top: 6px; }
