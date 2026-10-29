@@ -129,3 +129,18 @@ test('payment frequencies', () => {
   assert.deepStrictEqual(six.map((p) => p.amount), [166.66, 166.66, 166.66, 166.66, 166.66, 166.7]);
   assert.strictEqual(six[5].note, 'Phone – 6/6');
 });
+
+test('loan names come from notes and can be renamed keeping the part number', () => {
+  assert.strictEqual(Core.loanName('Phone – 2/6'), 'Phone');
+  assert.strictEqual(Core.loanName('Car repair'), 'Car repair');
+  assert.strictEqual(Core.loanName('3/4'), 'Other');
+  assert.strictEqual(Core.loanName(''), 'Other');
+  assert.strictEqual(Core.renameLoanNote('Phone – 2/6', 'iPhone 15'), 'iPhone 15 – 2/6');
+  assert.strictEqual(Core.renameLoanNote('3/4', 'Laptop'), 'Laptop – 3/4');
+  assert.strictEqual(Core.renameLoanNote('Car repair', 'Car'), 'Car');
+  assert.strictEqual(Core.renameLoanNote('Phone – 2/6', ''), '2/6');
+  assert.strictEqual(Core.renameLoanNote('', 'Laptop'), 'Laptop');
+  // Extra words after the part number stay with the same loan.
+  assert.strictEqual(Core.loanName('Phone – 2/6 (paid late)'), 'Phone');
+  assert.strictEqual(Core.renameLoanNote('Phone – 2/6 (paid late)', 'iPhone'), 'iPhone – 2/6 (paid late)');
+});

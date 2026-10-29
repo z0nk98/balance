@@ -94,9 +94,8 @@
 
   const filters = { status: 'unpaid', loan: '', month: '' };
 
-  // "Phone – 2/6" belongs to the loan "Phone".
   function loanName(i) {
-    return i.note.replace(/\s+–\s+\d+\/\d+$/, '').replace(/^\d+\/\d+$/, '') || 'Other';
+    return Core.loanName(i.note);
   }
 
   function fillFilterOptions() {

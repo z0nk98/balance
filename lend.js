@@ -246,6 +246,7 @@
       el('summary', { textContent: `Payments & reminders (${installments.length})` }),
       scheduleForm(b),
       installmentForm(b),
+      loansRow(b, installments),
       installmentTable(installments),
       contactForm(b),
     ]);
@@ -349,6 +350,36 @@
 
   function findInstallment(id) {
     return state.installments.find((x) => x.id === id);
+  }
+
+  // One entry per loan, with a button to rename all of its payments at once.
+  function loansRow(b, items) {
+    const loans = new Map();
+    for (const i of items) {
+      const name = Core.loanName(i.note);
+      loans.set(name, (loans.get(name) || 0) + 1);
+    }
+    if (!loans.size) return el('div');
+    return el('div', { className: 'loans-row' }, [
+      el('span', { className: 'hint', textContent: 'Loans:' }),
+      ...[...loans].map(([name, count]) =>
+        el('span', { className: 'loan-tag' }, [
+          document.createTextNode(`${name} (${count} payment${count === 1 ? '' : 's'})`),
+          el('button', { textContent: 'Rename', onclick: () => renameLoan(b, name) }),
+        ])),
+    ]);
+  }
+
+  function renameLoan(b, oldName) {
+    const input = prompt(`New name for "${oldName}" (changes the note on all of its payments)`, oldName === 'Other' ? '' : oldName);
+    if (input === null) return;
+    const name = input.trim().slice(0, 90);
+    if (name === oldName) return;
+    change(() => {
+      for (const i of state.installments) {
+        if (i.borrowerId === b.id && Core.loanName(i.note) === oldName) i.note = Core.renameLoanNote(i.note, name);
+      }
+    });
   }
 
   function installmentTable(items) {
