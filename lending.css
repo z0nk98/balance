@@ -246,3 +246,34 @@ tr:last-child td { border-bottom: 0; }
 .bill-form input[type="checkbox"] { width: auto; }
 .filter-selects input[type="search"] { color: var(--text); min-width: 180px; }
 @media (max-width: 720px) { .filter-selects input[type="search"] { min-width: 0; width: 100%; } }
+
+/* Money in / out */
+.money-in { color: #2f9e5b; }
+.stat-sub.over { color: var(--danger); }
+.type-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 12px; flex-wrap: wrap; }
+.type-toggle button { border: 0; border-radius: 8px; background: transparent; padding: 7px 14px; font-weight: 500; color: var(--muted); }
+.type-toggle button.active { background: var(--accent); color: #fff; }
+#typeToggle button[data-type="in"].active { background: #2f9e5b; }
+#expenseForm.is-in button.primary { background: #2f9e5b; border-color: #2f9e5b; }
+.breakdown-in-title { margin-top: 20px !important; }
+.list-filters { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.list-filters select { max-width: 160px; }
+.bill-item.compact { padding: 8px 0; }
+.bill-item.compact .pay-icon { width: 32px; height: 32px; border-radius: 8px; }
+.bill-item.compact .pay-icon svg { width: 20px; height: 20px; }
+
+/* Bills: fixed / variable */
+.seg-field { border: 0; padding: 0; margin: 0; min-width: 0; }
+.seg-field legend { font-size: 0.85rem; color: var(--muted); padding: 0; margin-bottom: 4px; }
+.seg-field .type-toggle { margin-bottom: 0; }
+.bill-group-title { font-size: 0.95rem; margin: 16px 0 4px; }
+.bill-group-title:first-of-type { margin-top: 0; }
+.bill-group-title span { font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+.bill-form input:disabled { opacity: 0.5; }
+@media (max-width: 720px) {
+  .list-head { flex-wrap: wrap; }
+  .list-filters { justify-content: flex-start; }
+  .list-filters select { max-width: none; flex: 1 1 140px; }
+}
+.seg-field .type-toggle { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 320px); }
+.bill-form .check input { flex: none; width: auto; }

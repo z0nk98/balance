@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Expense Tracker</title>
-  <link rel="stylesheet" href="style.css?v=59ec2e5d3a">
-  <link rel="stylesheet" href="lending.css?v=59ec2e5d3a">
+  <link rel="stylesheet" href="style.css?v=8d938a8845">
+  <link rel="stylesheet" href="lending.css?v=8d938a8845">
 </head>
 <body>
   <header class="topbar">
@@ -23,26 +23,35 @@
   </header>
 
   <main>
-    <section class="stats">
+    <section class="stats four">
       <div class="stat">
-        <span class="stat-label">Spent this month</span>
+        <span class="stat-label">Money in</span>
+        <span class="stat-value money-in" id="totalIn">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Money out</span>
         <span class="stat-value" id="totalSpent">0</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Budget</span>
+        <span class="stat-label">Net (in − out)</span>
+        <span class="stat-value" id="net">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Spending budget</span>
         <span class="stat-value">
           <input id="budgetInput" type="number" min="0" step="1" placeholder="Set budget">
         </span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Remaining</span>
-        <span class="stat-value" id="remaining">–</span>
+        <span class="stat-sub" id="remaining"></span>
       </div>
       <div class="budget-bar" aria-hidden="true"><div id="budgetFill"></div></div>
     </section>
 
     <section class="card">
-      <h2 id="formTitle">Add expense</h2>
+      <h2 id="formTitle">Add money in or out</h2>
+      <div class="type-toggle" id="typeToggle" role="group" aria-label="Type">
+        <button type="button" data-type="out" class="active">− Money out</button>
+        <button type="button" data-type="in">+ Money in</button>
+      </div>
       <form id="expenseForm" autocomplete="off">
         <input type="hidden" id="editId">
         <label>Amount
@@ -64,19 +73,38 @@
       </form>
     </section>
 
+    <section class="card" id="billsCard" hidden>
+      <div class="list-head">
+        <h2>Bills this month</h2>
+        <a href="bills.html" class="linkish">Open Bills</a>
+      </div>
+      <p id="billsSummary" class="filter-summary"></p>
+      <div id="billsList" class="bill-list"></div>
+    </section>
+
     <div class="grid">
       <section class="card">
-        <h2>By category</h2>
+        <h2>Money out by category</h2>
         <ul id="breakdown" class="breakdown"></ul>
-        <p id="breakdownEmpty" class="empty">No expenses this month.</p>
+        <p id="breakdownEmpty" class="empty">No money out this month.</p>
+        <h2 class="breakdown-in-title">Money in by category</h2>
+        <ul id="breakdownIn" class="breakdown"></ul>
+        <p id="breakdownInEmpty" class="empty">No money in this month.</p>
       </section>
 
       <section class="card">
         <div class="list-head">
-          <h2>Expenses</h2>
-          <select id="filterCategory" aria-label="Filter by category">
-            <option value="">All categories</option>
-          </select>
+          <h2>Transactions</h2>
+          <div class="list-filters">
+            <select id="filterType" aria-label="Filter by type">
+              <option value="">In &amp; out</option>
+              <option value="in">Money in</option>
+              <option value="out">Money out</option>
+            </select>
+            <select id="filterCategory" aria-label="Filter by category">
+              <option value="">All categories</option>
+            </select>
+          </div>
         </div>
         <input id="search" type="search" placeholder="Search notes…" aria-label="Search notes">
         <ul id="expenseList" class="expense-list"></ul>
@@ -99,6 +127,8 @@
     </section>
   </main>
 
-  <script src="app.js?v=59ec2e5d3a"></script>
+  <script src="lib/icons.js?v=8d938a8845"></script>
+  <script src="lib/bills.js?v=8d938a8845"></script>
+  <script src="app.js?v=8d938a8845"></script>
 </body>
 </html>

@@ -35,7 +35,7 @@ test('status, totals and overdue from earlier months', () => {
   const items = Bills.forMonth(state, '2026-10', '2026-10-29');
   assert.deepStrictEqual(items.map((i) => [i.bill.name, i.status]), [['Water', 'paid'], ['Meralco', 'overdue'], ['PLDT', 'due-soon']]);
   assert.strictEqual(items[0].amount, 640, 'paid amount wins over the usual amount');
-  assert.deepStrictEqual(Bills.totals(items), { due: 4839, paid: 640, left: 4199, overdue: 2500, count: 3, unpaid: 2 });
+  assert.deepStrictEqual(Bills.totals(items), { due: 4839, paid: 640, left: 4199, overdue: 2500, fixed: 4839, variable: 0, count: 3, unpaid: 2 });
 
   const late = Bills.overdueBefore(state, '2026-11', '2026-11-03');
   assert.deepStrictEqual(late.map((i) => `${i.bill.name} ${i.key}`), ['Meralco 2026-10', 'PLDT 2026-10']);
@@ -47,4 +47,35 @@ test('bill validation', () => {
   assert.throws(() => Bills.cleanBill({ name: 'X', amount: 1, dueDay: 32, every: 1, startMonth: '2026-10' }), /Due day/);
   assert.throws(() => Bills.cleanBill({ name: 'X', amount: 1, dueDay: 1, every: 5, startMonth: '2026-10' }), /repeats/);
   assert.strictEqual(Bills.cleanBill({ name: 'X', kind: 'nope', amount: 0, dueDay: 1, every: '0', startMonth: '2026-10' }).kind, 'other');
+});
+
+test('fixed vs variable bills, and bills without a set due date', () => {
+  // Older bills: amount 0 meant "varies".
+  assert.strictEqual(Bills.amountType({ amount: 0 }), 'variable');
+  assert.strictEqual(Bills.amountType({ amount: 900 }), 'fixed');
+  assert.strictEqual(Bills.amountType({ amount: 900, amountType: 'variable' }), 'variable');
+
+  const state = { bills: [
+    bill({ id: 'rent', name: 'Rent', kind: 'rent', amount: 12000, amountType: 'fixed', dueDay: 5 }),
+    bill({ id: 'elec', name: 'Meralco', amount: 2800, amountType: 'variable', dueDay: 20 }),
+    bill({ id: 'load', name: 'Mobile load', kind: 'mobile', amount: 300, amountType: 'variable', hasDueDate: false }),
+  ], payments: {} };
+  const items = Bills.forMonth(state, '2026-11', '2026-11-27');
+  assert.deepStrictEqual(items.map((i) => [i.bill.name, i.type, i.anytime, i.dueDate, i.status]), [
+    ['Rent', 'fixed', false, '2026-11-05', 'overdue'],
+    ['Meralco', 'variable', false, '2026-11-20', 'overdue'],
+    ['Mobile load', 'variable', true, '2026-11-30', 'due-soon'],
+  ]);
+  const t = Bills.totals(items);
+  assert.strictEqual(t.fixed, 12000);
+  assert.strictEqual(t.variable, 3100);
+  // No set due date: only overdue once the month is over.
+  assert.strictEqual(Bills.forMonth(state, '2026-11', '2026-11-10').find((i) => i.anytime).status, 'upcoming');
+  assert.strictEqual(Bills.forMonth(state, '2026-11', '2026-12-01').find((i) => i.anytime).status, 'overdue');
+
+  assert.throws(() => Bills.cleanBill({ name: 'Rent', amountType: 'fixed', amount: 0, dueDay: 5, every: 1, startMonth: '2026-10' }), /Variable/);
+  const v = Bills.cleanBill({ name: 'Water', amountType: 'variable', amount: '', dueDay: 2, every: 1, startMonth: '2026-10' });
+  assert.deepStrictEqual([v.amountType, v.amount, v.hasDueDate], ['variable', 0, true]);
+  const any = Bills.cleanBill({ name: 'Load', amountType: 'variable', amount: 300, hasDueDate: false, dueDay: '', every: 1, startMonth: '2026-10' });
+  assert.deepStrictEqual([any.hasDueDate, any.dueDay], [false, 31]);
 });

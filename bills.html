@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
   <title>Bills</title>
-  <link rel="stylesheet" href="style.css?v=59ec2e5d3a">
-  <link rel="stylesheet" href="lending.css?v=59ec2e5d3a">
+  <link rel="stylesheet" href="style.css?v=8d938a8845">
+  <link rel="stylesheet" href="lending.css?v=8d938a8845">
 </head>
 <body>
   <header class="topbar">
@@ -27,7 +27,7 @@
     <div id="alerts"></div>
 
     <section class="stats four">
-      <div class="stat"><span class="stat-label">Due this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumCount"></span></div>
+      <div class="stat"><span class="stat-label">Due this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumCount"></span><span class="stat-sub" id="sumSplit"></span></div>
       <div class="stat"><span class="stat-label">Paid</span><span class="stat-value" id="sumPaid"></span></div>
       <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="sumLeft"></span></div>
       <div class="stat"><span class="stat-label">Overdue</span><span class="stat-value" id="sumOverdue"></span></div>
@@ -54,8 +54,16 @@
       <form id="billForm" class="bill-form" autocomplete="off">
         <label>Type <select id="billKind"></select></label>
         <label>Name <input id="billName" maxlength="60" required placeholder="e.g. Meralco"></label>
-        <label>Usual amount <input id="billAmount" type="number" min="0" step="0.01" required placeholder="0 if it varies"></label>
-        <label>Due day of month <input id="billDueDay" type="number" min="1" max="31" required placeholder="e.g. 15"></label>
+        <fieldset class="wide seg-field">
+          <legend>Amount: <strong>Fixed</strong> is the same every time; <strong>Variable</strong> changes (e.g. electricity)</legend>
+          <div class="type-toggle" id="amountTypeToggle" role="group" aria-label="Amount type">
+            <button type="button" data-type="fixed" class="active">Fixed</button>
+            <button type="button" data-type="variable">Variable</button>
+          </div>
+        </fieldset>
+        <label><span id="billAmountLabel">Amount</span> <input id="billAmount" type="number" min="0" step="0.01" placeholder="e.g. 1699"></label>
+        <label>Due day of month <input id="billDueDay" type="number" min="1" max="31" placeholder="e.g. 15"></label>
+        <label class="check wide"><input type="checkbox" id="billNoDueDate"> No set due date (pay anytime in the month)</label>
         <label>Repeats <select id="billEvery"></select></label>
         <label>First month due <input id="billStart" type="month" required></label>
         <label>Last month (optional) <input id="billEnd" type="month"></label>
@@ -71,8 +79,12 @@
 
     <section class="card">
       <h2>All bills</h2>
-      <div id="allBills" class="bill-list"></div>
-      <p id="allEmpty" class="empty">No bills yet. Add one above.</p>
+      <h3 class="bill-group-title">Fixed bills <span id="fixedTotal"></span></h3>
+      <div id="fixedBills" class="bill-list"></div>
+      <p id="fixedEmpty" class="empty">No fixed bills yet (e.g. rent, internet, insurance).</p>
+      <h3 class="bill-group-title">Variable bills <span id="variableTotal"></span></h3>
+      <div id="variableBills" class="bill-list"></div>
+      <p id="variableEmpty" class="empty">No variable bills yet (e.g. electricity, water).</p>
     </section>
 
     <section class="card tools">
@@ -83,8 +95,8 @@
     </section>
   </main>
 
-  <script src="lib/icons.js?v=59ec2e5d3a"></script>
-  <script src="lib/bills.js?v=59ec2e5d3a"></script>
-  <script src="bills.js?v=59ec2e5d3a"></script>
+  <script src="lib/icons.js?v=8d938a8845"></script>
+  <script src="lib/bills.js?v=8d938a8845"></script>
+  <script src="bills.js?v=8d938a8845"></script>
 </body>
 </html>

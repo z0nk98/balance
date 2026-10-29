@@ -25,7 +25,7 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 | Page | Who it's for |
 | --- | --- |
-| `index.html` | You: personal expenses (stored in your browser only) |
+| `index.html` | You: money in and out (stored in your browser only) |
 | `bills.html` | You: bills tracker (stored in your browser only) |
 | `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
@@ -50,11 +50,15 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Record payments** with *Mark paid* or *Record payment* (partial).
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
 
+## Expenses: money in and out
+
+Each entry is **Money out** (food, transport, utilities…) or **Money in** (salary, business, freelance, loan repayments, gifts, refunds, interest…). For each month you see money in, money out and net, a spending budget for money out, a category breakdown for each side, and a transactions list you can filter by type and category. CSV export/import includes a `type` column (`in` / `out`); entries saved before this change count as money out. A **Bills this month** box summarises the Bills page.
+
 ## Bills
 
 `bills.html` keeps track of recurring bills: electricity, water, internet, rent, credit cards, subscriptions and so on.
 
-- **Add a bill** with its usual amount (0 if it varies), the day of the month it's due, how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
+- **Add a bill** as **Fixed** (same amount every time, e.g. rent) or **Variable** (changes, e.g. electricity: enter an estimate, and the actual amount when you pay). Give it a due day, or tick **No set due date** to pay any time in the month. Then set how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
 - **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
 - **Mark paid** asks for the amount actually paid. With *Add paid bills to Expenses* on (the default), the payment is also added to your Expenses; undoing removes it.
 - Bills are stored in this browser only, like expenses. Use *Download backup* and *Restore backup* to keep a copy or move them to another device.
