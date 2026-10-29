@@ -156,7 +156,7 @@
     const save = el('a', { className: 'qr-save', textContent: 'Save QR', download: `${m.label.replace(/[^\w-]+/g, '-')}-QR.png` });
     const wrap = el('div', { className: 'qr-wrap' }, [
       el('button', { type: 'button', className: 'qr-open', title: 'Tap to enlarge' }, [img]),
-      el('div', { className: 'hint', textContent: 'Tap to enlarge · scan with your banking app' }),
+      el('div', { className: 'hint', textContent: 'Tap to enlarge' }),
       save,
     ]);
     save.hidden = true;
