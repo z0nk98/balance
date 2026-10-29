@@ -277,3 +277,5 @@ tr:last-child td { border-bottom: 0; }
 }
 .seg-field .type-toggle { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 320px); }
 .bill-form .check input { flex: none; width: auto; }
+.cat .tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); vertical-align: 1px; }
+.type-toggle.locked { opacity: 0.6; pointer-events: none; }

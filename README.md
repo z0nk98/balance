@@ -60,7 +60,7 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 
 - **Add a bill** as **Fixed** (same amount every time, e.g. rent) or **Variable** (changes, e.g. electricity: enter an estimate, and the actual amount when you pay). Give it a due day, or tick **No set due date** to pay any time in the month. Then set how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
 - **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
-- **Mark paid** asks for the amount actually paid. With *Add paid bills to Expenses* on (the default), the payment is also added to your Expenses; undoing removes it.
+- **Mark paid** asks for the amount actually paid. Every paid bill counts as **money out** on the Expenses page, tagged *Bill*. The two pages stay in step: undoing on Bills removes it from Expenses, and deleting or editing it on Expenses marks the bill unpaid or updates its amount.
 - Bills are stored in this browser only, like expenses. Use *Download backup* and *Restore backup* to keep a copy or move them to another device.
 
 ## Borrowers sending their contact details

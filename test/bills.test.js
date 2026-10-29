@@ -79,3 +79,28 @@ test('fixed vs variable bills, and bills without a set due date', () => {
   const any = Bills.cleanBill({ name: 'Load', amountType: 'variable', amount: 300, hasDueDate: false, dueDay: '', every: 1, startMonth: '2026-10' });
   assert.deepStrictEqual([any.hasDueDate, any.dueDay], [false, 31]);
 });
+
+test('every paid bill is in Expenses exactly once', () => {
+  const bills = { bills: [bill({ id: 'elec', name: 'Meralco', kind: 'electricity' }), bill({ id: 'net', name: 'PLDT', kind: 'internet' })], payments: {
+    'elec:2026-09': { amount: 2900, paidOn: '2026-09-18' },                          // never added (old setting off)
+    'elec:2026-10': { amount: 3150, paidOn: '2026-10-19', expenseId: 'old-id' },     // linked, old-style id
+    'net:2026-10': { amount: 1699, paidOn: '2026-10-25', expenseId: 'deleted' },     // linked expense was deleted
+    'gone:2026-10': { amount: 500, paidOn: '2026-10-02' },                           // bill since removed
+  } };
+  const exp = { expenses: [{ id: 'old-id', type: 'out', amount: 3150, category: 'Utilities', date: '2026-10-19', note: 'Bill: Meralco' }] };
+
+  assert.deepStrictEqual(Bills.syncExpenses(bills, exp), { billsChanged: true, expensesChanged: true });
+  const out = exp.expenses.map((e) => [e.billPayment, e.amount, e.category, e.date]).sort();
+  assert.deepStrictEqual(out, [
+    ['elec:2026-09', 2900, 'Utilities', '2026-09-18'],
+    ['elec:2026-10', 3150, 'Utilities', '2026-10-19'],
+    ['gone:2026-10', 500, 'Other', '2026-10-02'],
+    ['net:2026-10', 1699, 'Utilities', '2026-10-25'],
+  ]);
+  assert.ok(exp.expenses.every((e) => !e.type || e.type === 'out'));
+  for (const [k, p] of Object.entries(bills.payments)) assert.strictEqual(exp.expenses.find((e) => e.id === p.expenseId).billPayment, k);
+
+  // Running again changes nothing (no duplicates).
+  assert.deepStrictEqual(Bills.syncExpenses(bills, exp), { billsChanged: false, expensesChanged: false });
+  assert.strictEqual(exp.expenses.length, 4);
+});

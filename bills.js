@@ -1,8 +1,9 @@
 (() => {
   'use strict';
 
-  // Bills are stored on this device, like expenses. Paying a bill can add
-  // it to the expense tracker, which uses EXPENSES_KEY (see app.js).
+  // Bills are stored on this device, like expenses. Every paid bill is also
+  // money out in the expense tracker (EXPENSES_KEY, see app.js); both pages
+  // keep the two in step with Bills.syncExpenses().
   const BILLS_KEY = 'tracking-bills:v1';
   const EXPENSES_KEY = 'expense-tracker:v1';
   const SOON_DAYS = 5;
@@ -31,9 +32,17 @@
     }
   }
 
-  let state = readJson(BILLS_KEY, { ...Bills.emptyState(), addToExpenses: true });
+  let state = readJson(BILLS_KEY, Bills.emptyState());
   const save = () => writeJson(BILLS_KEY, state);
   const expenses = () => readJson(EXPENSES_KEY, { expenses: [], budget: null, currency: 'USD' });
+
+  // Make sure every paid bill is in Expenses (and linked both ways).
+  function syncExpenses() {
+    const ex = expenses();
+    const { billsChanged, expensesChanged } = Bills.syncExpenses(state, ex);
+    if (expensesChanged) writeJson(EXPENSES_KEY, ex);
+    if (billsChanged) save();
+  }
 
   // ---- Helpers ----------------------------------------------------------
 
@@ -99,34 +108,19 @@
     const amount = Math.round(parseFloat(input) * 100) / 100;
     if (!(amount > 0)) return alert('Enter the amount you paid.');
 
-    const payment = { amount, paidOn: todayISO() };
-    if (state.addToExpenses) {
-      const ex = expenses();
-      const id = `bill-${b.id}-${item.key}-${Date.now().toString(36)}`;
-      ex.expenses.push({
-        id,
-        created: Date.now(),
-        amount,
-        category: Bills.KINDS[b.kind].expense,
-        date: payment.paidOn,
-        note: `Bill: ${b.name} (${monthLabel(item.key)})`,
-      });
-      if (writeJson(EXPENSES_KEY, ex)) payment.expenseId = id;
-    }
-    state.payments[`${b.id}:${item.key}`] = payment;
+    state.payments[`${b.id}:${item.key}`] = { amount, paidOn: todayISO() };
     save();
+    syncExpenses();
     render();
   }
 
   function undoPaid(item) {
     if (!confirm(`Mark ${item.bill.name} for ${monthLabel(item.key)} as not paid?`)) return;
-    const id = item.payment.expenseId;
-    if (id) {
-      const ex = expenses();
-      ex.expenses = ex.expenses.filter((e) => e.id !== id);
-      writeJson(EXPENSES_KEY, ex);
-    }
-    delete state.payments[`${item.bill.id}:${item.key}`];
+    const payKey = `${item.bill.id}:${item.key}`;
+    const ex = expenses();
+    ex.expenses = ex.expenses.filter((e) => e.id !== item.payment.expenseId && e.billPayment !== payKey);
+    writeJson(EXPENSES_KEY, ex);
+    delete state.payments[payKey];
     save();
     render();
   }
@@ -213,7 +207,6 @@
 
     renderAlerts(today);
     renderAllBills();
-    $('addToExpenses').checked = state.addToExpenses !== false;
     $('currencyHint').textContent = `Currency: ${expenses().currency} (change it on the Expenses page).`;
   }
 
@@ -384,7 +377,6 @@
   $('nextMonth').addEventListener('click', () => { viewMonth = Bills.shiftMonth(viewMonth, 1); render(); });
   $('todayBtn').addEventListener('click', () => { viewMonth = thisMonth(); render(); });
   $('billCancel').addEventListener('click', resetForm);
-  $('addToExpenses').addEventListener('change', (ev) => { state.addToExpenses = ev.target.checked; save(); });
 
   $('backupBtn').addEventListener('click', () => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
@@ -406,8 +398,9 @@
         if (!Array.isArray(data.bills) || typeof data.payments !== 'object') throw new Error('not a bills backup');
         const bills = data.bills.map((b) => ({ id: String(b.id), paused: Boolean(b.paused), ...Bills.cleanBill(b) }));
         if (!confirm(`Replace your ${state.bills.length} bill(s) with the ${bills.length} in this backup?`)) return;
-        state = { ...Bills.emptyState(), addToExpenses: data.addToExpenses !== false, bills, payments: data.payments };
+        state = { ...Bills.emptyState(), bills, payments: data.payments };
         save();
+        syncExpenses();
         render();
       } catch (err) {
         alert(`That file couldn’t be restored: ${err.message}`);
@@ -418,10 +411,11 @@
 
   // Another tab (bills or expenses) changed the data: show the latest.
   window.addEventListener('storage', (ev) => {
-    if (ev.key === BILLS_KEY) state = readJson(BILLS_KEY, { ...Bills.emptyState(), addToExpenses: true });
+    if (ev.key === BILLS_KEY) state = readJson(BILLS_KEY, Bills.emptyState());
     if (ev.key === BILLS_KEY || ev.key === EXPENSES_KEY) render();
   });
 
+  syncExpenses();
   resetForm();
   render();
 })();

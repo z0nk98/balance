@@ -57,6 +57,42 @@
     }
   }
 
+  // ---- Bills link ---------------------------------------------------------
+  //
+  // Paid bills are money out. syncBills() adds any paid bill missing from
+  // Expenses; deleting or editing a bill payment here updates the bill too.
+
+  function readBills() {
+    try {
+      const data = JSON.parse(localStorage.getItem(BILLS_KEY) || 'null');
+      return data && Array.isArray(data.bills) ? { ...data, payments: data.payments || {} } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeBills(bills) {
+    try {
+      localStorage.setItem(BILLS_KEY, JSON.stringify(bills));
+    } catch {
+      // Storage unavailable: the Bills page keeps its own copy.
+    }
+  }
+
+  function syncBills() {
+    const bills = readBills();
+    if (!bills || !window.Bills) return;
+    const { billsChanged, expensesChanged } = Bills.syncExpenses(bills, state);
+    if (expensesChanged) save();
+    if (billsChanged) writeBills(bills);
+  }
+
+  function billNameFor(e) {
+    const bills = readBills();
+    const billId = e.billPayment.slice(0, e.billPayment.lastIndexOf(':'));
+    return bills?.bills.find((b) => b.id === billId)?.name || 'bill';
+  }
+
   const typeOf = (e) => (e.type === 'in' ? 'in' : 'out');
   const colorOf = (e) => CATEGORIES[typeOf(e)][e.category] || '#9aa0a8';
 
@@ -201,7 +237,10 @@
         return el('li', {}, [
           dot,
           el('div', { className: 'meta' }, [
-            el('div', { className: 'cat', textContent: e.category }),
+            el('div', { className: 'cat' }, [
+              document.createTextNode(e.category),
+              e.billPayment ? el('span', { className: 'tag', textContent: 'Bill' }) : null,
+            ]),
             el('div', { className: 'sub', textContent: dateLabel(e.date) + (e.note ? ' · ' + e.note : '') }),
           ]),
           el('span', { className: `amt ${incoming ? 'money-in' : ''}`, textContent: `${incoming ? '+' : '−'}${money(e.amount)}` }),
@@ -288,6 +327,7 @@
     $('date').value = todayISO();
     $('formTitle').textContent = 'Add money in or out';
     $('cancelEdit').hidden = true;
+    $('typeToggle').classList.remove('locked');
     setFormType(formType);
   }
 
@@ -296,6 +336,7 @@
     if (!e) return;
     $('editId').value = e.id;
     setFormType(typeOf(e));
+    $('typeToggle').classList.toggle('locked', Boolean(e.billPayment));
     $('amount').value = e.amount;
     $('category').value = e.category;
     $('date').value = e.date;
@@ -309,7 +350,18 @@
 
   function remove(id) {
     const e = state.expenses.find((x) => x.id === id);
-    if (!e || !confirm(`Delete ${typeOf(e) === 'in' ? '+' : '−'}${money(e.amount)} (${e.category})?`)) return;
+    if (!e) return;
+    const question = e.billPayment
+      ? `This is your ${billNameFor(e)} bill payment (${money(e.amount)}). Deleting it also marks the bill as not paid. Continue?`
+      : `Delete ${typeOf(e) === 'in' ? '+' : '−'}${money(e.amount)} (${e.category})?`;
+    if (!confirm(question)) return;
+    if (e.billPayment) {
+      const bills = readBills();
+      if (bills && bills.payments[e.billPayment]) {
+        delete bills.payments[e.billPayment];
+        writeBills(bills);
+      }
+    }
     state.expenses = state.expenses.filter((x) => x.id !== id);
     if ($('editId').value === id) resetForm();
     save();
@@ -332,6 +384,16 @@
     const editId = $('editId').value;
     if (editId) {
       const e = state.expenses.find((x) => x.id === editId);
+      if (e?.billPayment) {
+        // A bill payment stays money out; keep the bill's record in step.
+        data.type = 'out';
+        const bills = readBills();
+        const payment = bills?.payments[e.billPayment];
+        if (payment) {
+          Object.assign(payment, { amount: data.amount, paidOn: data.date });
+          writeBills(bills);
+        }
+      }
       if (e) Object.assign(e, data);
     } else {
       state.expenses.push({ id: uid(), created: Date.now(), ...data });
@@ -432,6 +494,7 @@
   // ---- Init -----------------------------------------------------------
 
   function init() {
+    syncBills();
     fillCategoryFilter();
     $('budgetInput').value = state.budget ?? '';
     $('currency').value = state.currency;
@@ -439,7 +502,7 @@
 
     $('typeToggle').addEventListener('click', (ev) => {
       const type = ev.target.closest('[data-type]')?.dataset.type;
-      if (type) setFormType(type);
+      if (type && !$('typeToggle').classList.contains('locked')) setFormType(type);
     });
     $('expenseForm').addEventListener('submit', onSubmit);
     $('cancelEdit').addEventListener('click', resetForm);
@@ -469,6 +532,7 @@
     // The Bills page can add expenses from another tab: show them.
     window.addEventListener('storage', (ev) => {
       if (ev.key === STORAGE_KEY) Object.assign(state, load());
+      if (ev.key === BILLS_KEY) syncBills();
       if (ev.key === STORAGE_KEY || ev.key === BILLS_KEY) render();
     });
 
