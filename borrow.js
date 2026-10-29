@@ -249,17 +249,43 @@
     );
   }
 
+  // ---- Hide / show the totals (eye button) ----------------------------
+
+  const HIDE_KEY = 'balance:borrower-hide-amounts';
+  let amountsHidden = false;
+  try { amountsHidden = localStorage.getItem(HIDE_KEY) === '1'; } catch { /* storage blocked */ }
+
+  function maskedMoney(n) {
+    return amountsHidden ? '•••••' : money(n);
+  }
+
+  function renderAmountsToggle() {
+    const btn = $('toggleAmounts');
+    const label = amountsHidden ? 'Show amounts' : 'Hide amounts';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('aria-pressed', String(amountsHidden));
+    btn.replaceChildren(PayIcons.actionIcon(amountsHidden ? 'eyeOff' : 'eye'));
+  }
+
+  $('toggleAmounts').addEventListener('click', () => {
+    amountsHidden = !amountsHidden;
+    try { localStorage.setItem(HIDE_KEY, amountsHidden ? '1' : '0'); } catch { /* storage blocked */ }
+    render();
+  });
+
   function render() {
     renderPayMethods();
     const t = me.totals;
     $('greeting').textContent = `Hi ${me.name}! Here's your payment summary` + (me.ownerName ? ` with ${me.ownerName}.` : '.');
-    $('remaining').textContent = money(t.remaining);
-    $('overdue').textContent = money(t.overdue);
-    $('overdue').classList.toggle('danger', t.overdue > 0);
-    $('dueSoon').textContent = money(t.dueSoon);
-    $('dueSoon').classList.toggle('warn', t.dueSoon > 0);
+    $('remaining').textContent = maskedMoney(t.remaining);
+    $('overdue').textContent = maskedMoney(t.overdue);
+    $('overdue').classList.toggle('danger', !amountsHidden && t.overdue > 0);
+    $('dueSoon').textContent = maskedMoney(t.dueSoon);
+    $('dueSoon').classList.toggle('warn', !amountsHidden && t.dueSoon > 0);
     $('dueSoonLabel').textContent = `Due soon (next ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'})`;
-    $('nextDue').textContent = t.nextDue ? money(t.nextDue.remaining) : '—';
+    $('nextDue').textContent = t.nextDue ? maskedMoney(t.nextDue.remaining) : '—';
+    renderAmountsToggle();
     $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';
 
     for (const chip of $('statusFilter').children) {
@@ -271,7 +297,7 @@
     const shown = me.items.filter(matches);
     const st = Core.totals(shown);
     $('filterSummary').textContent = shown.length
-      ? `${shown.length} payment${shown.length === 1 ? '' : 's'} · ${money(st.owed)} total · ${money(st.paid)} paid · ${money(st.remaining)} left`
+      ? `${shown.length} payment${shown.length === 1 ? '' : 's'} · ${maskedMoney(st.owed)} total · ${maskedMoney(st.paid)} paid · ${maskedMoney(st.remaining)} left`
       : '';
 
     const months = groupPayments(shown);
