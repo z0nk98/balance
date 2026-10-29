@@ -27,8 +27,8 @@ test('codes are 12 unambiguous characters and normalize loosely', () => {
   const code = Core.generateCode();
   assert.match(code, /^[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/);
   assert.ok(Core.isWellFormedCode(code.toLowerCase().replace(/-/g, ' ')));
-  assert.ok(!Core.isWellFormedCode('ABCD-EFGH'));
-  assert.ok(!Core.isWellFormedCode('ABCD-EFGH-IJK0'), '0 and I are not in the alphabet');
+  assert.ok(!Core.isWellFormedCode('ABCD-EFG'), 'too short');
+  assert.ok(Core.isWellFormedCode('lang-2026-ok'), 'custom codes are accepted at sign-in');
 });
 
 test('borrower key/file id depend on both the code and the site salt', async () => {
@@ -249,4 +249,22 @@ test('note search matches every word, in any order and case', () => {
   assert.ok(!Core.matchesFilter(i, { text: 'car phone' }));
   assert.ok(!Core.matchesFilter(i, { text: 'repair', status: 'paid' }), 'combines with other filters');
   assert.ok(!Core.matchesFilter({ status: 'upcoming', note: '', dueDate: '2026-11-30' }, { text: 'x' }));
+});
+
+test('owner-chosen codes: rules and warnings', () => {
+  const ok = Core.checkCustomCode('sakura-88-blue', { name: 'Lang' });
+  assert.deepStrictEqual(ok, { code: 'SAKURA88BLUE', warnings: [] });
+  assert.throws(() => Core.checkCustomCode('ab12', {}), /at least 8/);
+  assert.throws(() => Core.checkCustomCode('onlyletters', {}), /Mix letters and numbers/);
+  assert.throws(() => Core.checkCustomCode('12345678', {}), /Mix/);
+  assert.throws(() => Core.checkCustomCode('Sakura-88-Blue', { taken: ['SAKURA88BLUE'] }), /already has/);
+  assert.deepStrictEqual(Core.checkCustomCode('lang2026x', { name: 'Lang' }).warnings, ['it contains their name', 'it’s short']);
+  assert.throws(() => Core.checkCustomCode('a'.repeat(25) + '1', {}), /at most/);
+});
+
+test('custom codes open their borrower file', async () => {
+  const { code } = Core.checkCustomCode('Sakura-88-Blue');
+  const a = await Core.deriveBorrower(code, 'site');
+  const b = await Core.deriveBorrower('sakura 88 blue', 'site');
+  assert.strictEqual(a.fileId, b.fileId);
 });

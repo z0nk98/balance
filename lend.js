@@ -375,7 +375,7 @@
         ]),
         el('div', { className: 'btn-row' }, [
           el('button', { textContent: 'Show code', onclick: () => showCode(b) }),
-          el('button', { textContent: 'New code', onclick: () => newCode(b) }),
+          el('button', { textContent: 'Change code', onclick: () => newCode(b) }),
           el('button', { textContent: 'Rename', onclick: () => rename(b) }),
           el('button', { className: 'danger', textContent: 'Delete', onclick: () => removeBorrower(b) }),
         ]),
@@ -568,11 +568,31 @@
     $('codeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
+  // Ask for an owner-chosen code. Returns the code, '' for a random one, or
+  // null if cancelled.
+  function askForCode(name, exceptId) {
+    const taken = state.borrowers.filter((x) => x.id !== exceptId).map((x) => x.code);
+    for (;;) {
+      const input = prompt(`Type a code for ${name} (at least 8 letters and numbers),\nor leave it blank for a strong random code.`, '');
+      if (input === null) return null;
+      if (!input.trim()) return '';
+      try {
+        const { code, warnings } = Core.checkCustomCode(input, { name, taken });
+        if (warnings.length && !confirm(`This code is easy to guess (${warnings.join(', ')}). Anyone who guesses it can see ${name}'s balance. Use it anyway?`)) continue;
+        return code;
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  }
+
   function newCode(b) {
-    if (!confirm(`Create a new code for ${b.name}? Their old code will stop working.`)) return;
+    const chosen = askForCode(b.name, b.id);
+    if (chosen === null) return;
+    if (!confirm(`Change ${b.name}'s code? Their old code will stop working.`)) return;
     change(() => {
       if (b.fileId) pendingDeletes.add(b.fileId);
-      b.code = Core.generateCode();
+      b.code = chosen || Core.generateCode();
       b.fileId = null;
     });
     showCode(b);
@@ -1085,10 +1105,16 @@
     ev.preventDefault();
     const name = $('borrowerName').value.trim().slice(0, 60);
     if (!name) return;
+    let code = Core.generateCode();
+    if ($('customCode').checked) {
+      const chosen = askForCode(name, null);
+      if (chosen === null) return;
+      if (chosen) code = chosen;
+    }
     const b = {
       id: Core.newId(),
       name,
-      code: Core.generateCode(),
+      code,
       fileId: null,
       contact: { email: '', phone: '', notifyEmail: false, notifySms: false },
       createdAt: new Date().toISOString(),
@@ -1100,7 +1126,7 @@
   });
 
   $('copyInvite').addEventListener('click', async () => {
-    const text = `See what you owe and when it's due at ${$('portalUrl').textContent}\nYour access code: ${$('codeValue').textContent}`;
+    const text = `See your payment schedule and due dates at ${$('portalUrl').textContent}\nYour access code: ${$('codeValue').textContent}`;
     try {
       await navigator.clipboard.writeText(text);
       $('copyInvite').textContent = 'Copied!';

@@ -45,7 +45,7 @@ If you named the site repo something other than `balance`, change `repo` in `con
 
 ## Using it
 
-- **Add a borrower.** You get a code like `K7QM-3XRP-T8WD` and a *Copy invite* button with the link. *Show code* shows it again anytime. *New code* replaces it and the old one stops working.
+- **Add a borrower.** You get a code like `K7QM-3XRP-T8WD` and a *Copy invite* button with the link. *Show code* shows it again anytime. *Change code* replaces it and the old one stops working. To pick a code yourself, tick *I'll choose the code* when adding a borrower (or use *Change code*). Chosen codes need at least 8 letters and numbers and must differ from other borrowers' codes, and you're warned if one is short or contains the borrower's name. The site is public, so a guessable code lets others see that borrower's balance; leave it blank for a strong random code.
 - **Add a loan.** Enter the amount, number of months and first due date; it's split into monthly payments. Or add single payments.
 - **Record payments** with *Mark paid* or *Record payment* (partial).
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
