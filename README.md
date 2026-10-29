@@ -78,6 +78,7 @@ GitHub pauses scheduled jobs in repos with no activity for 60 days. Saving a cha
 
 ```sh
 npm test                          # unit tests
+npm run stamp                     # after changing any .js/.css file, so browsers fetch the new version
 python3 -m http.server 8000       # then open http://localhost:8000
 ```
 

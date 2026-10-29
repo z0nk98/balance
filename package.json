@@ -5,7 +5,8 @@
   "description": "Expense tracker and money-lent tracker with an encrypted borrower portal on GitHub Pages",
   "scripts": {
     "test": "node --test",
-    "remind": "node scripts/remind.js"
+    "remind": "node scripts/remind.js",
+    "stamp": "node scripts/stamp.js"
   },
   "engines": {
     "node": ">=18"

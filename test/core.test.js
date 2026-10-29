@@ -158,3 +158,9 @@ test('due-soon total counts unpaid payments within the reminder window', () => {
   assert.strictEqual(t.dueSoon, 130);
   assert.strictEqual(t.overdue, 40);
 });
+
+test('pages load the current version of every script and stylesheet', () => {
+  const { run } = require('../scripts/stamp');
+  const { stale } = run({ check: true });
+  assert.deepStrictEqual(stale, [], 'run `node scripts/stamp.js` after changing a .js or .css file');
+});
