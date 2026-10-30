@@ -100,6 +100,7 @@
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .map((i) => Core.withStatus(i, data.reminderDays, today));
     me = { ...data, items, totals: Core.totals(items) };
+    filters.status = defaultStatus();
     session('set', code.trim());
     fillFilterOptions();
     $('loginView').hidden = true;
@@ -111,6 +112,11 @@
   // ---- Filters --------------------------------------------------------
 
   const filters = { status: 'unpaid', loan: '', month: '', text: '' };
+
+  // Open on "Due soon"; if nothing is due soon, show everything unpaid instead.
+  function defaultStatus() {
+    return me && me.items.some((i) => i.status === 'due-soon') ? 'due-soon' : 'unpaid';
+  }
 
   function loanName(i) {
     return Core.loanName(i.note);
@@ -322,7 +328,7 @@
       chip.classList.toggle('active', chip.dataset.status === filters.status);
       chip.setAttribute('aria-pressed', chip.dataset.status === filters.status);
     }
-    $('clearFilters').hidden = filters.status === 'unpaid' && !filters.loan && !filters.month && !filters.text.trim();
+    $('clearFilters').hidden = filters.status === defaultStatus() && !filters.loan && !filters.month && !filters.text.trim();
 
     const shown = me.items.filter(matches);
     const st = Core.totals(shown);
@@ -458,7 +464,7 @@
   });
   $('noteSearch').addEventListener('input', (ev) => { filters.text = ev.target.value; render(); });
   $('clearFilters').addEventListener('click', () => {
-    Object.assign(filters, { status: 'unpaid', loan: '', month: '', text: '' });
+    Object.assign(filters, { status: defaultStatus(), loan: '', month: '', text: '' });
     $('loanFilter').value = '';
     $('monthFilter').value = '';
     $('noteSearch').value = '';
