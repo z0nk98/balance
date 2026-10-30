@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>Money Lent</title>
-  <link rel="stylesheet" href="style.css?v=de7c7f89d8">
-  <link rel="stylesheet" href="lending.css?v=de7c7f89d8">
+  <link rel="stylesheet" href="style.css?v=5cd4c484ea">
+  <link rel="stylesheet" href="lending.css?v=5cd4c484ea">
 </head>
 <body>
   <header class="topbar">
@@ -40,6 +40,8 @@
       <form id="unlockForm" autocomplete="off">
         <input id="passphrase" type="password" placeholder="Passphrase" required autocomplete="current-password" aria-label="Passphrase">
         <input id="passphrase2" type="password" placeholder="Repeat passphrase" autocomplete="new-password" aria-label="Repeat passphrase" hidden>
+        <label class="check"><input type="checkbox" id="rememberPass"> Remember passphrase on this device</label>
+        <p class="hint remember-note">Without it, you’re asked again once you close this tab. Only tick it on your own phone or computer: anyone using it can open your records. “Lock” forgets it.</p>
         <button type="submit" class="primary" id="unlockBtn">Unlock</button>
       </form>
       <p id="unlockError" class="error" hidden></p>
@@ -172,8 +174,9 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=de7c7f89d8"></script>
-  <script src="lib/core.js?v=de7c7f89d8"></script>
-  <script src="lend.js?v=de7c7f89d8"></script>
+  <script src="lib/icons.js?v=5cd4c484ea"></script>
+  <script src="lib/account.js?v=5cd4c484ea"></script>
+  <script src="lib/core.js?v=5cd4c484ea"></script>
+  <script src="lend.js?v=5cd4c484ea"></script>
 </body>
 </html>

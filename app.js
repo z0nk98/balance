@@ -55,6 +55,7 @@
     } catch {
       // Storage unavailable (private mode, quota): keep working in memory.
     }
+    window.BalanceSync?.changed();
   }
 
   // ---- Bills link ---------------------------------------------------------
@@ -77,6 +78,7 @@
     } catch {
       // Storage unavailable: the Bills page keeps its own copy.
     }
+    window.BalanceSync?.changed();
   }
 
   function syncBills() {

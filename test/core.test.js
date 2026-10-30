@@ -311,3 +311,30 @@ test('editing a whole loan rebuilds its payments and keeps what was paid', () =>
   const small = Core.rebuildLoan(old, { name: 'Laptop', total: 600, count: 1, firstDue: '2026-10-15', frequency: 'monthly' });
   assert.deepStrictEqual([small.items[0].amount, small.items[0].paid, small.lostPaid], [600, 600, 800]);
 });
+
+test('splitSchedule spreads interest over the payments', () => {
+  const items = Core.splitSchedule(10000, 3, '2026-11-15', 'Phone', 'monthly', 1000);
+  assert.deepEqual(items.map((p) => p.amount), [3666.66, 3666.66, 3666.68]);
+  assert.deepEqual(items.map((p) => p.interest), [333.33, 333.33, 333.34]);
+  assert.deepEqual(Core.loanBreakdown(items), { principal: 10000, interest: 1000, total: 11000 });
+  assert.equal(Core.splitSchedule(100, 2, '2026-11-15', 'x')[0].interest, undefined);
+});
+
+test('rebuildLoan keeps interest and borrowerPayload shares it', () => {
+  const old = Core.splitSchedule(6000, 6, '2026-09-15', 'Loan', 'monthly', 600).map((p, k) => ({ id: `p${k}`, ...p, paid: k === 0 ? p.amount : 0 }));
+  const { items } = Core.rebuildLoan(old, { name: 'Loan', total: 6000, count: 3, firstDue: '2026-09-15', frequency: 'monthly', interest: 300 });
+  assert.deepEqual(Core.loanBreakdown(items), { principal: 6000, interest: 300, total: 6300 });
+  assert.equal(items[0].paid, 1100);
+  const state = { settings: { currency: 'PHP', reminderDays: 3 }, installments: items.map((i) => ({ ...i, borrowerId: 'b' })) };
+  const payload = Core.borrowerPayload(state, { id: 'b', name: 'B', contact: {} });
+  assert.equal(payload.installments[0].interest, 100);
+  assert.equal(Core.totals(payload.installments.map((i) => Core.withStatus(i, 3, '2026-09-01'))).interest, 300);
+});
+
+test('dueSoonLabel matches what is in the due-soon total', () => {
+  const at = (days) => ({ status: days === null ? 'upcoming' : 'due-soon', daysUntilDue: days });
+  assert.equal(Core.dueSoonLabel([at(0), at(0)], 2), 'Due today');
+  assert.equal(Core.dueSoonLabel([at(1), at(2)], 2), 'Due in the next 2 days');
+  assert.equal(Core.dueSoonLabel([at(0), at(2)], 2), 'Due today + next 2 days');
+  assert.equal(Core.dueSoonLabel([at(null)], 1), 'Due soon (next 1 day)');
+});

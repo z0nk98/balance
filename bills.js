@@ -1,7 +1,8 @@
 (() => {
   'use strict';
 
-  // Bills are stored on this device, like expenses. Every paid bill is also
+  // Bills are stored on this device, like expenses (lib/sync.js copies both
+  // to the other devices). Every paid bill is also
   // money out in the expense tracker (EXPENSES_KEY, see app.js); both pages
   // keep the two in step with Bills.syncExpenses().
   const BILLS_KEY = 'tracking-bills:v1';
@@ -25,6 +26,7 @@
   function writeJson(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      window.BalanceSync?.changed();
       return true;
     } catch {
       alert('Couldn’t save on this device (storage is full or blocked).');

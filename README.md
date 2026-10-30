@@ -13,6 +13,7 @@ It runs entirely on **GitHub Pages**. There's no server to pay for or maintain.
 Pages sites are public, so nothing readable is stored there:
 
 - **Your records** (borrowers, loans, payments, contact details, codes) are in `data/owner.json`, encrypted with **your passphrase**.
+- **Expenses and bills**, once you turn on sync, are in `data/money.json`, encrypted with the same passphrase.
 - **Each borrower's view** is in its own file under `data/b/`, encrypted with **their access code**. The file name comes from the code too, so you can't even tell which file is whose without it.
 - Encryption is AES-256-GCM, with keys stretched using PBKDF2-SHA256 at 600,000 rounds. Access codes are 12 random characters (about 59 bits).
 - Commit messages and reminder logs never include names, amounts or addresses.
@@ -25,8 +26,8 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 | Page | Who it's for |
 | --- | --- |
-| `index.html` | You: money in and out (stored in your browser only) |
-| `bills.html` | You: bills tracker (stored in your browser only) |
+| `index.html` | You: money in and out (on this device; synced if you turn it on) |
+| `bills.html` | You: bills tracker (on this device; synced if you turn it on) |
 | `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
 
@@ -61,7 +62,15 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 - **Add a bill** as **Fixed** (same amount every time, e.g. rent) or **Variable** (changes, e.g. electricity: enter an estimate, and the actual amount when you pay). Give it a due day, or tick **No set due date** to pay any time in the month. Then set how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
 - **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
 - **Mark paid** asks for the amount actually paid. Every paid bill counts as **money out** on the Expenses page, tagged *Bill*. The two pages stay in step: undoing on Bills removes it from Expenses, and deleting or editing it on Expenses marks the bill unpaid or updates its amount.
-- Bills are stored in this browser only, like expenses. Use *Download backup* and *Restore backup* to keep a copy or move them to another device.
+- Bills are stored in this browser, like expenses, and synced to your other devices if sync is on (see below). *Download backup* and *Restore backup* still work for keeping a copy.
+
+## Syncing expenses and bills across devices
+
+Expenses and bills are saved in each browser. To see the same ones everywhere, use the bar at the top of either page: **Sync across devices**, then enter the GitHub key and passphrase from your Money lent page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
+
+- Entries already on a device are kept and merged with the others the first time it syncs, so nothing is lost. Adds, edits and deletes from different devices all come through; if one device edits an entry another deleted, the edit wins.
+- Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.
+- **Remember passphrase on this device** (on any of the three pages) saves it in that browser, so the pages open and sync without asking. Without it, you're asked again once you close the tab. *Lock* on Money lent, or *Forget passphrase* in the sync bar, removes it. Only use it on your own devices.
 
 ## Borrowers sending their contact details
 

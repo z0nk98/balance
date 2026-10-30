@@ -7,7 +7,6 @@
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due soon', upcoming: 'Upcoming' };
   // "Due today" reads better than "Due soon" for a payment due today.
   const statusLabel = (i) => (i.status === 'due-soon' && i.daysUntilDue === 0 ? 'Due today' : STATUS_LABEL[i.status]);
-  const TOKEN_KEY = 'balance:github-token';
   const OWNER_FILE = 'data/owner.json';
   // Commit messages are public, so they never mention names or amounts.
   const COMMIT_MESSAGE = 'Update encrypted data';
@@ -53,21 +52,6 @@
     $('lock').hidden = view !== 'mainView';
   }
 
-  function storage(action, value) {
-    try {
-      if (action === 'get') return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
-      if (action === 'clear') {
-        localStorage.removeItem(TOKEN_KEY);
-        sessionStorage.removeItem(TOKEN_KEY);
-      }
-      if (action === 'local') localStorage.setItem(TOKEN_KEY, value);
-      if (action === 'session') sessionStorage.setItem(TOKEN_KEY, value);
-    } catch {
-      // Storage unavailable: the key is kept in memory for this visit only.
-    }
-    return null;
-  }
-
   async function derive(b) {
     const key = `${b.codeExact ? 'exact' : 'loose'}:${b.code}`;
     if (!derived.has(key)) derived.set(key, await Core.deriveBorrower(b.code, config.siteSalt, Boolean(b.codeExact)));
@@ -75,86 +59,6 @@
   }
 
   // ---- GitHub ---------------------------------------------------------
-
-  function GitHub(repo, token) {
-    const base = `https://api.github.com/repos/${repo}`;
-    let branch = 'main';
-
-    async function req(method, path, body, accept = 'application/vnd.github+json') {
-      const res = await fetch(base + path, {
-        method,
-        cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: accept,
-          'X-GitHub-Api-Version': '2022-11-28',
-          ...(body ? { 'Content-Type': 'application/json' } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      return res;
-    }
-
-    async function json(method, path, body) {
-      const res = await req(method, path, body);
-      if (!res.ok) {
-        const err = new Error(`GitHub error ${res.status}`);
-        err.status = res.status;
-        throw err;
-      }
-      return res.json();
-    }
-
-    return {
-      async connect() {
-        const res = await req('GET', '');
-        if (res.status === 401) throw new Error('GitHub didn’t accept that key. Check that you copied all of it and that it hasn’t expired.');
-        if (res.status === 404) throw new Error(`That key can’t see ${repo}. Give it access to this repository.`);
-        if (!res.ok) throw new Error(`GitHub error ${res.status}. Try again.`);
-        const info = await res.json();
-        if (info.permissions && !info.permissions.push) {
-          throw new Error('That key can only read. Give it “Contents: Read and write” permission.');
-        }
-        branch = info.default_branch || 'main';
-      },
-
-      async readText(path) {
-        const res = await req('GET', `/contents/${path}?ref=${encodeURIComponent(branch)}`, null, 'application/vnd.github.raw+json');
-        if (res.status === 404) return null;
-        if (!res.ok) throw new Error(`Couldn’t load ${path} (GitHub error ${res.status})`);
-        return res.text();
-      },
-
-      async listDir(path) {
-        const res = await req('GET', `/contents/${path}?ref=${encodeURIComponent(branch)}`);
-        if (res.status === 404) return [];
-        if (!res.ok) throw new Error(`Couldn’t list ${path} (GitHub error ${res.status})`);
-        const items = await res.json();
-        return Array.isArray(items) ? items.filter((i) => i.type === 'file').map((i) => i.name) : [];
-      },
-
-      // One commit with all changes; `content: null` deletes the file.
-      async commit(message, files) {
-        const ref = await json('GET', `/git/ref/heads/${branch}`);
-        const parent = await json('GET', `/git/commits/${ref.object.sha}`);
-        const tree = await json('POST', '/git/trees', {
-          base_tree: parent.tree.sha,
-          tree: files.map(([path, content]) =>
-            content === null
-              ? { path, mode: '100644', type: 'blob', sha: null }
-              : { path, mode: '100644', type: 'blob', content }),
-        });
-        const commit = await json('POST', '/git/commits', { message, tree: tree.sha, parents: [ref.object.sha] });
-        const res = await req('PATCH', `/git/refs/heads/${branch}`, { sha: commit.sha, force: false });
-        if (res.status === 422) {
-          const err = new Error('Your data was changed somewhere else (another device or tab). Reload this page to get the latest, then redo your last change.');
-          err.conflict = true;
-          throw err;
-        }
-        if (!res.ok) throw new Error(`GitHub error ${res.status} while saving`);
-      },
-    };
-  }
 
   // ---- Saving ---------------------------------------------------------
 
@@ -1192,15 +1096,13 @@
   // ---- Start-up -------------------------------------------------------
 
   async function loadConfig() {
-    const res = await fetch(`config.json?v=${Date.now()}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('config.json is missing');
-    config = await res.json();
+    config = await Account.loadConfig();
     $('repoName').textContent = config.repo;
     $('actionsLink').href = `https://github.com/${config.repo}/actions`;
   }
 
   async function connect(token) {
-    gh = GitHub(config.repo, token);
+    gh = Account.GitHub(config.repo, token);
     await gh.connect();
     const text = await gh.readText(OWNER_FILE);
     setupMode = text === null;
@@ -1213,6 +1115,12 @@
     $('passphrase2').required = setupMode;
     $('unlockBtn').textContent = setupMode ? 'Create' : 'Unlock';
     show('unlockView');
+    // Remembered on this device (or earlier in this tab): unlock straight away.
+    const saved = setupMode ? null : Account.passphrase('get');
+    if (saved) {
+      $('rememberPass').checked = Boolean(Account.passphrase('remembered'));
+      return unlock(saved, { auto: true });
+    }
     $('passphrase').focus();
   }
 
@@ -1223,7 +1131,7 @@
     const token = $('token').value.trim();
     try {
       await connect(token);
-      storage($('rememberToken').checked ? 'local' : 'session', token);
+      Account.token($('rememberToken').checked ? 'local' : 'session', token);
       $('token').value = '';
     } catch (err) {
       $('connectError').textContent = err.message;
@@ -1233,11 +1141,14 @@
     }
   });
 
-  $('unlockForm').addEventListener('submit', async (ev) => {
+  $('unlockForm').addEventListener('submit', (ev) => {
     ev.preventDefault();
+    unlock($('passphrase').value);
+  });
+
+  async function unlock(pass, { auto = false } = {}) {
     const err = $('unlockError');
     err.hidden = true;
-    const pass = $('passphrase').value;
     $('unlockBtn').disabled = true;
     try {
       if (setupMode) {
@@ -1250,6 +1161,9 @@
         const opened = await Core.openOwnerFile(JSON.parse($('unlockForm').dataset.file), pass);
         ({ data: state, key: ownerKey, salt: ownerSalt } = opened);
       }
+      // Kept for this tab's visit (so Expenses and Bills can sync), or on
+      // this device when "Remember" is ticked.
+      Account.passphrase($('rememberPass').checked ? 'local' : 'session', pass);
       $('passphrase').value = '';
       $('passphrase2').value = '';
       show('mainView');
@@ -1264,15 +1178,17 @@
       }
       loadInbox();
     } catch (e) {
-      err.textContent = e.message;
+      if (auto) Account.passphrase('clear');
+      err.textContent = auto ? 'The saved passphrase didn’t work (it was changed?). Enter it again.' : e.message;
       err.hidden = false;
+      $('passphrase').focus();
     } finally {
       $('unlockBtn').disabled = false;
     }
-  });
+  }
 
   $('forgetToken').addEventListener('click', () => {
-    storage('clear');
+    Account.token('clear');
     gh = null;
     show('connectView');
   });
@@ -1280,6 +1196,8 @@
   $('lock').addEventListener('click', async () => {
     await queue;
     if (saveFailed && !confirm('Your last change wasn’t saved. Lock anyway and lose it?')) return;
+    // Locking also forgets a remembered passphrase, so the next visit asks for it.
+    Account.passphrase('clear');
     state = null;
     ownerKey = null;
     published.clear();
@@ -1365,7 +1283,7 @@
       $('connectError').hidden = false;
       return;
     }
-    const token = storage('get');
+    const token = Account.token('get');
     if (!token) return show('connectView');
     try {
       await connect(token);
