@@ -319,7 +319,7 @@
     $('overdue').classList.toggle('danger', !amountsHidden && t.overdue > 0);
     $('dueSoon').textContent = maskedMoney(t.dueSoon);
     $('dueSoon').classList.toggle('warn', !amountsHidden && t.dueSoon > 0);
-    $('dueSoonLabel').textContent = `Due soon (today + next ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'})`;
+    $('dueSoonLabel').textContent = Core.dueSoonLabel(me.items, me.reminderDays);
     $('nextDue').textContent = t.nextDue ? maskedMoney(t.nextDue.remaining) : '—';
     renderAmountsToggle();
     $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';

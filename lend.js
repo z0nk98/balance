@@ -47,9 +47,6 @@
     return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  function dueSoonLabel(days) {
-    return `Due soon (today + next ${days} day${days === 1 ? '' : 's'})`;
-  }
 
   function show(view) {
     for (const v of ['connectView', 'unlockView', 'mainView']) $(v).hidden = v !== view;
@@ -274,7 +271,7 @@
     $('sumOverdue').classList.toggle('danger', !amountsHidden && sum('overdue') > 0);
     $('sumDueSoon').textContent = maskedMoney(sum('dueSoon'));
     $('sumDueSoon').classList.toggle('warn', !amountsHidden && sum('dueSoon') > 0);
-    $('dueSoonLabel').textContent = dueSoonLabel(state.settings.reminderDays);
+    $('dueSoonLabel').textContent = Core.dueSoonLabel(rows.flatMap((r) => r.installments), state.settings.reminderDays);
     $('sumPaid').textContent = maskedMoney(sum('paid'));
     renderAmountsToggle();
     $('sumBorrowers').textContent = rows.length;
