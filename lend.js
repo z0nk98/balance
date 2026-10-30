@@ -23,6 +23,7 @@
   const pendingQr = new Map(); // QR file id -> encrypted content, or null to delete
   const pendingPathDeletes = new Set(); // other files to delete on next save (saved borrower updates)
   const openPanels = new Set();
+  const addPanels = new Map(); // borrower id -> "add a loan" section open?
 
   // ---- Helpers --------------------------------------------------------
 
@@ -309,8 +310,7 @@
       el('summary', { textContent: filtered
         ? `Payments & reminders (showing ${shown.length} of ${installments.length})`
         : `Payments & reminders (${installments.length})` }),
-      scheduleForm(b),
-      installmentForm(b),
+      addSection(b, installments.length),
       loansRow(b, installments),
       filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` }) : '',
       installmentTable(sortPayments(filtered ? shown : installments)),
@@ -341,6 +341,19 @@
 
   function field(label, input) {
     return el('label', {}, [document.createTextNode(label), input]);
+  }
+
+  // The add-a-loan forms fold away; open by default only until the borrower
+  // has a payment.
+  function addSection(b, count) {
+    const open = addPanels.has(b.id) ? addPanels.get(b.id) : count === 0;
+    const section = el('details', { className: 'add-panel', open }, [
+      el('summary', { textContent: 'Add a loan or payment' }),
+      scheduleForm(b),
+      installmentForm(b),
+    ]);
+    section.addEventListener('toggle', () => addPanels.set(b.id, section.open));
+    return section;
   }
 
   function scheduleForm(b) {
@@ -378,6 +391,7 @@
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       openPanels.add(b.id);
+      addPanels.set(b.id, true);
       change(() => {
         const amount = Core.money(total.value, 'Initial amount');
         const extra = interest.value ? Core.money(interest.value, 'Total interest') : 0;
@@ -420,6 +434,7 @@
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       openPanels.add(b.id);
+      addPanels.set(b.id, true);
       change(() => {
         const a = Core.money(amount.value, 'Amount');
         if (a <= 0) throw new Error('Amount must be more than zero');

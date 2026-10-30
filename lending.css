@@ -314,3 +314,13 @@ td .sub { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .sync-form input[type=password] { flex: 1 1 200px; min-width: 0; }
 .sync-form .error { width: 100%; margin: 0; }
 .remember-note { margin: 4px 0 0; }
+
+/* "Add a loan or payment" fold-away */
+details.add-panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; }
+details.add-panel summary { font-weight: 600; }
+details.add-panel[open] summary { margin-bottom: 6px; }
+/* iPad Safari sizes date inputs wider than their box unless told not to. */
+.inline-form label { min-width: 0; }
+@supports (-webkit-touch-callout: none) {
+  .inline-form input[type=date] { display: block; min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; }
+}
