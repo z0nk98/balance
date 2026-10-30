@@ -5,6 +5,8 @@
   // Version stamp this script was loaded with (see scripts/stamp.js).
   const LOADED_VERSION = new URL(document.currentScript.src).searchParams.get('v');
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due soon', upcoming: 'Upcoming' };
+  // "Due today" reads better than "Due soon" for a payment due today.
+  const statusLabel = (i) => (i.status === 'due-soon' && i.daysUntilDue === 0 ? 'Due today' : STATUS_LABEL[i.status]);
   const TOKEN_KEY = 'balance:github-token';
   const OWNER_FILE = 'data/owner.json';
   // Commit messages are public, so they never mention names or amounts.
@@ -46,7 +48,7 @@
   }
 
   function dueSoonLabel(days) {
-    return `Due soon (next ${days} day${days === 1 ? '' : 's'})`;
+    return `Due soon (today + next ${days} day${days === 1 ? '' : 's'})`;
   }
 
   function show(view) {
@@ -689,7 +691,7 @@
         ]),
         el('td', { className: 'num', textContent: money(i.paid) }),
         el('td', { className: 'num', textContent: money(i.remaining) }),
-        el('td', {}, [el('span', { className: `badge ${i.status}`, textContent: STATUS_LABEL[i.status] })]),
+        el('td', {}, [el('span', { className: `badge ${i.status}`, textContent: statusLabel(i) })]),
         el('td', {}, [
           el('div', { className: 'btn-row row-actions' }, [
             i.remaining > 0

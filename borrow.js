@@ -3,6 +3,8 @@
 
   const $ = (id) => document.getElementById(id);
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due soon', upcoming: 'Upcoming' };
+  // "Due today" reads better than "Due soon" for a payment due today.
+  const statusLabel = (i) => (i.status === 'due-soon' && i.daysUntilDue === 0 ? 'Due today' : STATUS_LABEL[i.status]);
   const SESSION_KEY = 'balance:code';
   let me = null;
 
@@ -311,7 +313,7 @@
     $('overdue').classList.toggle('danger', !amountsHidden && t.overdue > 0);
     $('dueSoon').textContent = maskedMoney(t.dueSoon);
     $('dueSoon').classList.toggle('warn', !amountsHidden && t.dueSoon > 0);
-    $('dueSoonLabel').textContent = `Due soon (next ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'})`;
+    $('dueSoonLabel').textContent = `Due soon (today + next ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'})`;
     $('nextDue').textContent = t.nextDue ? maskedMoney(t.nextDue.remaining) : '—';
     renderAmountsToggle();
     $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';
@@ -347,7 +349,7 @@
               ]),
               el('div', { className: 'amt' }, [
                 el('div', { className: 'amt', textContent: money(i.remaining > 0 ? i.remaining : i.amount) }),
-                el('span', { className: `badge ${i.status}`, textContent: STATUS_LABEL[i.status] }),
+                el('span', { className: `badge ${i.status}`, textContent: statusLabel(i) }),
               ]),
             ])
           ),
