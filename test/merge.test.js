@@ -21,7 +21,16 @@ test('first sync keeps entries from both devices', () => {
 test('a fresh device takes everything online', () => {
   const online = data(ex({ id: 'a', amount: 1 }), bills([{ id: 'b1' }]));
   const m = merge(null, data(null, null), online);
-  assert.deepEqual(m, { v: 1, ...online });
+  assert.deepEqual(m, { v: 1, ...online, loans: undefined });
+});
+
+test('tracker loans and payments merge as lists', () => {
+  const base = { ...data(null, null), loans: { v: 1, loans: [{ id: 'L1', name: 'Phone' }], payments: [{ id: 'p1', loanId: 'L1', terms: 1 }] } };
+  const local = { ...data(null, null), loans: { v: 1, loans: [{ id: 'L1', name: 'Phone' }], payments: [{ id: 'p1', loanId: 'L1', terms: 1 }, { id: 'p2', loanId: 'L1', terms: 3 }] } };
+  const remote = { ...data(null, null), loans: { v: 1, loans: [{ id: 'L1', name: 'Phone' }, { id: 'L2', name: 'Car' }], payments: [] } };
+  const m = merge(base, local, remote);
+  assert.deepEqual(m.loans.loans.map((l) => l.id), ['L1', 'L2']);
+  assert.deepEqual(m.loans.payments.map((p) => p.id), ['p2']);
 });
 
 test('adds, edits and deletes on either side all survive', () => {

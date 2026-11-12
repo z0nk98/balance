@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
+  <title>Personal Bills Tracker</title>
+  <link rel="stylesheet" href="style.css?v=6c511d1a07">
+  <link rel="stylesheet" href="lending.css?v=6c511d1a07">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Personal Bills Tracker</h1>
+    <nav>
+      <a href="index.html">Expenses</a>
+      <a href="bills.html">Bills</a>
+      <a href="tracker.html" class="active">Tracker</a>
+      <a href="lend.html">Money lent</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="stats four">
+      <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="sumLeft"></span><span class="stat-sub" id="sumLeftSub"></span></div>
+      <div class="stat"><span class="stat-label">Due by this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumDueSub"></span></div>
+      <div class="stat"><span class="stat-label" id="paidLabel">Paid this month</span><span class="stat-value" id="sumPaid"></span><span class="stat-sub" id="sumPaidSub"></span></div>
+      <div class="stat"><span class="stat-label">Loans</span><span class="stat-value" id="sumLoans"></span><span class="stat-sub" id="sumLoansSub"></span></div>
+    </section>
+
+    <section class="card">
+      <div class="list-head">
+        <h2>My loans</h2>
+        <div class="chips" id="loanFilter" role="group" aria-label="Show loans">
+          <button type="button" data-show="active" class="chip active">Active</button>
+          <button type="button" data-show="done" class="chip">Paid off</button>
+          <button type="button" data-show="all" class="chip">All</button>
+        </div>
+      </div>
+      <div id="loanList" class="tracker-list"></div>
+      <p id="loanEmpty" class="empty" hidden></p>
+    </section>
+
+    <section class="card">
+      <details id="loanFormWrap" class="add-panel">
+        <summary id="formTitle">Add a loan</summary>
+        <form id="loanForm" class="bill-form" autocomplete="off">
+          <label>Loan name <input id="loanName" maxlength="60" required placeholder="e.g. Phone (Home Credit)"></label>
+          <label>Lender (optional) <input id="loanLender" maxlength="60" placeholder="e.g. Home Credit, BPI, SSS"></label>
+          <label>Amount per term <input id="loanTermAmount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="e.g. 1500"></label>
+          <label>Number of terms <input id="loanTerms" type="number" min="1" max="360" required inputmode="numeric" placeholder="e.g. 18"></label>
+          <label>First term due <input id="loanFirstMonth" type="month" required></label>
+          <label>Due day of month (optional) <input id="loanDueDay" type="number" min="1" max="31" placeholder="e.g. 15"></label>
+          <label>Amount borrowed (optional) <input id="loanBorrowed" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Shows the interest"></label>
+          <label class="wide">Note <input id="loanNote" maxlength="120" placeholder="e.g. Pay at any Bayad center"></label>
+          <p class="hint wide" id="loanPreview"></p>
+          <div class="form-actions wide">
+            <button type="submit" class="primary" id="loanSubmit">Add loan</button>
+            <button type="button" id="loanCancel" hidden>Cancel</button>
+          </div>
+        </form>
+      </details>
+    </section>
+
+    <p class="hint tracker-foot">Each payment records the month you paid and how many terms it covered, so paying several terms in one month is counted correctly.</p>
+  </main>
+
+  <script src="lib/icons.js?v=6c511d1a07"></script>
+  <script src="lib/loans.js?v=6c511d1a07"></script>
+  <script src="tracker.js?v=6c511d1a07"></script>
+  <script src="lib/core.js?v=6c511d1a07"></script>
+  <script src="lib/merge.js?v=6c511d1a07"></script>
+  <script src="lib/account.js?v=6c511d1a07"></script>
+  <script src="lib/sync.js?v=6c511d1a07"></script>
+</body>
+</html>

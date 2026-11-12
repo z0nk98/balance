@@ -28,6 +28,7 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 | --- | --- |
 | `index.html` | You: money in and out (on this device; synced if you turn it on) |
 | `bills.html` | You: bills tracker (on this device; synced if you turn it on) |
+| `tracker.html` | You: Personal Bills Tracker, for loans you are paying off (on this device; synced if you turn it on) |
 | `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
 
@@ -64,9 +65,18 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 - **Mark paid** asks for the amount actually paid. Every paid bill counts as **money out** on the Expenses page, tagged *Bill*. The two pages stay in step: undoing on Bills removes it from Expenses, and deleting or editing it on Expenses marks the bill unpaid or updates its amount.
 - Bills are stored in this browser, like expenses, and synced to your other devices if sync is on (see below). *Download backup* and *Restore backup* still work for keeping a copy.
 
+## Tracker: loans you are paying off
+
+`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each loan you took by its terms rather than by month.
+
+- **Add a loan** with the amount per term, the number of terms (e.g. 18), and the month the first term is due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
+- **Record payment** asks for the month you paid, how many terms it covers and the amount (filled in as terms × amount per term; change it if you paid something different). Paying three terms in one month counts as three terms.
+- Each loan shows terms paid out of the total, a box per term (green paid, red overdue, blue next), what's paid and left, the next term and its month, and whether you're **behind**, **on track**, **ahead** or **paid off**. *Payment history* lists each payment with the terms it covered.
+- The totals at the top show what's left on all loans, what's overdue by this month, and what you paid this month.
+
 ## Syncing expenses and bills across devices
 
-Expenses and bills are saved in each browser. To see the same ones everywhere, use the bar at the top of either page: **Sync across devices**, then enter the GitHub key and passphrase from your Money lent page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
+Expenses, bills and tracker loans are saved in each browser. To see the same ones everywhere, use the bar at the top of any of those pages: **Sync across devices**, then enter the GitHub key and passphrase from your Money lent page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
 
 - Entries already on a device are kept and merged with the others the first time it syncs, so nothing is lost. Adds, edits and deletes from different devices all come through; if one device edits an entry another deleted, the edit wins.
 - Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.
