@@ -156,6 +156,31 @@
 
   // Groups of payments to show: by month (due date order), or by loan/note
   // (A–Z or Z–A), with each loan's payments in due-date order.
+  // One payment: a date block, what it's for, and how much.
+  function paymentTile(i) {
+    const [y, mo, d] = i.dueDate.split('-').map(Number);
+    const due = new Date(y, mo - 1, d);
+    const sub = dueText(i) + (i.paid > 0 && i.remaining > 0 ? ` · ${money(i.paid)} paid so far` : '');
+    const tile = el('article', { className: `pay-tile is-${i.status}` }, [
+      el('div', { className: 'pay-date' }, [
+        el('span', { className: 'pay-date-mon', textContent: due.toLocaleDateString(undefined, { month: 'short' }) }),
+        el('span', { className: 'pay-date-day', textContent: String(d) }),
+        el('span', { className: 'pay-date-wd', textContent: due.toLocaleDateString(undefined, { weekday: 'short' }) }),
+      ]),
+      el('div', { className: 'pay-info' }, [
+        el('div', { className: 'pay-loan', textContent: i.note || 'Payment' }),
+        el('div', { className: 'sub pay-due', textContent: sub }),
+        i.interest > 0 ? el('div', { className: 'sub', textContent: `${money(i.amount - i.interest)} + ${money(i.interest)} interest` }) : '',
+      ]),
+      el('div', { className: 'pay-side' }, [
+        el('div', { className: 'pay-amt', textContent: money(i.remaining > 0 ? i.remaining : i.amount) }),
+        el('span', { className: `badge ${i.status}`, textContent: statusLabel(i) }),
+      ]),
+    ]);
+    tile.title = dateLabel(i.dueDate);
+    return tile;
+  }
+
   function groupPayments(items) {
     const groups = new Map();
     const byNote = sortBy !== 'date';
@@ -349,29 +374,15 @@
     renderLoans();
 
     const months = groupPayments(shown);
-    $('months').replaceChildren(
-      ...months.map((m) =>
-        el('div', { className: 'month-card' }, [
-          el('h3', {}, [
-            document.createTextNode(m.title),
-            el('span', { textContent: m.remaining > 0 ? `${money(m.remaining)} left` : 'Paid' }),
-          ]),
-          ...m.items.map((i) =>
-            el('div', { className: 'item' }, [
-              el('div', {}, [
-                el('div', { textContent: dateLabel(i.dueDate) + (i.note ? ` · ${i.note}` : '') }),
-                el('div', { className: 'sub', textContent: dueText(i) + (i.paid > 0 && i.remaining > 0 ? ` · ${money(i.paid)} paid so far` : '') }),
-                i.interest > 0 ? el('div', { className: 'sub', textContent: `${money(i.amount)} = ${money(i.amount - i.interest)} + ${money(i.interest)} interest` }) : '',
-              ]),
-              el('div', { className: 'amt' }, [
-                el('div', { className: 'amt', textContent: money(i.remaining > 0 ? i.remaining : i.amount) }),
-                el('span', { className: `badge ${i.status}`, textContent: statusLabel(i) }),
-              ]),
-            ])
-          ),
-        ])
-      )
-    );
+    $('months').replaceChildren(...months.map((m) =>
+      el('section', { className: 'pay-group' }, [
+        el('div', { className: 'pay-group-head' }, [
+          el('h3', { textContent: m.title }),
+          el('span', { className: `pay-group-left${m.remaining > 0 ? '' : ' done'}`, textContent: m.remaining > 0 ? `${money(m.remaining)} left` : 'All paid' }),
+        ]),
+        el('div', { className: 'pay-grid' }, m.items.map(paymentTile)),
+      ])
+    ));
     $('monthsEmpty').hidden = months.length > 0;
 
     const who = me.ownerName || 'your lender';

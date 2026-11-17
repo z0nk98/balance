@@ -110,7 +110,6 @@ body::before {
 /* Panels inside a card: lighter glass, no extra blur. */
 .tracker-loan,
 .loan-summary,
-.month-card,
 .pay-item,
 .bill-item,
 details.add-panel,
@@ -123,6 +122,47 @@ details.add-panel,
   border-radius: 14px;
 }
 .loan-editor { background-color: color-mix(in srgb, var(--accent) 8%, var(--glass-inner)); border-color: var(--accent); }
+
+/* Borrower page: payments grouped by month, one tile each. */
+.pay-group + .pay-group { margin-top: 22px; }
+.pay-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 2px 10px; }
+.pay-group-head h3 { margin: 0; font-size: 1.05rem; }
+.pay-group-left { font-weight: 600; font-variant-numeric: tabular-nums; padding: 3px 12px; border-radius: 999px; background: var(--glass-inner); border: 1px solid var(--glass-edge); }
+.pay-group-left.done { color: #2f9e5b; }
+.pay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; }
+.pay-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--glass-inner);
+  border: 1px solid var(--glass-edge);
+  border-left: 3px solid var(--border);
+}
+.pay-tile.is-overdue { border-left-color: var(--danger); }
+.pay-tile.is-due-soon { border-left-color: var(--warn); }
+.pay-tile.is-paid { border-left-color: #2f9e5b; opacity: 0.85; }
+.pay-date {
+  display: grid;
+  justify-items: center;
+  width: 52px;
+  padding: 6px 0;
+  border-radius: 12px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-pressed);
+  line-height: 1.1;
+}
+.pay-date-mon { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+.pay-date-day { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pay-date-wd { font-size: 0.68rem; color: var(--muted); }
+.pay-info { min-width: 0; }
+.pay-loan { font-weight: 600; overflow-wrap: anywhere; }
+.pay-info .sub { color: var(--muted); font-size: 0.82rem; }
+.pay-tile.is-overdue .pay-due { color: var(--danger); }
+.pay-side { display: grid; justify-items: end; gap: 4px; }
+.pay-amt { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Collapsed archive of paid-off loans and finished bills. */
 details.archive {
