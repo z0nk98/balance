@@ -22,6 +22,10 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 **If you forget your passphrase, the data can't be recovered.** Write it down, and use *Download backup* now and then.
 
+## Light or dark
+
+Every page has a theme switch in the header: sun for **Light**, moon for **Dark**, half-circle for **Auto** (follow the device's setting, the default). The choice is remembered on that device for all pages.
+
 ## Using it on a phone
 
 On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Money lent payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are. Long overdue lists on Bills show the three most recent first, with *Show N more*.

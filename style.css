@@ -10,17 +10,19 @@
   --radius: 10px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14161a;
-    --surface: #1e2127;
-    --text: #e8eaed;
-    --muted: #9aa0a8;
-    --border: #2e323a;
-    --accent: #6b9cf0;
-    --danger: #ef6b6b;
-    --warn: #f0a94a;
-  }
+/* Dark colours apply when lib/theme.js sets data-theme="dark" (the
+   person's choice, or their device's setting when they chose Auto). */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14161a;
+  --surface: #1e2127;
+  --text: #e8eaed;
+  --muted: #9aa0a8;
+  --border: #2e323a;
+  --accent: #6b9cf0;
+  --danger: #ef6b6b;
+  --warn: #f0a94a;
 }
 
 * { box-sizing: border-box; }

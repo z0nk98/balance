@@ -29,30 +29,29 @@
     linear-gradient(160deg, #eef2fb, #f5f0fb 50%, #eef8f7);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --glass: rgba(30, 34, 46, 0.5);
-    --glass-strong: rgba(34, 38, 52, 0.66);
-    --glass-inner: rgba(255, 255, 255, 0.05);
-    --glass-edge: rgba(255, 255, 255, 0.14);
-    --glass-shadow: 0 12px 38px rgba(0, 0, 0, 0.4);
-    --border: rgba(255, 255, 255, 0.1);
+:root[data-theme="dark"] {
+  --surface: var(--glass-strong);
+  --glass: rgba(30, 34, 46, 0.5);
+  --glass-strong: rgba(34, 38, 52, 0.66);
+  --glass-inner: rgba(255, 255, 255, 0.05);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 12px 38px rgba(0, 0, 0, 0.4);
+  --border: rgba(255, 255, 255, 0.1);
 
-    --neu-bg: #252a36;
-    --neu-light: rgba(70, 78, 98, 0.55);
-    --neu-dark: rgba(8, 10, 16, 0.75);
+  --neu-bg: #252a36;
+  --neu-light: rgba(70, 78, 98, 0.55);
+  --neu-dark: rgba(8, 10, 16, 0.75);
 
-    --backdrop:
-      radial-gradient(60vmax 60vmax at 8% 0%, rgba(70, 100, 220, 0.4), transparent 60%),
-      radial-gradient(50vmax 50vmax at 100% 18%, rgba(150, 80, 220, 0.32), transparent 60%),
-      radial-gradient(55vmax 55vmax at 85% 100%, rgba(30, 150, 150, 0.3), transparent 60%),
-      radial-gradient(45vmax 45vmax at 0% 85%, rgba(200, 80, 120, 0.24), transparent 60%),
-      linear-gradient(160deg, #0f1220, #141225 50%, #0e1718);
-  }
+  --backdrop:
+    radial-gradient(60vmax 60vmax at 8% 0%, rgba(70, 100, 220, 0.4), transparent 60%),
+    radial-gradient(50vmax 50vmax at 100% 18%, rgba(150, 80, 220, 0.32), transparent 60%),
+    radial-gradient(55vmax 55vmax at 85% 100%, rgba(30, 150, 150, 0.3), transparent 60%),
+    radial-gradient(45vmax 45vmax at 0% 85%, rgba(200, 80, 120, 0.24), transparent 60%),
+    linear-gradient(160deg, #0f1220, #141225 50%, #0e1718)}
 }
 
 html { background: #eef2fb; }
-@media (prefers-color-scheme: dark) { html { background: #0f1220; } }
+:root[data-theme="dark"] { background: #0f1220; }
 
 body {
   background: transparent;
@@ -90,10 +89,8 @@ body::before {
   position: relative;
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 42%);
 }
-@media (prefers-color-scheme: dark) {
-  .card,
-  .stat { background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%); }
-}
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .stat { background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%); }
 
 .topbar {
   position: sticky;
@@ -225,10 +222,8 @@ button.primary {
 button.primary:hover { color: #fff; filter: brightness(1.05); }
 button.primary:active { box-shadow: var(--neu-pressed), inset 0 0 0 999px rgba(0, 0, 0, 0.08); }
 #expenseForm.is-in button.primary { background: linear-gradient(145deg, #3bb36b, #2a8f52); }
-@media (prefers-color-scheme: dark) {
-  /* The dark theme's lighter blue needs deepening for white text. */
-  button.primary { background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 70%, #000), color-mix(in srgb, var(--accent) 58%, #000)); }
-}
+/* The dark theme's lighter blue needs deepening for white text. */
+:root[data-theme="dark"] button.primary { background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 70%, #000), color-mix(in srgb, var(--accent) 58%, #000)); }
 
 button.danger:hover,
 .icon-btn.danger:hover { color: var(--danger); }
@@ -292,11 +287,11 @@ th, td { border-color: var(--border); }
    transparency, the glass becomes nearly solid so text stays readable. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root { --glass: rgba(255, 255, 255, 0.9); }
-  @media (prefers-color-scheme: dark) { :root { --glass: rgba(30, 34, 46, 0.94); } }
+  :root[data-theme="dark"] { --glass: rgba(30, 34, 46, 0.94); }
 }
 @media (prefers-reduced-transparency: reduce) {
   :root { --glass: rgba(255, 255, 255, 0.94); --glass-strong: #fff; }
-  @media (prefers-color-scheme: dark) { :root { --glass: rgba(30, 34, 46, 0.96); --glass-strong: #222634; } }
+  :root[data-theme="dark"] { --glass: rgba(30, 34, 46, 0.96); --glass-strong: #222634; }
 }
 @media (prefers-reduced-motion: reduce) {
   button, .topbar nav a { transition: none; }
@@ -477,3 +472,27 @@ button { min-height: 38px; }
 .tracker-head { flex-wrap: nowrap; align-items: center; }
 .tracker-head > div:first-child { flex: 1 1 0; }
 .tracker-head .badge { flex: none; }
+
+/* Theme switch (Light / Dark / Auto) in the header. */
+.theme-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-pressed);
+}
+.theme-switch button {
+  width: 34px;
+  height: 34px;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+}
+.theme-switch button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, var(--neu-bg)); box-shadow: var(--neu-raised-sm); color: var(--accent); }
+.theme-switch .action-icon svg { width: 18px; height: 18px; }
