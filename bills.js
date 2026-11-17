@@ -159,16 +159,31 @@
     ]);
   }
 
+  const ALERT_PREVIEW = 3;
+  let showAllLate = false;
+
   function renderAlerts(today) {
     const current = Bills.forMonth(state, thisMonth(), today, SOON_DAYS);
     const next = Bills.forMonth(state, Bills.shiftMonth(thisMonth(), 1), today, SOON_DAYS);
     const soon = [...current, ...next].filter((i) => i.status === 'due-soon');
-    const late = [...Bills.overdueBefore(state, thisMonth(), today), ...current.filter((i) => i.status === 'overdue')];
+    // Most recent first; a long list shows the first few until expanded.
+    const late = [...Bills.overdueBefore(state, thisMonth(), today), ...current.filter((i) => i.status === 'overdue')]
+      .sort((a, b) => b.dueDate.localeCompare(a.dueDate));
     const boxes = [];
     if (late.length) {
+      const shown = showAllLate ? late : late.slice(0, ALERT_PREVIEW);
+      const more = late.length - shown.length;
       boxes.push(el('section', { className: 'card alert-card overdue' }, [
-        el('h2', { textContent: `Overdue (${late.length})` }),
-        el('div', { className: 'bill-list' }, late.map((i) => billRow(i, { showMonth: true }))),
+        el('h2', { textContent: `Overdue (${late.length}) · ${money(Bills.totals(late).left)}` }),
+        el('div', { className: 'bill-list' }, shown.map((i) => billRow(i, { showMonth: true }))),
+        late.length > ALERT_PREVIEW
+          ? el('button', {
+            type: 'button',
+            className: 'show-more',
+            textContent: more ? `Show ${more} more` : 'Show fewer',
+            onclick: () => { showAllLate = !showAllLate; render(); },
+          })
+          : '',
       ]));
     }
     if (soon.length) {

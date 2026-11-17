@@ -67,9 +67,14 @@
   let queue = Promise.resolve();
   let saveFailed = false;
 
+  let statusTimer = null;
+
   function setStatus(kind, text) {
     const s = $('saveStatus');
     s.className = `save-status ${kind}`;
+    // "Saved" shows briefly; errors stay until dealt with.
+    clearTimeout(statusTimer);
+    if (kind === 'saved') statusTimer = setTimeout(() => s.classList.add('is-faded'), 2500);
     s.replaceChildren(document.createTextNode(text));
     if (kind === 'error' && !text.includes('Reload')) {
       s.append(' ', el('button', { textContent: 'Try again', onclick: () => persist() }));
@@ -621,7 +626,8 @@
 
   function installmentTable(items) {
     if (!items.length) return el('p', { className: 'empty', textContent: 'No payments yet.' });
-    const head = el('tr', {}, ['Due', 'Loan', 'Amount', 'Paid', 'Left', 'Status', ''].map((h, i) =>
+    const labels = ['Due', 'Loan', 'Amount', 'Paid', 'Left', 'Status', ''];
+    const head = el('tr', {}, labels.map((h, i) =>
       el('th', { className: i >= 2 && i <= 4 ? 'num' : '', textContent: h })));
     const rows = items.map((i) =>
       el('tr', {}, [
@@ -650,7 +656,9 @@
         ]),
       ])
     );
-    return el('div', { className: 'table-wrap' }, [el('table', {}, [el('thead', {}, [head]), el('tbody', {}, rows)])]);
+    // Column names on each cell, so phones can show each row as a labelled card.
+    for (const row of rows) [...row.cells].forEach((td, k) => { td.dataset.label = labels[k]; });
+    return el('div', { className: 'table-wrap' }, [el('table', { className: 'pay-table' }, [el('thead', {}, [head]), el('tbody', {}, rows)])]);
   }
 
   function contactForm(b) {
