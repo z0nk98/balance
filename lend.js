@@ -23,6 +23,7 @@
   const pendingQr = new Map(); // QR file id -> encrypted content, or null to delete
   const pendingPathDeletes = new Set(); // other files to delete on next save (saved borrower updates)
   const openPanels = new Set();
+  const archiveOpen = new Set(); // borrower ids with "Paid off loans" open
   const addPanels = new Map(); // borrower id -> "add a loan" section open?
 
   // ---- Helpers --------------------------------------------------------
@@ -306,14 +307,39 @@
 
     // With a filter on, show only matching payments and open the list.
     const ft = filtered ? Core.totals(shown) : null;
+    // Loans paid in full move to a collapsed "Paid off loans" section.
+    const byLoan = new Map();
+    for (const i of installments) {
+      const name = Core.loanName(i.note);
+      if (!byLoan.has(name)) byLoan.set(name, []);
+      byLoan.get(name).push(i);
+    }
+    const paidOff = new Set([...byLoan].filter(([, items]) => items.every((i) => i.remaining <= 0)).map(([name]) => name));
+    const isPaidOff = (i) => paidOff.has(Core.loanName(i.note));
+    const list = filtered ? shown : installments;
+    const current = list.filter((i) => !isPaidOff(i));
+    const archived = list.filter(isPaidOff);
+    let archive = '';
+    if (archived.length) {
+      archive = el('details', { className: 'archive', open: archiveOpen.has(b.id) || ownerFilters.status === 'paid' }, [
+        el('summary', { textContent: `Paid off loans (${paidOff.size})` }),
+        loansRow(b, installments.filter(isPaidOff)),
+        installmentTable(sortPayments(archived)),
+      ]);
+      archive.addEventListener('toggle', () => {
+        if (archive.open) archiveOpen.add(b.id);
+        else archiveOpen.delete(b.id);
+      });
+    }
     const details = el('details', { open: filtered || openPanels.has(b.id) }, [
       el('summary', { textContent: filtered
         ? `Payments & reminders (showing ${shown.length} of ${installments.length})`
         : `Payments & reminders (${installments.length})` }),
       addSection(b, installments.length),
-      loansRow(b, installments),
+      loansRow(b, installments.filter((i) => !isPaidOff(i))),
       filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` }) : '',
-      installmentTable(sortPayments(filtered ? shown : installments)),
+      current.length || !archived.length ? installmentTable(sortPayments(current)) : (filtered ? '' : el('p', { className: 'empty', textContent: 'Every loan is paid off.' })),
+      archive,
       contactForm(b),
     ]);
     details.addEventListener('toggle', () => {

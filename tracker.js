@@ -90,7 +90,6 @@
 
   // ---- Rendering --------------------------------------------------------
 
-  let show = 'active';
   const openPay = new Set(); // loan ids with the payment form open
   const openHistory = new Set(); // loan ids with the history shown
   let editingId = null;
@@ -265,15 +264,19 @@
     $('sumLoans').textContent = String(active.length);
     $('sumLoansSub').textContent = `active${rows.length > active.length ? ` · ${rows.length - active.length} paid off` : ''}`;
 
-    for (const chip of $('loanFilter').children) chip.classList.toggle('active', chip.dataset.show === show);
-    const shown = rows
-      .filter((r) => show === 'all' || (show === 'done' ? r.s.status === 'done' : r.s.status !== 'done'))
+    const shown = active
       // Behind first, then by the next term's month.
       .sort((a, b) => (b.s.behind > 0) - (a.s.behind > 0) || String(a.s.nextMonth || '9999').localeCompare(String(b.s.nextMonth || '9999')) || a.loan.name.localeCompare(b.loan.name));
     $('loanList').replaceChildren(...shown.map((r) => loanCard(r.loan, r.s)));
+    // Paid-off loans are kept in a collapsed archive, most recent first.
+    const lastPaid = (r) => (r.s.history.length ? r.s.history[r.s.history.length - 1].month : '');
+    const done = rows.filter((r) => r.s.status === 'done').sort((a, b) => lastPaid(b).localeCompare(lastPaid(a)));
+    $('doneList').replaceChildren(...done.map((r) => loanCard(r.loan, r.s)));
+    $('doneWrap').hidden = done.length === 0;
+    $('doneTitle').textContent = `Paid off (${done.length})`;
     $('loanEmpty').hidden = shown.length > 0;
     $('loanEmpty').textContent = rows.length
-      ? (show === 'done' ? 'No loans paid off yet.' : 'Nothing here.')
+      ? 'All your loans are paid off.'
       : 'No loans yet. Add one below: the amount per term, how many terms, and when the first one is due.';
     if (!rows.length) $('loanFormWrap').open = true;
   }
@@ -367,13 +370,6 @@
 
   $('loanCancel').addEventListener('click', () => {
     resetForm();
-    render();
-  });
-
-  $('loanFilter').addEventListener('click', (ev) => {
-    const value = ev.target.closest('[data-show]')?.dataset.show;
-    if (!value) return;
-    show = value;
     render();
   });
 

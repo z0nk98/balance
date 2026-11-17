@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <link rel="stylesheet" href="style.css?v=f45a7ed324">
-  <link rel="stylesheet" href="lending.css?v=f45a7ed324">
-  <link rel="stylesheet" href="theme.css?v=f45a7ed324">
+  <link rel="stylesheet" href="style.css?v=d9b2059f73">
+  <link rel="stylesheet" href="lending.css?v=d9b2059f73">
+  <link rel="stylesheet" href="theme.css?v=d9b2059f73">
 </head>
 <body>
   <header class="topbar">
@@ -29,16 +29,13 @@
     </section>
 
     <section class="card">
-      <div class="list-head">
-        <h2>My loans</h2>
-        <div class="chips" id="loanFilter" role="group" aria-label="Show loans">
-          <button type="button" data-show="active" class="chip active">Active</button>
-          <button type="button" data-show="done" class="chip">Paid off</button>
-          <button type="button" data-show="all" class="chip">All</button>
-        </div>
-      </div>
+      <h2>My loans</h2>
       <div id="loanList" class="tracker-list"></div>
       <p id="loanEmpty" class="empty" hidden></p>
+      <details id="doneWrap" class="archive" hidden>
+        <summary id="doneTitle">Paid off</summary>
+        <div id="doneList" class="tracker-list"></div>
+      </details>
     </section>
 
     <section class="card">
@@ -65,12 +62,12 @@
     <p class="hint tracker-foot">Each payment records the month you paid and how many terms it covered, so paying several terms in one month is counted correctly.</p>
   </main>
 
-  <script src="lib/icons.js?v=f45a7ed324"></script>
-  <script src="lib/loans.js?v=f45a7ed324"></script>
-  <script src="tracker.js?v=f45a7ed324"></script>
-  <script src="lib/core.js?v=f45a7ed324"></script>
-  <script src="lib/merge.js?v=f45a7ed324"></script>
-  <script src="lib/account.js?v=f45a7ed324"></script>
-  <script src="lib/sync.js?v=f45a7ed324"></script>
+  <script src="lib/icons.js?v=d9b2059f73"></script>
+  <script src="lib/loans.js?v=d9b2059f73"></script>
+  <script src="tracker.js?v=d9b2059f73"></script>
+  <script src="lib/core.js?v=d9b2059f73"></script>
+  <script src="lib/merge.js?v=d9b2059f73"></script>
+  <script src="lib/account.js?v=d9b2059f73"></script>
+  <script src="lib/sync.js?v=d9b2059f73"></script>
 </body>
 </html>

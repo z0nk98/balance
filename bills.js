@@ -242,7 +242,13 @@
   // (bills without a set due date last).
   function renderAllBills() {
     const order = (b) => (Bills.hasDueDate(b) ? b.dueDay : 99);
-    const list = [...state.bills].sort((a, b) => order(a) - order(b) || a.name.localeCompare(b.name));
+    const sorted = [...state.bills].sort((a, b) => order(a) - order(b) || a.name.localeCompare(b.name));
+    // Finished bills go to the collapsed "Paid off" archive.
+    const ended = sorted.filter((b) => Bills.isFinished(state, b));
+    const list = sorted.filter((b) => !ended.includes(b));
+    $('endedBills').replaceChildren(...ended.map(allBillRow));
+    $('endedWrap').hidden = ended.length === 0;
+    $('endedTitle').textContent = `Paid off (${ended.length})`;
     for (const type of ['fixed', 'variable']) {
       const group = list.filter((b) => Bills.amountType(b) === type);
       $(`${type}Bills`).replaceChildren(...group.map(allBillRow));

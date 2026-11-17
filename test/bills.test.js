@@ -104,3 +104,11 @@ test('every paid bill is in Expenses exactly once', () => {
   assert.deepStrictEqual(Bills.syncExpenses(bills, exp), { billsChanged: false, expensesChanged: false });
   assert.strictEqual(exp.expenses.length, 4);
 });
+
+test('isFinished: an ended or one-off bill with every payment made', () => {
+  const st = { payments: { 'b1:2026-01': { amount: 1 }, 'b1:2026-02': { amount: 1 }, 'b2:2026-03': { amount: 5 } } };
+  assert.strictEqual(Bills.isFinished(st, bill({ id: 'b1', startMonth: '2026-01', endMonth: '2026-02' })), true);
+  assert.strictEqual(Bills.isFinished(st, bill({ id: 'b1', startMonth: '2026-01', endMonth: '2026-03' })), false);
+  assert.strictEqual(Bills.isFinished(st, bill({ id: 'b1', startMonth: '2026-01' })), false);
+  assert.strictEqual(Bills.isFinished(st, bill({ id: 'b2', startMonth: '2026-03', every: 0 })), true);
+});

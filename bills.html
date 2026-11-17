@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Bills</title>
-  <link rel="stylesheet" href="style.css?v=f45a7ed324">
-  <link rel="stylesheet" href="lending.css?v=f45a7ed324">
-  <link rel="stylesheet" href="theme.css?v=f45a7ed324">
+  <link rel="stylesheet" href="style.css?v=d9b2059f73">
+  <link rel="stylesheet" href="lending.css?v=d9b2059f73">
+  <link rel="stylesheet" href="theme.css?v=d9b2059f73">
 </head>
 <body>
   <header class="topbar">
@@ -87,6 +87,11 @@
       <h3 class="bill-group-title">Variable bills <span id="variableTotal"></span></h3>
       <div id="variableBills" class="bill-list"></div>
       <p id="variableEmpty" class="empty">No variable bills yet (e.g. electricity, water).</p>
+      <details id="endedWrap" class="archive" hidden>
+        <summary id="endedTitle">Paid off</summary>
+        <p class="hint">Bills that have ended with every payment made. Edit one to give it a later last month and it comes back.</p>
+        <div id="endedBills" class="bill-list"></div>
+      </details>
     </section>
 
     <section class="card tools">
@@ -97,12 +102,12 @@
     </section>
   </main>
 
-  <script src="lib/icons.js?v=f45a7ed324"></script>
-  <script src="lib/bills.js?v=f45a7ed324"></script>
-  <script src="bills.js?v=f45a7ed324"></script>
-  <script src="lib/core.js?v=f45a7ed324"></script>
-  <script src="lib/merge.js?v=f45a7ed324"></script>
-  <script src="lib/account.js?v=f45a7ed324"></script>
-  <script src="lib/sync.js?v=f45a7ed324"></script>
+  <script src="lib/icons.js?v=d9b2059f73"></script>
+  <script src="lib/bills.js?v=d9b2059f73"></script>
+  <script src="bills.js?v=d9b2059f73"></script>
+  <script src="lib/core.js?v=d9b2059f73"></script>
+  <script src="lib/merge.js?v=d9b2059f73"></script>
+  <script src="lib/account.js?v=d9b2059f73"></script>
+  <script src="lib/sync.js?v=d9b2059f73"></script>
 </body>
 </html>

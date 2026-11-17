@@ -6,9 +6,9 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <link rel="stylesheet" href="style.css?v=f45a7ed324">
-  <link rel="stylesheet" href="lending.css?v=f45a7ed324">
-  <link rel="stylesheet" href="theme.css?v=f45a7ed324">
+  <link rel="stylesheet" href="style.css?v=d9b2059f73">
+  <link rel="stylesheet" href="lending.css?v=d9b2059f73">
+  <link rel="stylesheet" href="theme.css?v=d9b2059f73">
 </head>
 <body>
   <header class="topbar">
@@ -62,6 +62,10 @@
       <section class="card" id="loansSection" hidden>
         <h2>My loans</h2>
         <div id="loanList" class="loan-list"></div>
+        <details id="loansDoneWrap" class="archive" hidden>
+          <summary id="loansDoneTitle">Paid off</summary>
+          <div id="loansDone" class="loan-list"></div>
+        </details>
       </section>
 
       <section class="card">
@@ -123,8 +127,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=f45a7ed324"></script>
-  <script src="lib/core.js?v=f45a7ed324"></script>
-  <script src="borrow.js?v=f45a7ed324"></script>
+  <script src="lib/icons.js?v=d9b2059f73"></script>
+  <script src="lib/core.js?v=d9b2059f73"></script>
+  <script src="borrow.js?v=d9b2059f73"></script>
 </body>
 </html>

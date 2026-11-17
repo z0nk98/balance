@@ -50,6 +50,7 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Add a borrower.** You get a code like `K7QM-3XRP-T8WD` and a *Copy invite* button with the link. *Show code* shows it again anytime. *Change code* replaces it and the old one stops working. To pick a code yourself, tick *I'll choose the code* when adding a borrower (or use *Change code*). Chosen codes are **exact**: small letters, capitals and symbols all count (e.g. `lang.88!Blue`), so borrowers must type them exactly. They need 8–40 characters with at least one letter and one number, no spaces, and must differ from other borrowers' codes; you're warned if one is short, contains the borrower's name, or uses only capitals and numbers. Generated codes, and custom codes made before this change, ignore case, spaces and dashes. The site is public, so a guessable code lets others see that borrower's balance; leave it blank for a strong random code.
 - **Add a loan.** Enter the amount, number of months and first due date; it's split into monthly payments. Or add single payments.
 - **Record payments** with *Mark paid* or *Record payment* (partial).
+- **Paid-off loans** move into a collapsed *Paid off loans* section in each borrower's card (it opens by itself under the *Paid* filter). Borrowers see theirs under a collapsed *Paid off* in *My loans*.
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
 
 ## Expenses: money in and out
@@ -63,6 +64,7 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 - **Add a bill** as **Fixed** (same amount every time, e.g. rent) or **Variable** (changes, e.g. electricity: enter an estimate, and the actual amount when you pay). Give it a due day, or tick **No set due date** to pay any time in the month. Then set how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
 - **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
 - **Mark paid** asks for the amount actually paid. Every paid bill counts as **money out** on the Expenses page, tagged *Bill*. The two pages stay in step: undoing on Bills removes it from Expenses, and deleting or editing it on Expenses marks the bill unpaid or updates its amount.
+- **Finished bills** (ones with a last month, or one-off bills, where every payment was made) move into a collapsed *Paid off* list under *All bills*.
 - Bills are stored in this browser, like expenses, and synced to your other devices if sync is on (see below). *Download backup* and *Restore backup* still work for keeping a copy.
 
 ## Tracker: loans you are paying off
@@ -72,6 +74,7 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 - **Add a loan** with the amount per term, the number of terms (e.g. 18), and the month the first term is due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
 - **Record payment** asks for the month you paid, how many terms it covers and the amount (filled in as terms × amount per term; change it if you paid something different). Paying three terms in one month counts as three terms.
 - Each loan shows terms paid out of the total, a box per term (green paid, red overdue, blue next), what's paid and left, the next term and its month, and whether you're **behind**, **on track**, **ahead** or **paid off**. *Payment history* lists each payment with the terms it covered.
+- Loans you've paid off move into a collapsed *Paid off* list below the others.
 - The totals at the top show what's left on all loans, what's overdue by this month, and what you paid this month.
 
 ## Syncing expenses and bills across devices

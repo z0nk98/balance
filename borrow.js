@@ -290,7 +290,7 @@
       if (!loans.has(name)) loans.set(name, []);
       loans.get(name).push(i);
     }
-    $('loanList').replaceChildren(...[...loans].map(([name, items]) => {
+    const card = ([name, items]) => {
       const b = Core.loanBreakdown(items);
       const left = items.reduce((s, i) => s + i.remaining, 0);
       const amounts = new Set(items.map((i) => i.amount));
@@ -306,7 +306,17 @@
           ['Left to pay', left > 0 ? maskedMoney(left) : 'Paid in full'],
         ].map(([k, v]) => el('div', {}, [el('dt', { textContent: k }), el('dd', { textContent: v })]))),
       ]);
-    }));
+    };
+    // Loans paid in full go to a collapsed "Paid off" list.
+    const paidOff = ([, items]) => items.every((i) => i.remaining <= 0);
+    const all = [...loans];
+    const done = all.filter(paidOff);
+    const open = all.filter((l) => !paidOff(l));
+    $('loanList').replaceChildren(...open.map(card));
+    $('loanList').hidden = open.length === 0;
+    $('loansDone').replaceChildren(...done.map(card));
+    $('loansDoneWrap').hidden = done.length === 0;
+    $('loansDoneTitle').textContent = `Paid off (${done.length})`;
     $('loansSection').hidden = loans.size === 0;
   }
 

@@ -124,6 +124,17 @@ details.add-panel,
 }
 .loan-editor { background-color: color-mix(in srgb, var(--accent) 8%, var(--glass-inner)); border-color: var(--accent); }
 
+/* Collapsed archive of paid-off loans and finished bills. */
+details.archive {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px dashed var(--glass-edge);
+  border-radius: 14px;
+  background-color: var(--glass-inner);
+}
+details.archive > summary { color: var(--muted); font-weight: 600; }
+details.archive[open] > summary { margin-bottom: 10px; }
+
 /* ---- Fields: frosted and slightly sunk in ------------------------------- */
 
 input,
