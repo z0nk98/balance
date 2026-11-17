@@ -245,9 +245,9 @@
       el('div', { className: 'bill-side' }, [
         el('div', { className: 'amt', textContent: amountText(b.amount, Bills.amountType(b), false) }),
         el('div', { className: 'btn-row' }, [
-          el('button', { type: 'button', textContent: 'Edit', onclick: () => startEdit(b) }),
-          el('button', { type: 'button', textContent: b.paused ? 'Resume' : 'Pause', onclick: () => { b.paused = !b.paused; save(); render(); } }),
-          el('button', { type: 'button', className: 'danger', textContent: 'Delete', onclick: () => removeBill(b) }),
+          PayIcons.iconButton('edit', `Edit ${b.name}`, () => startEdit(b)),
+          PayIcons.iconButton(b.paused ? 'resume' : 'pause', `${b.paused ? 'Resume' : 'Pause'} ${b.name}`, () => { b.paused = !b.paused; save(); render(); }),
+          PayIcons.iconButton('delete', `Delete ${b.name}`, () => removeBill(b), 'danger'),
         ]),
       ]),
     ]);

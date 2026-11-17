@@ -247,8 +247,8 @@
           ]),
           el('span', { className: `amt ${incoming ? 'money-in' : ''}`, textContent: `${incoming ? '+' : '−'}${money(e.amount)}` }),
           el('div', { className: 'actions' }, [
-            el('button', { textContent: 'Edit', onclick: () => startEdit(e.id) }),
-            el('button', { className: 'del', textContent: 'Delete', onclick: () => remove(e.id) }),
+            PayIcons.iconButton('edit', `Edit ${e.category}${e.note ? ` (${e.note})` : ''}`, () => startEdit(e.id)),
+            PayIcons.iconButton('delete', `Delete ${e.category}${e.note ? ` (${e.note})` : ''}`, () => remove(e.id), 'danger'),
           ]),
         ]);
       })
