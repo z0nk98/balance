@@ -28,14 +28,52 @@
   }
 
   let state = readJson(LOANS_KEY, Loans.emptyState());
+  // The data as last saved, so the change just made can be undone.
+  let lastSaved = JSON.stringify(state);
 
-  function save() {
+  function write(json) {
     try {
-      localStorage.setItem(LOANS_KEY, JSON.stringify(state));
+      localStorage.setItem(LOANS_KEY, json);
       window.BalanceSync?.changed();
+      return true;
     } catch {
       alert('Couldn’t save on this device (storage is full or blocked).');
+      return false;
     }
+  }
+
+  // Saves, then shows `message` with an Undo button for a few seconds.
+  function save(message = 'Saved') {
+    const before = lastSaved;
+    const json = JSON.stringify(state);
+    if (!write(json)) return;
+    lastSaved = json;
+    showUndo(message, before);
+  }
+
+  let undoTimer = null;
+
+  function showUndo(message, before) {
+    const bar = $('undoBar');
+    clearTimeout(undoTimer);
+    bar.className = 'save-status saved';
+    bar.replaceChildren(document.createTextNode(message), ' ', el('button', {
+      type: 'button',
+      textContent: 'Undo',
+      onclick: () => {
+        clearTimeout(undoTimer);
+        state = { ...Loans.emptyState(), ...JSON.parse(before) };
+        if (!write(before)) return;
+        lastSaved = before;
+        openPay.clear();
+        if (editingId && !state.loans.some((l) => l.id === editingId)) resetForm();
+        render();
+        bar.replaceChildren(document.createTextNode('Undone'));
+        undoTimer = setTimeout(() => bar.classList.add('is-faded'), 2500);
+      },
+    }));
+    // Long enough to notice and tap.
+    undoTimer = setTimeout(() => bar.classList.add('is-faded'), 8000);
   }
 
   // ---- Helpers ----------------------------------------------------------
@@ -153,7 +191,7 @@
         return;
       }
       openPay.delete(loan.id);
-      save();
+      save('Payment saved');
       render();
     });
     return form;
@@ -176,7 +214,7 @@
         iconButton('delete', `Delete the ${monthLabel(p.month)} payment`, () => {
           if (!confirm(`Delete the ${money(p.amount)} payment from ${monthLabel(p.month)}?`)) return;
           state.payments = state.payments.filter((x) => x.id !== p.id);
-          save();
+          save('Payment deleted');
           render();
         }, 'danger'),
       ]));
@@ -328,7 +366,7 @@
       if (already !== undefined && !confirm(`${monthLabel(p.month)} already has ${money(already)} paid. Add ${money(p.amount)} more?`)) return;
       state.payments.push({ id: newId(), loanId: bill.id, ...p, created: Date.now() });
       openPay.delete(bill.id);
-      save();
+      save('Payment saved');
       render();
     });
     return form;
@@ -346,7 +384,7 @@
         iconButton('delete', `Delete the ${monthLabel(p.month)} payment`, () => {
           if (!confirm(`Delete the ${money(p.amount)} payment for ${monthLabel(p.month)}?`)) return;
           state.payments = state.payments.filter((x) => x.id !== p.id);
-          save();
+          save('Payment deleted');
           render();
         }, 'danger'),
       ]));
@@ -576,7 +614,7 @@
       alert(err.message);
       return;
     }
-    save();
+    save('Payment saved');
     render();
   }
 
@@ -591,14 +629,27 @@
       alert(err.message);
       return;
     }
-    save();
+    save('Payment saved');
+    render();
+  }
+
+  // Fixed: removes the payment that covered this term. Terms count in order,
+  // so the terms paid drop by however many that payment covered.
+  function undoFixed(loan, termNo) {
+    const s = Loans.summary(loan, state.payments, thisMonth());
+    const h = s.history.find((x) => x.fromTerm && x.fromTerm <= termNo && x.toTerm >= termNo);
+    if (!h) return;
+    const terms = h.terms === 1 ? `term ${h.fromTerm}` : `terms ${h.fromTerm}–${h.toTerm}`;
+    if (!confirm(`Undo the ${money(h.amount)} payment from ${monthLabel(h.month)} that covered ${terms} of ${loan.name}? Terms paid go from ${s.termsPaid} to ${s.termsPaid - h.terms}.`)) return;
+    state.payments = state.payments.filter((p) => p.id !== h.id);
+    save(`${loan.name} payment undone`);
     render();
   }
 
   function undoVariable(loan, month) {
     if (!confirm(`Mark ${loan.name} for ${monthLabel(month)} as not paid? Its payment will be deleted.`)) return;
     state.payments = state.payments.filter((p) => !(p.loanId === loan.id && p.month === month));
-    save();
+    save(`${loan.name} marked not paid`);
     render();
   }
 
@@ -617,8 +668,13 @@
           ? payVariable(loan, item.month, item.amount)
           : payFixed(loan, item.cover, item.termNo - item.cover + 1, item.month < thisMonth() ? item.month : thisMonth())),
       });
-    } else if (item.variable) {
-      action = el('button', { type: 'button', textContent: 'Undo', onclick: () => undoVariable(loan, item.month) });
+    } else {
+      action = el('button', {
+        type: 'button',
+        textContent: 'Undo',
+        title: 'Mark as not paid',
+        onclick: () => (item.variable ? undoVariable(loan, item.month) : undoFixed(loan, item.termNo)),
+      });
     }
     return el('div', { className: `bill-item status-${item.status}` }, [
       iconFor(loan),
@@ -886,7 +942,7 @@
     state.loans = state.loans.filter((l) => l.id !== loan.id);
     state.payments = state.payments.filter((p) => p.loanId !== loan.id);
     if (editingId === loan.id) resetForm();
-    save();
+    save(`${loan.name} deleted`);
     render();
   }
 
@@ -909,9 +965,10 @@
     } else {
       state.loans.push({ id: newId(), ...loan, created: Date.now() });
     }
+    const message = editingId ? `${loan.name} updated` : `${loan.name} added`;
     resetForm();
     $('loanFormWrap').open = false;
-    save();
+    save(message);
     render();
   });
 
@@ -922,7 +979,10 @@
 
   // Another tab, or a sync from another device, changed the data.
   window.addEventListener('storage', (ev) => {
-    if (ev.key === LOANS_KEY) state = readJson(LOANS_KEY, Loans.emptyState());
+    if (ev.key === LOANS_KEY) {
+      state = readJson(LOANS_KEY, Loans.emptyState());
+      lastSaved = JSON.stringify(state);
+    }
     if (ev.key === LOANS_KEY || ev.key === EXPENSES_KEY) render();
   });
 
