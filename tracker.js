@@ -550,6 +550,181 @@
     render();
   });
 
+  // ---- Month view ----------------------------------------------------------
+  // Like the Bills page: pick a month and see what's due, paid and left.
+  const VIEW_KEY = 'tracker-view:v1';
+  let view = localStorage.getItem(VIEW_KEY) === 'all' ? 'all' : 'month';
+  let viewMonth = thisMonth();
+  let monthStatus = 'all';
+  const ITEM_STATUS = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due this month', upcoming: 'Upcoming' };
+
+  // A picture for the row: loans get the loan icon, bills a guess from the name.
+  function iconFor(loan) {
+    if (!Loans.isVariable(loan)) return PayIcons.billIcon('loan');
+    const t = `${loan.name} ${loan.lender}`.toLowerCase();
+    const guess = [
+      ['electricity', /electric|meralco|veco|davao light|power|kuryente/],
+      ['water', /water|maynilad|tubig/],
+      ['internet', /internet|wifi|wi-fi|pldt|converge|globe at home|sky ?cable|fiber|broadband/],
+      ['mobile', /mobile|phone|postpaid|load|smart|globe|dito/],
+      ['rent', /rent|upa|condo|apartment|dues/],
+      ['card', /credit card|card/],
+      ['insurance', /insurance|philhealth|pag-?ibig|sss/],
+      ['subscription', /netflix|spotify|youtube|disney|subscription/],
+      ['school', /school|tuition/],
+    ].find(([, re]) => re.test(t));
+    return PayIcons.billIcon(guess ? guess[0] : 'other');
+  }
+
+  const dueDayText = (item) => (item.dueDay ? `Due on the ${ordinal(item.dueDay)}` : 'Due anytime in the month');
+  const amountOf = (item) => (item.amount === null ? 'Varies' : (item.estimated ? `~${money(item.amount)}` : money(item.amount)));
+
+  // Fixed: one payment covering the term(s) up to this one.
+  function payFixed(loan, cover, firstTerm, paidMonth) {
+    const last = firstTerm + cover - 1;
+    const terms = cover === 1 ? `term ${firstTerm}` : `terms ${firstTerm}–${last}`;
+    const input = prompt(`Amount paid for ${loan.name}, ${terms} of ${loan.terms}${cover > 1 ? ` (${cover} terms)` : ''}:`, (Math.round(cover * loan.termAmount * 100) / 100).toFixed(2));
+    if (input === null) return;
+    try {
+      const p = Loans.cleanPayment({ month: paidMonth, terms: cover, amount: input, note: '' }, loan);
+      state.payments.push({ id: newId(), loanId: loan.id, ...p, created: Date.now() });
+    } catch (err) {
+      alert(err.message);
+      return;
+    }
+    save();
+    render();
+  }
+
+  // Variable: the actual amount for one bill month.
+  function payVariable(loan, month, guess) {
+    const input = prompt(`How much was ${loan.name} for ${monthLabel(month)}?${guess !== null ? ` Estimate: ${money(guess)}` : ''}`, guess !== null ? guess.toFixed(2) : '');
+    if (input === null) return;
+    try {
+      const p = Loans.cleanVariablePayment({ month, amount: input, note: '' }, loan);
+      state.payments.push({ id: newId(), loanId: loan.id, ...p, created: Date.now() });
+    } catch (err) {
+      alert(err.message);
+      return;
+    }
+    save();
+    render();
+  }
+
+  function undoVariable(loan, month) {
+    if (!confirm(`Mark ${loan.name} for ${monthLabel(month)} as not paid? Its payment will be deleted.`)) return;
+    state.payments = state.payments.filter((p) => !(p.loanId === loan.id && p.month === month));
+    save();
+    render();
+  }
+
+  function monthRow(item) {
+    const loan = item.loan;
+    const name = loan.name + (item.variable ? '' : ` · term ${item.termNo} of ${loan.terms}`);
+    const kind = item.variable ? 'Varies each month' : 'Fixed amount';
+    const sub2 = [kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
+    let action = null;
+    if (!item.paid) {
+      action = el('button', {
+        type: 'button', className: 'primary',
+        textContent: item.variable ? 'Mark paid' : (item.cover > 1 ? `Pay ${item.cover} terms` : 'Mark paid'),
+        title: item.cover > 1 ? `Terms are paid in order, so this also covers ${plural(item.cover - 1, 'earlier unpaid term')}` : '',
+        onclick: () => (item.variable
+          ? payVariable(loan, item.month, item.amount)
+          : payFixed(loan, item.cover, item.termNo - item.cover + 1, item.month < thisMonth() ? item.month : thisMonth())),
+      });
+    } else if (item.variable) {
+      action = el('button', { type: 'button', textContent: 'Undo', onclick: () => undoVariable(loan, item.month) });
+    }
+    return el('div', { className: `bill-item status-${item.status}` }, [
+      iconFor(loan),
+      el('div', { className: 'bill-main' }, [
+        el('div', { className: 'bill-name', textContent: name }),
+        el('div', { className: 'sub', textContent: dueDayText(item) }),
+        el('div', { className: 'sub', textContent: sub2 }),
+      ]),
+      el('div', { className: 'bill-side' }, [
+        el('div', { className: 'amt', textContent: amountOf(item) }),
+        el('span', { className: `badge ${item.status}`, textContent: ITEM_STATUS[item.status] }),
+        action,
+      ]),
+    ]);
+  }
+
+  function earlierRow(e) {
+    const loan = e.loan;
+    const months = e.months.length > 4 ? `${monthList(e.months.slice(0, 3))} and ${e.months.length - 3} more` : monthList(e.months);
+    const pay = e.variable
+      ? el('button', { type: 'button', className: 'primary', textContent: `Pay ${monthLabel(e.months[0], true)}`, onclick: () => payVariable(loan, e.months[0], Loans.variableSummary(loan, state.payments, thisMonth()).guess) })
+      : el('button', { type: 'button', className: 'primary', textContent: e.months.length > 1 ? `Pay ${e.months.length} terms` : 'Pay', onclick: () => payFixed(loan, e.months.length, Loans.summary(loan, state.payments, thisMonth()).termsPaid + 1, thisMonth()) });
+    return el('div', { className: 'bill-item compact status-overdue' }, [
+      iconFor(loan),
+      el('div', { className: 'bill-main' }, [
+        el('div', { className: 'bill-name', textContent: loan.name }),
+        el('div', { className: 'sub', textContent: `Not paid: ${months}` }),
+      ]),
+      el('div', { className: 'bill-side' }, [
+        el('div', { className: 'amt', textContent: e.amount === null ? plural(e.months.length, 'month') : `${e.estimated ? '~' : ''}${money(e.amount)}` }),
+        pay,
+      ]),
+    ]);
+  }
+
+  function renderMonth() {
+    const now = thisMonth();
+    const todayDay = new Date().getDate();
+    const label = monthLabel(viewMonth);
+    $('monthLabel').textContent = label;
+    $('monthTitle').textContent = viewMonth === now ? 'This month' : label;
+    $('todayBtn').hidden = viewMonth === now;
+    $('mDueLabel').textContent = viewMonth === now ? 'Due this month' : `Due in ${label.split(' ')[0]}`;
+
+    const items = Loans.monthItems(state, viewMonth, now, todayDay);
+    const sum = (list) => list.reduce((t, i) => t + (i.amount || 0), 0);
+    const paidItems = items.filter((i) => i.paid);
+    const unpaidItems = items.filter((i) => !i.paid);
+    const overdueItems = items.filter((i) => i.status === 'overdue');
+    const earlier = viewMonth === now ? Loans.unpaidBefore(state, viewMonth, now) : [];
+    const estimated = unpaidItems.some((i) => i.estimated);
+
+    $('mDue').textContent = money(sum(items));
+    $('mDueSub').textContent = items.length ? `${items.length} ${items.length === 1 ? 'bill or loan' : 'bills & loans'}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
+    $('mPaid').textContent = money(sum(paidItems));
+    $('mPaidSub').textContent = items.length ? `${paidItems.length} of ${items.length}` : '';
+    $('mLeft').textContent = money(sum(unpaidItems));
+    $('mLeftSub').textContent = unpaidItems.length ? `${unpaidItems.length} to pay${estimated ? ' · estimated' : ''}` : (items.length ? 'All paid' : '');
+    const overAmount = sum(overdueItems) + earlier.reduce((t, e) => t + (e.amount || 0), 0);
+    const overCount = overdueItems.length + earlier.reduce((t, e) => t + e.months.length, 0);
+    $('mOver').textContent = money(overAmount);
+    $('mOver').classList.toggle('danger', overCount > 0);
+    $('mOverSub').textContent = overCount ? `${plural(overCount, 'payment')}${earlier.length ? ' incl. earlier months' : ''}` : 'None';
+
+    for (const c of document.querySelectorAll('#monthStatus .chip')) c.classList.toggle('active', c.dataset.status === monthStatus);
+    const shownEarlier = monthStatus === 'paid' ? [] : earlier;
+    $('earlierWrap').hidden = shownEarlier.length === 0;
+    $('earlierList').replaceChildren(...shownEarlier.map(earlierRow));
+    const total = shownEarlier.reduce((t, e) => t + (e.amount || 0), 0);
+    $('earlierTotal').textContent = total ? `(${shownEarlier.some((e) => e.estimated) ? '~' : ''}${money(total)})` : '';
+    const shown = items.filter((i) => monthStatus === 'all' || (monthStatus === 'paid' ? i.paid : !i.paid));
+    $('monthList').replaceChildren(...shown.map(monthRow));
+    $('monthEmpty').hidden = shown.length > 0;
+    $('monthEmpty').textContent = !items.length
+      ? `Nothing due in ${label}.`
+      : (monthStatus === 'paid' ? 'Nothing paid yet this month.' : 'Everything due this month is paid.');
+  }
+
+  function setView(v) {
+    view = v;
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* still applies now */ }
+    render();
+  }
+
+  for (const b of document.querySelectorAll('#viewToggle button')) b.addEventListener('click', () => setView(b.dataset.view));
+  for (const c of document.querySelectorAll('#monthStatus .chip')) c.addEventListener('click', () => { monthStatus = c.dataset.status; render(); });
+  $('prevMonth').addEventListener('click', () => { viewMonth = Loans.addMonths(viewMonth, -1); render(); });
+  $('nextMonth').addEventListener('click', () => { viewMonth = Loans.addMonths(viewMonth, 1); render(); });
+  $('todayBtn').addEventListener('click', () => { viewMonth = thisMonth(); render(); });
+
   const card = (r) => (Loans.isVariable(r.loan) ? variableCard(r.loan, r.s) : loanCard(r.loan, r.s));
 
   function render() {
@@ -620,6 +795,16 @@
     else if (on) $('loanEmpty').textContent = pickedDone.length ? 'Only paid-off ones match: see Paid off below.' : 'Nothing matches these filters.';
     else $('loanEmpty').textContent = 'Everything here is paid off.';
     if (!rows.length) $('loanFormWrap').open = true;
+
+    // Which view is showing.
+    const byMonth = view === 'month';
+    for (const b of document.querySelectorAll('#viewToggle button')) b.classList.toggle('active', b.dataset.view === view);
+    $('monthNav').hidden = !byMonth;
+    $('monthStats').hidden = !byMonth;
+    $('monthCard').hidden = !byMonth;
+    $('allStats').hidden = byMonth;
+    $('allCard').hidden = byMonth;
+    if (byMonth) renderMonth();
   }
 
   // ---- Adding / editing bills and loans -------------------------------------
@@ -696,7 +881,7 @@
   function resetForm() {
     form.reset();
     editingId = null;
-    inputs.firstMonth.value = thisMonth();
+    inputs.firstMonth.value = view === 'month' ? viewMonth : thisMonth();
     $('formTitle').textContent = 'Add a bill or loan';
     $('loanSubmit').textContent = 'Add';
     $('loanCancel').hidden = true;

@@ -359,3 +359,8 @@ details.add-panel[open] summary { margin-bottom: 6px; }
 .tracker-history li > div:first-child { flex: 1; min-width: 0; }
 .tracker-history .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
 .tracker-foot { margin-top: 4px; }
+
+/* Tracker: month view */
+.view-toggle { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 360px); margin: 0 0 14px; }
+#earlierList .bill-item:last-child { border-bottom: 1px solid var(--border); }
+.bill-item .est { color: var(--muted); font-weight: 500; }

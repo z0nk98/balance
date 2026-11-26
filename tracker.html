@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=11324c9de6"></script>
-  <link rel="stylesheet" href="style.css?v=11324c9de6">
-  <link rel="stylesheet" href="lending.css?v=11324c9de6">
-  <link rel="stylesheet" href="theme.css?v=11324c9de6">
+  <script src="lib/theme.js?v=b4a8a0fc51"></script>
+  <link rel="stylesheet" href="style.css?v=b4a8a0fc51">
+  <link rel="stylesheet" href="lending.css?v=b4a8a0fc51">
+  <link rel="stylesheet" href="theme.css?v=b4a8a0fc51">
 </head>
 <body>
   <header class="topbar">
@@ -19,17 +19,53 @@
       <a href="tracker.html" class="active">Tracker</a>
       <a href="lend.html">Money lent</a>
     </nav>
+    <div class="month-nav" id="monthNav">
+      <button id="prevMonth" aria-label="Previous month">&lsaquo;</button>
+      <span id="monthLabel"></span>
+      <button id="nextMonth" aria-label="Next month">&rsaquo;</button>
+    </div>
   </header>
 
   <main>
-    <section class="stats four">
+    <div class="type-toggle view-toggle" id="viewToggle" role="group" aria-label="View">
+      <button type="button" data-view="month" class="active">By month</button>
+      <button type="button" data-view="all">All bills &amp; loans</button>
+    </div>
+
+    <section class="stats four" id="monthStats">
+      <div class="stat"><span class="stat-label" id="mDueLabel">Due this month</span><span class="stat-value" id="mDue"></span><span class="stat-sub" id="mDueSub"></span></div>
+      <div class="stat"><span class="stat-label">Paid</span><span class="stat-value" id="mPaid"></span><span class="stat-sub" id="mPaidSub"></span></div>
+      <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="mLeft"></span><span class="stat-sub" id="mLeftSub"></span></div>
+      <div class="stat"><span class="stat-label">Overdue</span><span class="stat-value" id="mOver"></span><span class="stat-sub" id="mOverSub"></span></div>
+    </section>
+
+    <section class="card" id="monthCard">
+      <div class="list-head">
+        <h2 id="monthTitle">This month</h2>
+        <button type="button" id="todayBtn" class="linkish" hidden>Back to this month</button>
+      </div>
+      <div class="chips" id="monthStatus" role="group" aria-label="Filter by status">
+        <button type="button" data-status="all" class="chip active">All</button>
+        <button type="button" data-status="unpaid" class="chip">Unpaid</button>
+        <button type="button" data-status="paid" class="chip">Paid</button>
+      </div>
+      <div id="earlierWrap" hidden>
+        <h3 class="bill-group-title">Still unpaid from earlier months <span id="earlierTotal"></span></h3>
+        <div id="earlierList" class="bill-list"></div>
+        <h3 class="bill-group-title" id="monthGroupTitle">Due this month</h3>
+      </div>
+      <div id="monthList" class="bill-list"></div>
+      <p id="monthEmpty" class="empty" hidden></p>
+    </section>
+
+    <section class="stats four" id="allStats">
       <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="sumLeft"></span><span class="stat-sub" id="sumLeftSub"></span></div>
       <div class="stat"><span class="stat-label">Due by this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumDueSub"></span></div>
       <div class="stat"><span class="stat-label" id="paidLabel">Paid this month</span><span class="stat-value" id="sumPaid"></span><span class="stat-sub" id="sumPaidSub"></span></div>
       <div class="stat"><span class="stat-label">Bills &amp; loans</span><span class="stat-value" id="sumLoans"></span><span class="stat-sub" id="sumLoansSub"></span></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="allCard">
       <div class="list-head">
         <h2>My bills &amp; loans</h2>
       </div>
@@ -108,12 +144,12 @@
     <p class="hint tracker-foot">Fixed-amount bills and loans: each payment records the month you paid and how many months (terms) it covered, so paying several at once is counted correctly. Bills that vary: record the actual amount for each month.</p>
   </main>
 
-  <script src="lib/icons.js?v=11324c9de6"></script>
-  <script src="lib/loans.js?v=11324c9de6"></script>
-  <script src="tracker.js?v=11324c9de6"></script>
-  <script src="lib/core.js?v=11324c9de6"></script>
-  <script src="lib/merge.js?v=11324c9de6"></script>
-  <script src="lib/account.js?v=11324c9de6"></script>
-  <script src="lib/sync.js?v=11324c9de6"></script>
+  <script src="lib/icons.js?v=b4a8a0fc51"></script>
+  <script src="lib/loans.js?v=b4a8a0fc51"></script>
+  <script src="tracker.js?v=b4a8a0fc51"></script>
+  <script src="lib/core.js?v=b4a8a0fc51"></script>
+  <script src="lib/merge.js?v=b4a8a0fc51"></script>
+  <script src="lib/account.js?v=b4a8a0fc51"></script>
+  <script src="lib/sync.js?v=b4a8a0fc51"></script>
 </body>
 </html>

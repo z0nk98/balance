@@ -86,3 +86,34 @@ test('variable bills with an end month finish, and payments are checked', () => 
   assert.throws(() => Loans.cleanVariablePayment({ month: '2026-10', amount: '' }, b), /amount/);
   assert.throws(() => Loans.cleanVariable({ name: 'x', firstMonth: '2026-01', months: '0' }), /between 1 and 360/);
 });
+
+test('month view: what is due, paid and overdue in a month', () => {
+  const st = {
+    loans: [L, bill],
+    payments: [pay('a', '2026-06', 2), bpay('e', '2026-10', 2900)],
+  };
+  // November, on the 25th: phone term 6 (terms 3-5 unpaid before it); electricity unpaid, due on the 20th.
+  const nov = Loans.monthItems(st, '2026-11', '2026-11', 25);
+  const phone = nov.find((i) => i.loan.id === 'L1');
+  assert.equal(phone.termNo, 6);
+  assert.equal(phone.paid, false);
+  assert.equal(phone.cover, 4); // terms 3 to 6
+  assert.equal(phone.status, 'due-soon'); // no due day
+  const elec = nov.find((i) => i.loan.id === 'B1');
+  assert.equal(elec.status, 'overdue'); // past the 20th
+  assert.equal(elec.amount, 2500);
+  assert.equal(elec.estimated, true);
+  // October: electricity paid with the actual amount; phone term 5 overdue.
+  const oct = Loans.monthItems(st, '2026-10', '2026-11', 25);
+  assert.deepEqual(oct.map((i) => [i.loan.id, i.status, i.amount]), [['L1', 'overdue', 1500], ['B1', 'paid', 2900]]);
+  // Paid terms show as paid in their month; months outside a loan are left out.
+  assert.equal(Loans.monthItems(st, '2026-07', '2026-11', 1).find((i) => i.loan.id === 'L1').status, 'paid');
+  assert.equal(Loans.monthItems(st, '2026-05', '2026-11', 1).length, 0);
+  assert.equal(Loans.monthItems(st, '2027-01', '2026-11', 1).find((i) => i.loan.id === 'L1').status, 'upcoming');
+  // Still unpaid from earlier months.
+  const early = Loans.unpaidBefore(st, '2026-11', '2026-11');
+  assert.deepEqual(early.map((e) => [e.loan.id, e.months, e.amount]), [
+    ['B1', ['2026-08', '2026-09'], 5000],
+    ['L1', ['2026-08', '2026-09', '2026-10'], 4500],
+  ]);
+});
