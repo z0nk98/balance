@@ -725,7 +725,8 @@
     $('mDue').textContent = money(t.due);
     $('mDueSub').textContent = items.length ? `${items.length} ${items.length === 1 ? 'bill or loan' : 'bills & loans'}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
     $('mPaid').textContent = money(t.paid);
-    $('mPaidSub').textContent = items.length ? `${t.paidCount} of ${items.length}${t.partial.length ? ` · ${plural(t.partial.length, 'partial payment')}` : ''}` : '';
+    $('mPaidLabel').textContent = viewMonth === now ? 'Paid this month' : `Paid in ${label.split(' ')[0]}`;
+    $('mPaidSub').textContent = t.payments.length ? `${plural(t.payments.length, 'payment')} logged` : (items.length ? 'Nothing logged yet' : '');
     $('mLeft').textContent = money(t.left);
     $('mLeftSub').textContent = t.unpaidCount ? `${t.unpaidCount} to pay${estimated ? ' · estimated' : ''}` : (items.length ? 'All paid' : '');
     $('mOver').textContent = money(t.overdue);

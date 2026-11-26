@@ -66,9 +66,9 @@ If you named the site repo something other than `balance`, change `repo` in `con
 The Expenses page (`index.html`) works month by month (arrows in the header):
 
 - **Money in**: what you add here (salary, business, freelance, gifts, refunds, interest…).
-- **Bills paid**: the bills and loans you mark paid in your **Personal Bills Tracker** for that month. They're added automatically; change them on the Tracker.
+- **Bills paid**: every payment you log in your **Personal Bills Tracker**, at the full amount you entered, in the month you logged it under (for a fixed-amount bill or loan, the *Month paid*; for a bill that varies, its bill month). One payment covering four terms counts all four that month. They're added automatically; change them on the Tracker.
 - **Net** = money in − bills paid. The **Bills budget** compares bills paid with a monthly amount you set.
-- **Bills this month** shows the Tracker's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as the Tracker's *By month* view.
+- **Bills this month** shows the Tracker's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as the Tracker's *By month* view, where *Paid* is also what you logged that month.
 - *Bills paid* breaks them down by bill, *Money in by category* by category, and *Transactions* lists both (bills paid are tagged *Tracker*).
 - Money-out entries typed in before this change, and payments from the Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Tracker payments.
 

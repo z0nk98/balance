@@ -118,25 +118,28 @@ test('month view: what is due, paid and overdue in a month', () => {
   ]);
 });
 
-test('month totals: what the Tracker and Expenses pages both show', () => {
+test('month totals: paid is what was logged in that month', () => {
   const st = {
     loans: [L, bill],
-    // Terms 1-2 paid at 1,600 each; a partial 500 in November; electricity paid 2,900 in October.
-    payments: [pay('a', '2026-06', 2, 3200), { id: 'pp', loanId: 'L1', month: '2026-11', terms: 0, amount: 500 }, bpay('e', '2026-10', 2900)],
+    // Terms 1-2 logged in June (3,200); terms 3-6 logged together in November (6,000);
+    // a partial 500 in November; electricity 2,900 logged for October.
+    payments: [pay('a', '2026-06', 2, 3200), pay('b', '2026-11', 4, 6000), { id: 'pp', loanId: 'L1', month: '2026-11', terms: 0, amount: 500 }, bpay('e', '2026-10', 2900)],
   };
-  // July: term 2, paid at the actual 1,600, not the planned 1,500.
-  const jul = Loans.monthTotals(st, '2026-07', '2026-11', 25);
-  assert.equal(jul.paid, 1600);
-  assert.equal(jul.left, 0);
-  // October: phone term 5 unpaid (1,500), electricity paid 2,900.
-  const oct = Loans.monthTotals(st, '2026-10', '2026-11', 25);
-  assert.deepEqual([oct.due, oct.paid, oct.left, oct.overdue], [4400, 2900, 1500, 1500]);
-  assert.equal(oct.earlier.length, 0); // earlier months only on the current month
-  // November: the partial payment counts as paid; electricity estimated at 2,500.
+  // November: the whole 6,000 plus the 500 count, in the month they were logged.
   const nov = Loans.monthTotals(st, '2026-11', '2026-11', 25);
-  assert.equal(nov.paid, 500);
-  assert.equal(nov.left, 4000);
-  assert.equal(nov.due, 4500);
+  assert.equal(nov.paid, 6500);
+  assert.equal(nov.payments.length, 2);
+  // What's due in November: phone term 6 (paid, 6,000 / 4) and electricity (~2,500, unpaid).
+  assert.equal(nov.due, 4000);
+  assert.equal(nov.left, 2500);
   assert.equal(nov.estimated, true);
-  assert.ok(nov.earlier.length > 0);
+  // July: term 2 is paid, but nothing was logged in July.
+  const jul = Loans.monthTotals(st, '2026-07', '2026-11', 25);
+  assert.equal(jul.paid, 0);
+  assert.equal(jul.left, 0);
+  // October: electricity's 2,900 was logged for October; the phone's term 4 is paid (by November's payment).
+  const oct = Loans.monthTotals(st, '2026-10', '2026-11', 25);
+  assert.deepEqual([oct.paid, oct.left, oct.overdue], [2900, 0, 0]);
+  // June: the 3,200 for terms 1-2.
+  assert.equal(Loans.monthTotals(st, '2026-06', '2026-11', 25).paid, 3200);
 });

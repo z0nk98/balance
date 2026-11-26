@@ -127,22 +127,32 @@
       const last = new Date(y, m, 0).getDate();
       return `${month}-${pad(Math.min(day || 1, last))}`;
     };
-    // Bills paid, as list entries (read-only: change them on the Tracker).
-    const paid = t.items.filter((i) => i.paid).map((i) => ({
-      id: `tracker:${i.loan.id}:${i.month}`,
-      tracker: true,
-      type: 'out',
-      category: i.loan.name,
-      amount: i.amount,
-      date: dateIn(i.month, i.dueDay),
-      note: [i.variable ? 'Varies each month' : `Term ${i.termNo} of ${i.loan.terms}`, i.loan.lender].filter(Boolean).join(' · '),
-      color: colorFor(i.loan.id),
-      created: 0,
-    }));
-    for (const p of t.partial) {
+    // Every payment logged on the Tracker for this month, as a list entry
+    // (read-only: change it on the Tracker). Shown on the day it was logged
+    // when that's in this month.
+    const termsText = (loan, p) => {
+      if (!p.terms) return 'Partial payment';
+      const h = Loans.summary(loan, tracker.payments, monthKey(todayISO())).history.find((x) => x.id === p.id);
+      if (!h || !h.fromTerm) return `${p.terms} term${p.terms === 1 ? '' : 's'}`;
+      return (h.terms === 1 ? `Term ${h.fromTerm}` : `Terms ${h.fromTerm}–${h.toTerm}`) + ` of ${loan.terms}`;
+    };
+    const paid = t.payments.map((p) => {
       const loan = tracker.loans.find((l) => l.id === p.loanId);
-      paid.push({ id: `tracker:${p.id}`, tracker: true, type: 'out', category: loan ? loan.name : 'Loan', amount: p.amount, date: dateIn(p.month, loan && loan.dueDay), note: 'Partial payment', color: colorFor(p.loanId), created: 0 });
-    }
+      const variable = Loans.isVariable(loan);
+      const logged = p.created ? new Date(p.created) : null;
+      const loggedIso = logged ? `${logged.getFullYear()}-${pad(logged.getMonth() + 1)}-${pad(logged.getDate())}` : '';
+      return {
+        id: `tracker:${p.id}`,
+        tracker: true,
+        type: 'out',
+        category: loan.name,
+        amount: p.amount,
+        date: monthKey(loggedIso) === p.month ? loggedIso : dateIn(p.month, loan.dueDay),
+        note: [variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
+        color: colorFor(loan.id),
+        created: p.created || 0,
+      };
+    });
     return { ...t, paidEntries: paid, hasLoans: tracker.loans.length > 0 };
   }
 
@@ -299,7 +309,7 @@
               document.createTextNode(e.category),
               e.tracker ? el('span', { className: 'tag', textContent: 'Tracker' }) : null,
             ]),
-            el('div', { className: 'sub', textContent: (e.tracker ? monthLabel(monthKey(e.date)) : dateLabel(e.date)) + (e.note ? ' · ' + e.note : '') }),
+            el('div', { className: 'sub', textContent: dateLabel(e.date) + (e.note ? ' · ' + e.note : '') }),
           ]),
           el('span', { className: `amt ${incoming ? 'money-in' : ''}`, textContent: `${incoming ? '+' : '−'}${money(e.amount)}` }),
           e.tracker
@@ -347,6 +357,7 @@
       ? `Nothing due in ${monthLabel(viewMonth)}.`
       : [
         `${t.paidCount} of ${t.items.length} paid`,
+        t.payments.length ? `${t.payments.length} payment${t.payments.length === 1 ? '' : 's'} logged (${money(t.paid)})` : '',
         t.estimated ? 'amounts with ~ are estimates' : '',
         t.earlier.length ? `${t.earlier.reduce((n, e) => n + e.months.length, 0)} unpaid from earlier months (in Overdue)` : '',
       ].filter(Boolean).join(' · ');
