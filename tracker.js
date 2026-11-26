@@ -465,6 +465,91 @@
     render();
   });
 
+  // ---- Filtering -----------------------------------------------------------
+  // Status, type and provider are remembered on this device; search isn't.
+  const FILTER_KEY = 'tracker-filters:v1';
+  const NO_PROVIDER = '\u0000none';
+  const filters = { status: 'all', type: '', provider: '', search: '', ...readJson(FILTER_KEY, {}) };
+  filters.search = '';
+  if (!['all', 'unpaid', 'current', 'done'].includes(filters.status)) filters.status = 'all';
+  if (!['', 'fixed', 'variable'].includes(filters.type)) filters.type = '';
+
+  function saveFilters() {
+    const { status, type, provider } = filters;
+    try { localStorage.setItem(FILTER_KEY, JSON.stringify({ status, type, provider })); } catch { /* still applies now */ }
+  }
+
+  const filtering = () => filters.status !== 'all' || !!filters.type || !!filters.provider || !!filters.search.trim();
+
+  function matches(r) {
+    const done = r.s.status === 'done';
+    if (filters.status === 'unpaid' && (done || !r.s.behind)) return false;
+    if (filters.status === 'current' && (done || r.s.behind)) return false;
+    if (filters.status === 'done' && !done) return false;
+    if (filters.type === 'variable' && !Loans.isVariable(r.loan)) return false;
+    if (filters.type === 'fixed' && Loans.isVariable(r.loan)) return false;
+    if (filters.provider) {
+      const p = providerOf(r).toLowerCase();
+      if (filters.provider === NO_PROVIDER ? p : p !== filters.provider) return false;
+    }
+    const words = filters.search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length) {
+      const text = [r.loan.name, r.loan.lender, r.loan.note].join(' ').toLowerCase();
+      if (!words.every((w) => text.includes(w))) return false;
+    }
+    return true;
+  }
+
+  // Provider choices come from what's saved; a stale choice falls back to all.
+  function fillProviders(rows) {
+    const names = new Map();
+    let none = false;
+    for (const r of rows) {
+      const name = providerOf(r);
+      if (!name) none = true;
+      else if (!names.has(name.toLowerCase())) names.set(name.toLowerCase(), name);
+    }
+    const sorted = [...names].sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: 'base' }));
+    if (filters.provider && !(filters.provider === NO_PROVIDER ? none : names.has(filters.provider))) filters.provider = '';
+    const options = [el('option', { value: '', textContent: 'All providers' })];
+    for (const [key, name] of sorted) options.push(el('option', { value: key, textContent: name }));
+    if (none) options.push(el('option', { value: NO_PROVIDER, textContent: 'No provider or lender' }));
+    $('providerFilter').replaceChildren(...options);
+    $('providerFilter').value = filters.provider;
+  }
+
+  // What's left and due on a set of rows (estimates for bills that vary).
+  function amounts(rows) {
+    let left = 0;
+    let due = 0;
+    for (const r of rows) {
+      if (Loans.isVariable(r.loan)) {
+        if (r.s.status === 'done') continue;
+        left += r.s.remainingEstimate || 0;
+        due += r.s.overdueEstimate || 0;
+      } else {
+        left += r.s.remaining;
+        if (r.s.status !== 'done') due += r.s.behind * r.loan.termAmount;
+      }
+    }
+    return { left, due };
+  }
+
+  for (const b of document.querySelectorAll('#statusFilter .chip')) {
+    b.addEventListener('click', () => { filters.status = b.dataset.status; saveFilters(); render(); });
+  }
+  $('typeFilter').value = filters.type;
+  $('typeFilter').addEventListener('change', (ev) => { filters.type = ev.target.value; saveFilters(); render(); });
+  $('providerFilter').addEventListener('change', (ev) => { filters.provider = ev.target.value; saveFilters(); render(); });
+  $('trackerSearch').addEventListener('input', (ev) => { filters.search = ev.target.value; render(); });
+  $('clearFilters').addEventListener('click', () => {
+    Object.assign(filters, { status: 'all', type: '', provider: '', search: '' });
+    $('typeFilter').value = '';
+    $('trackerSearch').value = '';
+    saveFilters();
+    render();
+  });
+
   const card = (r) => (Loans.isVariable(r.loan) ? variableCard(r.loan, r.s) : loanCard(r.loan, r.s));
 
   function render() {
@@ -497,21 +582,43 @@
     $('sumLoans').textContent = String(active.length);
     $('sumLoansSub').textContent = `active${rows.length > active.length ? ` · ${rows.length - active.length} paid off` : ''}`;
 
-    const shown = arrange(active, (a, b) =>
+    // ---- The list, after filters ----
+    fillProviders(rows);
+    for (const c of document.querySelectorAll('#statusFilter .chip')) c.classList.toggle('active', c.dataset.status === filters.status);
+    const picked = rows.filter(matches);
+    const dueOrder = (a, b) =>
       // Behind first, then by the next month due.
-      (b.s.behind > 0) - (a.s.behind > 0) || String(a.s.nextMonth || '9999').localeCompare(String(b.s.nextMonth || '9999')) || byName(a, b));
-    $('loanList').replaceChildren(...shown);
-    // Paid-off ones are kept in a collapsed archive, most recent first.
+      (b.s.behind > 0) - (a.s.behind > 0) || String(a.s.nextMonth || '9999').localeCompare(String(b.s.nextMonth || '9999')) || byName(a, b);
+    // Paid-off ones are kept in a collapsed archive, most recent first,
+    // unless the Paid off filter is on: then they're the main list.
     const lastPaid = (r) => (r.s.history.length ? r.s.history[r.s.history.length - 1].month : '');
-    const doneRows = rows.filter((r) => r.s.status === 'done');
-    $('doneList').replaceChildren(...arrange(doneRows, (a, b) => lastPaid(b).localeCompare(lastPaid(a)) || byName(a, b)));
-    const done = doneRows;
-    $('doneWrap').hidden = done.length === 0;
-    $('doneTitle').textContent = `Paid off (${done.length})`;
-    $('loanEmpty').hidden = active.length > 0;
-    $('loanEmpty').textContent = rows.length
-      ? 'Everything here is paid off.'
-      : 'Nothing here yet. Add a bill or loan below: a fixed amount paid over a set number of months, or a bill that varies each month.';
+    const doneOrder = (a, b) => lastPaid(b).localeCompare(lastPaid(a)) || byName(a, b);
+    const pickedActive = picked.filter((r) => r.s.status !== 'done');
+    const pickedDone = picked.filter((r) => r.s.status === 'done');
+    const showDoneInMain = filters.status === 'done';
+    const main = showDoneInMain ? pickedDone : pickedActive;
+    $('loanList').replaceChildren(...arrange(main, showDoneInMain ? doneOrder : dueOrder));
+    const archive = showDoneInMain ? [] : pickedDone;
+    $('doneList').replaceChildren(...arrange(archive, doneOrder));
+    $('doneWrap').hidden = archive.length === 0;
+    $('doneTitle').textContent = `Paid off (${archive.length})`;
+
+    const on = filtering();
+    $('clearFilters').hidden = !on;
+    $('filterSummary').hidden = !on;
+    if (on) {
+      const sum = amounts(picked);
+      $('filterSummary').textContent = `Showing ${picked.length} of ${rows.length}` +
+        (picked.length ? `${sum.left > 0 ? ` · ${money(sum.left)} left` : ''} · ${money(sum.due)} due by this month` : '') +
+        (picked.some((r) => Loans.isVariable(r.loan) && r.s.status !== 'done') ? ' (bills that vary are estimated)' : '');
+    }
+
+    $('loanEmpty').hidden = main.length > 0;
+    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Add a bill or loan below: a fixed amount paid over a set number of months, or a bill that varies each month.';
+    else if (on && !picked.length) $('loanEmpty').textContent = 'Nothing matches these filters.';
+    else if (showDoneInMain) $('loanEmpty').textContent = 'Nothing paid off yet.';
+    else if (on) $('loanEmpty').textContent = pickedDone.length ? 'Only paid-off ones match: see Paid off below.' : 'Nothing matches these filters.';
+    else $('loanEmpty').textContent = 'Everything here is paid off.';
     if (!rows.length) $('loanFormWrap').open = true;
   }
 
