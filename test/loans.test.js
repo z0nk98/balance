@@ -143,3 +143,29 @@ test('month totals: paid is what was logged in that month', () => {
   // June: the 3,200 for terms 1-2.
   assert.equal(Loans.monthTotals(st, '2026-06', '2026-11', 25).paid, 3200);
 });
+
+test('paid in advance: a zero balance counts as paid off', () => {
+  // 18 x 1,500 = 27,000. Two terms paid, then the remaining 24,000 in one go,
+  // recorded as a single term.
+  const payments = [pay('a', '2026-06', 2), pay('b', '2026-08', 1, 24000)];
+  const s = Loans.summary(L, payments, '2026-08');
+  assert.equal(s.remaining, 0);
+  assert.equal(s.status, 'done');
+  assert.equal(s.termsPaid, 18);
+  assert.equal(s.behind, 0);
+  assert.equal(s.nextTerm, null);
+  assert.equal(s.paidOffIn, '2026-08');
+  assert.equal(s.early, true);
+  // Partial payments (0 terms) that add up to the total count too.
+  assert.equal(Loans.summary(L, [pay('c', '2026-06', 0, 27000)], '2026-06').status, 'done');
+  // Not paid off while money is still owed.
+  assert.notEqual(Loans.summary(L, [pay('d', '2026-06', 0, 26000)], '2026-06').status, 'done');
+  // After an early payoff the loan isn't due in later months, or overdue before.
+  const st = { loans: [L], payments };
+  assert.equal(Loans.monthItems(st, '2026-09', '2026-11', 1).length, 0);
+  assert.equal(Loans.monthItems(st, '2026-08', '2026-11', 1)[0].status, 'paid');
+  assert.equal(Loans.unpaidBefore(st, '2026-11', '2026-11').length, 0);
+  // Paid off on schedule isn't "early".
+  const onTime = Loans.summary(L, [pay('e', '2027-11', 18)], '2027-11');
+  assert.equal(onTime.early, false);
+});

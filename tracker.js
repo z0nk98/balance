@@ -133,7 +133,7 @@
   let editingId = null;
 
   function statusText(s) {
-    if (s.status === 'done') return 'Paid off';
+    if (s.status === 'done') return s.early ? 'Paid off early' : 'Paid off';
     if (s.status === 'behind') return `Behind ${plural(s.behind, 'term')}`;
     if (s.status === 'ahead') return `Ahead ${plural(s.ahead, 'term')}`;
     return 'On track';
@@ -167,10 +167,27 @@
       const n = Number(terms.value) || 0;
       if (!amountEdited) amount.value = n ? (Math.round(n * loan.termAmount * 100) / 100).toFixed(2) : '';
       const from = s.termsPaid + 1;
-      hint.textContent = n > 0 ? `Covers term${n === 1 ? '' : 's'} ${from}${n > 1 ? `–${Math.min(from + n - 1, loan.terms)}` : ''} of ${loan.terms}.` : 'Enter 0 terms for a partial payment that doesn’t complete a term.';
+      const paysOff = n >= s.termsLeft || Number(amount.value) >= s.remaining - 0.005;
+      hint.textContent = paysOff
+        ? `This pays off ${loan.name}: it moves to Paid off and stops showing in later months.`
+        : (n > 0 ? `Covers term${n === 1 ? '' : 's'} ${from}${n > 1 ? `–${Math.min(from + n - 1, loan.terms)}` : ''} of ${loan.terms}.` : 'Enter 0 terms for a partial payment that doesn’t complete a term.');
     };
     terms.addEventListener('input', update);
-    amount.addEventListener('input', () => { amountEdited = amount.value !== ''; });
+    amount.addEventListener('input', () => { amountEdited = amount.value !== ''; update(); });
+    // Paying the whole balance in advance, instead of term by term.
+    const payOff = el('button', {
+      type: 'button',
+      className: 'linkish',
+      textContent: `Pay off the rest (${money(s.remaining)})`,
+      onclick: () => {
+        terms.value = String(s.termsLeft);
+        amount.value = s.remaining.toFixed(2);
+        amountEdited = true;
+        if (!note.value) note.value = 'Paid off in advance';
+        update();
+        amount.focus();
+      },
+    });
     update();
     const form = el('form', { className: 'inline-form pay-terms-form', autocomplete: 'off' }, [
       field('Month paid', month),
@@ -179,6 +196,7 @@
       field('Note', note),
       el('button', { type: 'submit', className: 'primary', textContent: 'Save payment' }),
       el('button', { type: 'button', textContent: 'Cancel', onclick: () => { openPay.delete(loan.id); render(); } }),
+      s.termsLeft > 1 ? payOff : '',
       hint,
     ]);
     form.addEventListener('submit', (ev) => {
@@ -191,7 +209,8 @@
         return;
       }
       openPay.delete(loan.id);
-      save('Payment saved');
+      const nowDone = Loans.summary(loan, state.payments, thisMonth()).status === 'done';
+      save(nowDone ? `${loan.name} paid off · moved to Paid off` : 'Payment saved');
       render();
     });
     return form;
@@ -240,7 +259,7 @@
     ].filter(Boolean).join(' · ');
     const next = s.nextTerm
       ? `Next: term ${s.nextTerm} · ${monthLabel(s.nextMonth)}${s.behind > 0 ? ` · ${money(s.behind * loan.termAmount)} overdue` : ''}`
-      : `Paid off · last payment ${s.history.length ? monthLabel(s.history[s.history.length - 1].month) : ''}`;
+      : `${s.early ? 'Paid off early' : 'Paid off'}${s.paidOffIn ? ` · last payment ${monthLabel(s.paidOffIn)}` : ''}${s.early ? ` (instead of ${monthLabel(s.lastMonth)})` : ''}`;
     const bar = el('div', { className: 'progress' }, [el('div', { className: 'progress-fill' })]);
     bar.querySelector('.progress-fill').style.width = `${Math.round((s.termsPaid / loan.terms) * 100)}%`;
     bar.setAttribute('aria-hidden', 'true');
