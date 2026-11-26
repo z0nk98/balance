@@ -191,6 +191,19 @@ test('a third type: other expenses', () => {
   assert.equal(Loans.categoryLabel(e), 'Other');
   assert.equal(Loans.categoryLabel({ name: 'Old phone', termAmount: 1 }), 'Loan');
   assert.equal(Loans.cleanLoan({ name: 'Allowance', category: 'expense', termAmount: 3500, terms: 12, firstMonth: '2026-01' }).category, 'expense');
-  assert.equal(Loans.iconKind({ name: 'Groceries', category: 'expense', kind: 'variable' }), 'other');
+  assert.equal(Loans.iconKind({ name: 'Groceries', category: 'expense', kind: 'variable' }), 'groceries');
+  assert.equal(Loans.iconKind({ name: 'Misc', category: 'expense', kind: 'variable' }), 'other');
   assert.equal(Loans.iconKind({ name: 'Tuition', category: 'expense', termAmount: 5000 }), 'school');
+});
+
+test('icons: chosen in the form, else guessed', () => {
+  assert.equal(Loans.cleanVariable({ name: 'Groceries', firstMonth: '2026-01', icon: 'shopping' }).icon, 'shopping');
+  assert.equal(Loans.cleanVariable({ name: 'Groceries', firstMonth: '2026-01', icon: 'bogus' }).icon, null);
+  assert.equal(Loans.iconKind({ name: 'Groceries', category: 'expense', icon: 'shopping' }), 'shopping');
+  assert.equal(Loans.iconKind({ name: 'Groceries', lender: 'Puregold', category: 'expense' }), 'groceries');
+  assert.equal(Loans.iconKind({ name: 'MangPangKoy Allowance', category: 'bill' }), 'family');
+  assert.equal(Loans.iconKind({ name: 'Shopee Installments', category: 'bill' }), 'shopping');
+  assert.equal(Loans.iconKind({ name: 'CreditCard', lender: 'BPI', category: 'bill' }), 'card');
+  assert.equal(Loans.iconKind({ name: 'MayaLoan', category: 'loan' }), 'loan');
+  assert.equal(Loans.iconKind({ name: 'MayaLoan', category: 'loan', icon: 'mobile' }), 'mobile');
 });

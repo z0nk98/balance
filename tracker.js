@@ -273,6 +273,7 @@
     });
     return el('article', { className: `tracker-loan${editingId === loan.id ? ' editing' : ''}` }, [
       el('div', { className: 'tracker-head' }, [
+        iconFor(loan),
         el('div', {}, [
           el('h3', {}, [document.createTextNode(loan.name), subTag(loan)]),
           loan.lender ? el('div', { className: 'sub', textContent: loan.lender }) : '',
@@ -447,6 +448,7 @@
     });
     return el('article', { className: `tracker-loan${editingId === bill.id ? ' editing' : ''}` }, [
       el('div', { className: 'tracker-head' }, [
+        iconFor(bill),
         el('div', {}, [
           el('h3', {}, [document.createTextNode(bill.name), subTag(bill)]),
           bill.lender ? el('div', { className: 'sub', textContent: bill.lender }) : '',
@@ -899,7 +901,17 @@
     dueDay: $('loanDueDay'),
     borrowed: $('loanBorrowed'),
     note: $('loanNote'),
+    icon: $('iconSelect'),
   };
+
+  // Icon choices, and a preview of the one that will show (Auto guesses from the name).
+  for (const [value, label] of Object.entries(Loans.ICONS)) inputs.icon.append(el('option', { value, textContent: label }));
+  function updateIconPreview() {
+    const kind = Loans.iconKind({ name: inputs.name.value, lender: inputs.lender.value, category: formCategory, kind: formKind === 'variable' ? 'variable' : undefined, icon: inputs.icon.value });
+    $('iconPreview').replaceChildren(PayIcons.billIcon(kind));
+  }
+  form.addEventListener('input', updateIconPreview);
+  inputs.icon.addEventListener('change', updateIconPreview);
   let formKind = 'fixed';
   let formCategory = 'bill';
   // The subcategory a new expense starts with: the one used last time.
@@ -924,6 +936,7 @@
     $('lenderLabel').textContent = text[0];
     inputs.lender.placeholder = text[1];
     inputs.name.placeholder = text[2];
+    if (typeof updateIconPreview === 'function') updateIconPreview();
   }
 
   $('categorySelect').addEventListener('change', (ev) => setCategory(ev.target.value));

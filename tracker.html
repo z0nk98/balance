@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=5fc47b1fa9"></script>
-  <script src="lib/privacy.js?v=5fc47b1fa9"></script>
-  <link rel="stylesheet" href="style.css?v=5fc47b1fa9">
-  <link rel="stylesheet" href="lending.css?v=5fc47b1fa9">
-  <link rel="stylesheet" href="theme.css?v=5fc47b1fa9">
+  <script src="lib/theme.js?v=c9520609c7"></script>
+  <script src="lib/privacy.js?v=c9520609c7"></script>
+  <link rel="stylesheet" href="style.css?v=c9520609c7">
+  <link rel="stylesheet" href="lending.css?v=c9520609c7">
+  <link rel="stylesheet" href="theme.css?v=c9520609c7">
 </head>
 <body>
   <header class="topbar">
@@ -45,6 +45,12 @@
               <option value="loan">Loan</option>
               <option value="expense">Other</option>
             </select>
+          </label>
+          <label>Icon
+            <span class="icon-pick">
+              <span id="iconPreview" class="icon-preview" aria-hidden="true"></span>
+              <select id="iconSelect"><option value="">Auto (from the name)</option></select>
+            </span>
           </label>
           <label><span id="lenderLabel">Lender (optional)</span> <input id="loanLender" maxlength="60" placeholder="e.g. Home Credit, BPI, SSS"></label>
           <label data-kind="fixed">Amount per month <input id="loanTermAmount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="e.g. 1500"></label>
@@ -167,12 +173,12 @@
 
   <p id="undoBar" class="save-status" role="status" aria-live="polite"></p>
 
-  <script src="lib/icons.js?v=5fc47b1fa9"></script>
-  <script src="lib/loans.js?v=5fc47b1fa9"></script>
-  <script src="tracker.js?v=5fc47b1fa9"></script>
-  <script src="lib/core.js?v=5fc47b1fa9"></script>
-  <script src="lib/merge.js?v=5fc47b1fa9"></script>
-  <script src="lib/account.js?v=5fc47b1fa9"></script>
-  <script src="lib/sync.js?v=5fc47b1fa9"></script>
+  <script src="lib/icons.js?v=c9520609c7"></script>
+  <script src="lib/loans.js?v=c9520609c7"></script>
+  <script src="tracker.js?v=c9520609c7"></script>
+  <script src="lib/core.js?v=c9520609c7"></script>
+  <script src="lib/merge.js?v=c9520609c7"></script>
+  <script src="lib/account.js?v=c9520609c7"></script>
+  <script src="lib/sync.js?v=c9520609c7"></script>
 </body>
 </html>
