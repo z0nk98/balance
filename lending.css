@@ -364,3 +364,12 @@ details.add-panel[open] summary { margin-bottom: 6px; }
 .view-toggle { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 360px); margin: 0 0 14px; }
 #earlierList .bill-item:last-child { border-bottom: 1px solid var(--border); }
 .bill-item .est { color: var(--muted); font-weight: 500; }
+
+/* Tracker: the add panel sits at the top, its summary styled as a button. */
+section.card.add-card { padding: 12px 16px; }
+.add-card details.add-panel { border: 0; padding: 0; background-color: transparent; }
+.add-card details.add-panel > summary { display: inline-flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; padding: 9px 16px; border-radius: 10px; background: var(--accent); color: #fff; }
+.add-card details.add-panel > summary::-webkit-details-marker { display: none; }
+.add-card details.add-panel > summary::before { content: '+'; font-size: 1.15rem; line-height: 1; font-weight: 700; }
+.add-card details.add-panel[open] > summary { background: transparent; color: var(--text); padding-left: 0; margin-bottom: 10px; }
+.add-card details.add-panel[open] > summary::before { content: '–'; }

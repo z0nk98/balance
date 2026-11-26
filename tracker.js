@@ -789,7 +789,7 @@
     }
 
     $('loanEmpty').hidden = main.length > 0;
-    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Add a bill or loan below: a fixed amount paid over a set number of months, or a bill that varies each month.';
+    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add a bill or loan at the top: a fixed amount paid over a set number of months, or a bill that varies each month.';
     else if (on && !picked.length) $('loanEmpty').textContent = 'Nothing matches these filters.';
     else if (showDoneInMain) $('loanEmpty').textContent = 'Nothing paid off yet.';
     else if (on) $('loanEmpty').textContent = pickedDone.length ? 'Only paid-off ones match: see Paid off below.' : 'Nothing matches these filters.';

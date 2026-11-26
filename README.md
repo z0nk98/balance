@@ -77,7 +77,7 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 
 ## Tracker: bills and loans you are paying off
 
-`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. When adding one, pick its type:
+`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. Tap **+ Add a bill or loan** at the top of the page, then pick its type:
 
 - **Fixed amount**: the same amount every month for a set number of months (an installment, a loan, a bill split over a few months). Enter the amount per month, the number of months (e.g. 6) and the first month due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
   - **Record payment** asks for the month you paid, how many months (terms) it covers and the amount (filled in as terms × amount; change it if you paid something different). Paying three terms in one month counts as three terms.
