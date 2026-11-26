@@ -154,7 +154,11 @@
 
   const amountsHidden = () => Boolean(window.BalancePrivacy && window.BalancePrivacy.hidden);
   const maskedMoney = (n) => money(n);
-  window.addEventListener('balance:amounts', () => { if (state) render(); });
+  window.addEventListener('balance:amounts', () => {
+    // Privacy mode back on: fold every borrower's payments away again.
+    if (amountsHidden()) openPanels.clear();
+    if (state) render();
+  });
 
   function render() {
     const today = Core.todayISO();

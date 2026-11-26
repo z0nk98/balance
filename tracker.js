@@ -279,10 +279,7 @@
           loan.lender ? el('div', { className: 'sub', textContent: loan.lender }) : '',
         ]),
         el('span', { className: `badge ${STATUS[s.status]}`, textContent: statusText(s) }),
-        el('span', { className: 'loan-actions' }, [
-          iconButton('edit', `Edit ${loan.name}`, () => startEdit(loan)),
-          iconButton('delete', `Delete ${loan.name}`, () => removeLoan(loan, s), 'danger'),
-        ]),
+        el('span', { className: 'loan-actions' }, [collapseButton(loan), actionMenu(loan, s)]),
       ]),
       el('div', { className: 'sub', textContent: meta }),
       extra ? el('div', { className: 'sub', textContent: extra }) : '',
@@ -454,10 +451,7 @@
           bill.lender ? el('div', { className: 'sub', textContent: bill.lender }) : '',
         ]),
         el('span', { className: `badge ${st.cls}`, textContent: st.text }),
-        el('span', { className: 'loan-actions' }, [
-          iconButton('edit', `Edit ${bill.name}`, () => startEdit(bill)),
-          iconButton('delete', `Delete ${bill.name}`, () => removeLoan(bill, s), 'danger'),
-        ]),
+        el('span', { className: 'loan-actions' }, [collapseButton(bill), actionMenu(bill, s)]),
       ]),
       el('div', { className: 'sub', textContent: meta }),
       extra ? el('div', { className: 'sub', textContent: extra }) : '',
@@ -787,23 +781,117 @@
   $('nextMonth').addEventListener('click', () => { viewMonth = Loans.addMonths(viewMonth, 1); render(); });
   $('todayBtn').addEventListener('click', () => { viewMonth = thisMonth(); render(); });
 
-  // ---- Collapsed lists -------------------------------------------------------
-  // Both lists start collapsed every time the page opens, so nothing in them
-  // shows until you choose to expand it. Only the count is shown meanwhile.
-  const expanded = { month: false, all: false };
+  // ---- Privacy mode ----------------------------------------------------------
+  // The lists follow privacy mode (lib/privacy.js): collapsed while it's on,
+  // with only their name and count showing. Show / Hide flips it for every
+  // section and amount at once, the same as the eye in the header.
+  const isPrivate = () => !window.BalancePrivacy || window.BalancePrivacy.hidden;
 
   function applyCollapsed() {
-    for (const [key, body, toggle] of [['month', 'monthBody', 'monthToggle'], ['all', 'allBody', 'allToggle']]) {
-      $(body).hidden = !expanded[key];
-      $(toggle).setAttribute('aria-expanded', String(expanded[key]));
-      $(toggle).querySelector('.section-action').textContent = expanded[key] ? 'Hide' : 'Show';
+    const open = !isPrivate();
+    for (const [body, toggle] of [['monthBody', 'monthToggle'], ['allBody', 'allToggle']]) {
+      $(body).hidden = !open;
+      $(toggle).setAttribute('aria-expanded', String(open));
+      $(toggle).querySelector('.section-action').textContent = open ? 'Hide' : 'Show';
     }
   }
 
-  $('monthToggle').addEventListener('click', () => { expanded.month = !expanded.month; applyCollapsed(); });
-  $('allToggle').addEventListener('click', () => { expanded.all = !expanded.all; applyCollapsed(); });
+  for (const id of ['monthToggle', 'allToggle']) $(id).addEventListener('click', () => window.BalancePrivacy && window.BalancePrivacy.toggle());
 
-  const card = (r) => (Loans.isVariable(r.loan) ? variableCard(r.loan, r.s) : loanCard(r.loan, r.s));
+  // ---- Compact rows ----------------------------------------------------------
+  // Each expense shows as one line (icon, name, what's due, status, Pay, ⋯).
+  // Tap a line to open its full card; Pay opens it with the payment form.
+  const expandedRows = new Set();
+
+  function collapseButton(loan) {
+    return el('button', { type: 'button', className: 'linkish collapse-btn', textContent: 'Less ▴', title: 'Back to one line', onclick: () => { expandedRows.delete(loan.id); openPay.delete(loan.id); render(); } });
+  }
+
+  // Edit and Delete live in a small menu, so they're hard to hit by accident.
+  let openMenu = null;
+  function closeMenu() {
+    if (openMenu) openMenu.hidden = true;
+    openMenu = null;
+  }
+  document.addEventListener('click', (ev) => { if (openMenu && !ev.target.closest('.row-menu')) closeMenu(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeMenu(); });
+
+  function actionMenu(loan, s) {
+    const list = el('div', { className: 'row-menu-list', hidden: true }, [
+      el('button', { type: 'button', textContent: 'Edit', onclick: () => { closeMenu(); startEdit(loan); } }),
+      el('button', { type: 'button', className: 'danger-text', textContent: 'Delete', onclick: () => { closeMenu(); removeLoan(loan, s); } }),
+    ]);
+    const btn = el('button', { type: 'button', className: 'icon-btn row-menu-btn', textContent: '⋯', title: `More for ${loan.name}` });
+    btn.setAttribute('aria-label', `More for ${loan.name}`);
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const wasOpen = openMenu === list;
+      closeMenu();
+      if (!wasOpen) { list.hidden = false; openMenu = list; }
+    });
+    return el('span', { className: 'row-menu' }, [btn, list]);
+  }
+
+  // "Nov 9", or "Nov 2026" when there's no due day.
+  const dueOn = (month, day) => (day ? `${shortMonth(month)} ${day}` : monthLabel(month, true));
+
+  function rowSummary(loan, s) {
+    if (s.status === 'done') return { amount: money(s.paid), note: 'Paid off', badge: Loans.isVariable(loan) ? variableStatus(s, thisMonth()) : { text: statusText(s), cls: 'paid' } };
+    if (Loans.isVariable(loan)) {
+      const st = variableStatus(s, thisMonth());
+      const overdue = st.cls === 'overdue';
+      const amt = overdue ? s.overdueEstimate : s.guess;
+      return {
+        amount: amt === null ? 'Varies' : `~${money(amt)}`,
+        note: overdue ? `${plural(s.behind, 'month')} unpaid` : `due ${dueOn(s.nextMonth, loan.dueDay)}`,
+        badge: st,
+      };
+    }
+    return {
+      amount: money(s.behind > 0 ? s.behind * loan.termAmount : loan.termAmount),
+      note: s.behind > 0 ? `${plural(s.behind, 'term')} overdue` : `term ${s.nextTerm} of ${loan.terms} · due ${dueOn(s.nextMonth, loan.dueDay)}`,
+      badge: { text: statusText(s), cls: STATUS[s.status] },
+    };
+  }
+
+  function compactRow(r) {
+    const { loan, s } = r;
+    const info = rowSummary(loan, s);
+    const open = () => { expandedRows.add(loan.id); render(); };
+    const pay = s.status === 'done' ? null : el('button', {
+      type: 'button', className: 'primary pay-btn', textContent: 'Pay',
+      onclick: (ev) => {
+        ev.stopPropagation();
+        expandedRows.add(loan.id);
+        openPay.add(loan.id);
+        render();
+        document.getElementById(`row-${loan.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      },
+    });
+    const row = el('article', { className: `expense-row status-${info.badge.cls}`, id: `row-${loan.id}`, tabIndex: 0 }, [
+      iconFor(loan),
+      el('div', { className: 'row-main' }, [
+        el('div', { className: 'row-name' }, [document.createTextNode(loan.name), subTag(loan)]),
+        el('div', { className: 'sub', textContent: [info.note, loan.lender].filter(Boolean).join(' · ') }),
+      ]),
+      el('div', { className: 'row-side' }, [
+        el('div', { className: 'amt', textContent: info.amount }),
+        el('span', { className: `badge ${info.badge.cls}`, textContent: info.badge.text }),
+      ]),
+      el('div', { className: 'row-actions' }, [pay, actionMenu(loan, s)]),
+    ]);
+    row.setAttribute('aria-label', `${loan.name}: ${info.note}. Open details.`);
+    row.addEventListener('click', (ev) => { if (!ev.target.closest('button, a, input, select')) open(); });
+    row.addEventListener('keydown', (ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target === row) { ev.preventDefault(); open(); } });
+    return row;
+  }
+
+  const fullCard = (r) => {
+    const c = Loans.isVariable(r.loan) ? variableCard(r.loan, r.s) : loanCard(r.loan, r.s);
+    c.id = `row-${r.loan.id}`;
+    return c;
+  };
+  const card = (r) => (expandedRows.has(r.loan.id) || editingId === r.loan.id ? fullCard(r) : compactRow(r));
 
   function render() {
     const month = thisMonth();

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Overview</title>
-  <script src="lib/theme.js?v=e07088b91e"></script>
-  <script src="lib/privacy.js?v=e07088b91e"></script>
-  <link rel="stylesheet" href="style.css?v=e07088b91e">
-  <link rel="stylesheet" href="lending.css?v=e07088b91e">
-  <link rel="stylesheet" href="theme.css?v=e07088b91e">
+  <script src="lib/theme.js?v=17d77310bd"></script>
+  <script src="lib/privacy.js?v=17d77310bd"></script>
+  <link rel="stylesheet" href="style.css?v=17d77310bd">
+  <link rel="stylesheet" href="lending.css?v=17d77310bd">
+  <link rel="stylesheet" href="theme.css?v=17d77310bd">
 </head>
 <body>
   <header class="topbar">
@@ -26,30 +26,52 @@
   </header>
 
   <main>
-    <section class="stats four">
-      <div class="stat">
-        <span class="stat-label">Money in</span>
-        <span class="stat-value money-in" id="totalIn">0</span>
+    <section class="card hero" id="heroCard">
+      <div class="hero-main">
+        <span class="hero-label" id="heroLabel">Left this month</span>
+        <strong class="hero-value" id="net"></strong>
+        <p id="verdict" class="verdict" hidden></p>
       </div>
-      <div class="stat">
-        <span class="stat-label">Expenses paid</span>
-        <span class="stat-value" id="totalSpent">0</span>
-        <span class="stat-sub" id="spentSub">on your Spending page</span>
+      <div class="hero-tiles">
+        <div class="hero-tile">
+          <span class="tile-label">Money in</span>
+          <strong class="money-in" id="totalIn"></strong>
+        </div>
+        <div class="hero-tile">
+          <span class="tile-label">Expenses paid</span>
+          <strong id="totalSpent"></strong>
+          <span class="tile-sub" id="spentSub"></span>
+        </div>
+        <div class="hero-tile budget-tile">
+          <span class="tile-label">Budget</span>
+          <button type="button" class="budget-show" id="budgetShow" title="Set or change your monthly budget">
+            <strong id="budgetText">Set a budget</strong>
+            <span class="tile-sub" id="remaining"></span>
+          </button>
+          <div class="budget-bar" aria-hidden="true"><div id="budgetFill"></div></div>
+          <form id="budgetForm" class="budget-form" hidden>
+            <input id="budgetInput" type="number" min="0" step="1" inputmode="numeric" placeholder="Monthly budget" aria-label="Monthly budget">
+            <button type="submit" class="primary">Save</button>
+          </form>
+        </div>
       </div>
-      <div class="stat">
-        <span class="stat-label">Net (in − expenses paid)</span>
-        <span class="stat-value" id="net">0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Budget</span>
-        <span class="stat-value">
-          <input id="budgetInput" type="number" min="0" step="1" placeholder="Set budget">
-        </span>
-        <span class="stat-sub" id="remaining"></span>
-      </div>
-      <div class="budget-bar" aria-hidden="true"><div id="budgetFill"></div></div>
     </section>
-    <p id="verdict" class="verdict" hidden></p>
+
+    <section class="card" id="upcomingCard">
+      <div class="list-head">
+        <button type="button" class="section-toggle" id="upcomingToggle" aria-expanded="false" aria-controls="upcomingBody">
+          <h2>Coming up</h2>
+          <span class="section-count" id="upcomingCount"></span>
+          <span class="section-action">Show</span>
+        </button>
+      </div>
+      <div id="upcomingBody" class="section-body" hidden>
+        <p class="hint" id="upcomingNote"></p>
+        <div id="upcomingList" class="bill-list"></div>
+        <a href="tracker.html" class="linkish upcoming-link">Pay on Spending →</a>
+      </div>
+    </section>
+
 
     <section class="card add-card">
       <details id="moneyInWrap" class="add-panel">
@@ -125,6 +147,19 @@
             <div class="trend-table-wrap" id="trendTableWrap" hidden></div>
           </div>
 
+          <div class="insight-block where-block">
+            <div>
+              <h3>Where it went <span class="muted">· this month</span></h3>
+              <ul id="breakdown" class="breakdown"></ul>
+              <p id="breakdownEmpty" class="empty">No expenses paid this month.</p>
+            </div>
+            <div>
+              <h3>Where it came from</h3>
+              <ul id="breakdownIn" class="breakdown"></ul>
+              <p id="breakdownInEmpty" class="empty">No money in this month.</p>
+            </div>
+          </div>
+
           <div class="insight-block">
             <h3>Bills that vary <span class="muted">· last 6 months</span></h3>
             <div id="varyingList" class="varying-list"></div>
@@ -139,36 +174,31 @@
       </div>
     </section>
 
-    <div class="grid">
-      <section class="card">
-        <h2>Expenses paid</h2>
-        <ul id="breakdown" class="breakdown"></ul>
-        <p id="breakdownEmpty" class="empty">No expenses paid this month.</p>
-        <h2 class="breakdown-in-title">Money in by category</h2>
-        <ul id="breakdownIn" class="breakdown"></ul>
-        <p id="breakdownInEmpty" class="empty">No money in this month.</p>
-      </section>
-
-      <section class="card">
-        <div class="list-head">
+    <section class="card" id="txnCard">
+      <div class="list-head">
+        <button type="button" class="section-toggle" id="txnToggle" aria-expanded="false" aria-controls="txnBody">
           <h2>Transactions</h2>
-          <div class="list-filters">
-            <select id="filterType" aria-label="Filter by type">
-              <option value="">In &amp; expenses paid</option>
-              <option value="in">Money in</option>
-              <option value="out">Expenses paid</option>
-            </select>
-            <select id="filterCategory" aria-label="Filter by category">
-              <option value="">All categories</option>
-            </select>
-          </div>
+          <span class="section-count" id="txnCount"></span>
+          <span class="section-action">Show</span>
+        </button>
+      </div>
+      <div id="txnBody" class="section-body" hidden>
+        <div class="list-filters">
+          <select id="filterType" aria-label="Filter by type">
+            <option value="">In &amp; expenses paid</option>
+            <option value="in">Money in</option>
+            <option value="out">Expenses paid</option>
+          </select>
+          <select id="filterCategory" aria-label="Filter by category">
+            <option value="">All categories</option>
+          </select>
+          <input id="search" type="search" placeholder="Search notes…" aria-label="Search notes">
         </div>
-        <input id="search" type="search" placeholder="Search notes…" aria-label="Search notes">
         <ul id="expenseList" class="expense-list"></ul>
         <p id="listEmpty" class="empty">Nothing to show.</p>
         <p id="hiddenNote" class="hint" hidden></p>
-      </section>
-    </div>
+      </div>
+    </section>
 
     <section class="card tools">
       <button id="exportCsv">Export CSV</button>
@@ -185,13 +215,13 @@
     </section>
   </main>
 
-  <script src="lib/icons.js?v=e07088b91e"></script>
-  <script src="lib/loans.js?v=e07088b91e"></script>
-  <script src="lib/insights.js?v=e07088b91e"></script>
-  <script src="app.js?v=e07088b91e"></script>
-  <script src="lib/core.js?v=e07088b91e"></script>
-  <script src="lib/merge.js?v=e07088b91e"></script>
-  <script src="lib/account.js?v=e07088b91e"></script>
-  <script src="lib/sync.js?v=e07088b91e"></script>
+  <script src="lib/icons.js?v=17d77310bd"></script>
+  <script src="lib/loans.js?v=17d77310bd"></script>
+  <script src="lib/insights.js?v=17d77310bd"></script>
+  <script src="app.js?v=17d77310bd"></script>
+  <script src="lib/core.js?v=17d77310bd"></script>
+  <script src="lib/merge.js?v=17d77310bd"></script>
+  <script src="lib/account.js?v=17d77310bd"></script>
+  <script src="lib/sync.js?v=17d77310bd"></script>
 </body>
 </html>

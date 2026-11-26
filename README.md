@@ -26,9 +26,9 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 Every page has a theme switch in the header: sun for **Light**, moon for **Dark**, half-circle for **Auto** (follow the device's setting, the default). The choice is remembered on that device for all pages.
 
-## Hiding amounts
+## Privacy mode
 
-Every page has an eye button in the header, next to the theme switch. Tap it to hide all amounts on the page (they show as ₱•••••, and amount boxes in forms are masked until you tap into them); tap again to show them. The choice is remembered on that device and applies to Expenses, Spending and Lending together. The borrower page has its own eye button and setting, on the borrower's device.
+Every page opens in **privacy mode**: amounts show as ₱••••• and the detail sections (lists, Insights, Coming up, Transactions, a borrower's payments) are collapsed, showing only their name and count. Tap the **eye** in the header, or any section's **Show**, to reveal everything at once; tap again (or **Hide**) to make it all private again. Once revealed, moving between your pages keeps it revealed for 15 minutes after your last tap; after that, and in any new tab, pages open private again. The borrower page has its own eye and setting.
 
 ## Using it on a phone
 
@@ -69,10 +69,14 @@ If you named the site repo something other than `balance`, change `repo` in `con
 
 **Overview** (`index.html`) works month by month (arrows in the header):
 
+- **Left this month** is the big number at the top: money in minus everything paid, in whole pesos, with a one-line summary under it. Beside it: **Money in**, **Expenses paid**, and **Budget**, a progress bar of regular spending against your monthly budget (tap it to set or change the amount; it suggests your average).
+- **Coming up** lists anything overdue and everything due in the next 14 days, with a total.
+
 - **Money in**: what you add here (salary, business, freelance, gifts, refunds, interest…).
 - **Expenses paid**: every payment you log in your **Spending page**, at the full amount you entered, in the month you logged it under (for a fixed-amount bill or loan, the *Month paid*; for a bill that varies, its bill month). One payment covering four terms counts all four that month. They're added automatically; change them on Spending.
 - **Paid ahead**: when a payment covers more than was due by its month (terms paid in advance, paying a loan off early, paying extra), that part counts as *paid ahead* and the rest as *regular*. Catching up on overdue terms is regular. Expenses that vary are always regular. The Expenses paid box shows both, a line under the boxes sums up the month (e.g. *Spent ₱18,450 more than came in, but ₱42,000 of it was paid ahead*), and Insights use regular spending for the savings rate, loan share and average, so paying ahead doesn't make a month look bad. Net and Expenses paid always include everything.
 - **+ Add money in** opens the form, and it closes again after you save.
+- *Where it went* and *Where it came from* (expenses paid by expense, money in by category) are inside Insights.
 - **Net** = money in − expenses paid. The **Budget** compares expenses paid with a monthly amount you set.
 - **Expenses this month** starts collapsed every time you open the page (only how many items it holds shows); tap **Show** to expand it. It shows Spending's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as Spending's *By month* view, where *Paid* is also what you logged that month.
 - *Expenses paid* breaks them down by expense, *Money in by category* by category, and *Transactions* lists both (each expense paid shows its category tag: Bill, Loan or Other).
@@ -94,7 +98,7 @@ The eye button hides every amount here too.
 
 ## Spending: your bills, loans and other expenses
 
-`tracker.html` (**Spending** in the menu) follows each bill or loan month by month. Tap **+ Add expense** at the top of the page. Everything you add is an expense. Its **Category** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Category* sort and filter use. A new expense starts with the category you used last. Every expense has an **Icon**, shown on its card, in the month view and on the Overview. Leave it on **Auto** to pick one from the name and provider (Meralco gets electricity, Shopee shopping, an allowance the family icon, loans the loan icon), or choose one from the list; the form shows a preview. Ones added before categories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:
+`tracker.html` (**Spending** in the menu) follows each bill or loan month by month. Each expense shows as one line: its icon, name, what's due next, its status, a **Pay** button and a **⋯** menu (Edit, Delete). Tap a line for its full card (term boxes, payment history); **Less** folds it back. Tap **+ Add expense** at the top of the page to add one. Everything you add is an expense. Its **Category** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Category* sort and filter use. A new expense starts with the category you used last. Every expense has an **Icon**, shown on its card, in the month view and on the Overview. Leave it on **Auto** to pick one from the name and provider (Meralco gets electricity, Shopee shopping, an allowance the family icon, loans the loan icon), or choose one from the list; the form shows a preview. Ones added before categories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:
 
 - **Fixed amount**: the same amount every month for a set number of months (an installment, a loan, a bill split over a few months). Enter the amount per month, the number of months (e.g. 6) and the first month due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
   - **Record payment** asks for the month you paid, how many months (terms) it covers and the amount (filled in as terms × amount; change it if you paid something different). Paying three terms in one month counts as three terms.

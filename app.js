@@ -188,9 +188,11 @@
 
     renderStats(sum(ins), t ? t.paid : 0);
     renderVerdict();
+    renderUpcoming();
     renderBreakdown($('breakdown'), $('breakdownEmpty'), billsPaid);
     renderBreakdown($('breakdownIn'), $('breakdownInEmpty'), ins);
     renderList([...ins, ...billsPaid]);
+    $('txnCount').textContent = `(${ins.length + billsPaid.length})`;
     renderTracker(t);
     renderInsights();
 
@@ -206,48 +208,127 @@
     const v = $('verdict');
     if (!window.Insights) { v.hidden = true; return; }
     const h = Insights.headline(state.expenses, readTracker(), viewMonth);
-    $('spentSub').textContent = h.extra > 0 ? `${money(h.regular)} regular · ${money(h.extra)} paid ahead` : 'on your Spending page';
+    $('spentSub').textContent = h.extra > 0 ? `${moneyRound(h.regular)} regular · ${moneyRound(h.extra)} ahead` : 'from Spending';
     if (!(h.in > 0 || h.out > 0)) { v.hidden = true; return; }
+    const m = moneyRound;
     let text;
     if (h.net < 0) {
-      text = `Spent ${money(-h.net)} more than came in`;
+      text = `Spent ${m(-h.net)} more than came in`;
       if (h.extra > 0) text += h.regularNet >= 0
-        ? `, but ${money(h.extra)} of it was paid ahead. Without that, ${money(h.regularNet)} would be left.`
-        : `, ${money(h.extra)} of it paid ahead.`;
+        ? `, but ${m(h.extra)} of it was paid ahead. Without that, ${m(h.regularNet)} would be left.`
+        : `, ${m(h.extra)} of it paid ahead.`;
       else text += '.';
+    } else if (h.extra > 0) {
+      text = `Includes ${m(h.extra)} paid ahead. Regular spending was ${m(h.regular)}${h.in > 0 ? ` (${Math.round((h.regular / h.in) * 100)}% of money in)` : ''}.`;
+    } else if (h.in > 0) {
+      text = `You've spent ${Math.round((h.out / h.in) * 100)}% of what came in.`;
     } else {
-      text = `${money(h.net)} left after expenses` + (h.extra > 0 ? `, after paying ${money(h.extra)} ahead.` : '.');
+      text = `${m(h.out)} paid so far; no money in logged yet.`;
     }
     v.textContent = text;
     v.classList.toggle('is-over', h.regularNet < 0);
     v.hidden = false;
   }
 
+  // Whole pesos for the big figures (exact amounts stay in lists and tooltips).
+  function moneyRound(n) {
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency, maximumFractionDigits: 0 }).format(n);
+    } catch {
+      return money(n);
+    }
+  }
+
   function renderStats(totalIn, totalOut) {
-    $('totalIn').textContent = money(totalIn);
-    $('totalSpent').textContent = money(totalOut);
+    const now = monthKey(todayISO());
+    $('heroLabel').textContent = viewMonth === now ? 'Left this month' : `Left in ${monthLabel(viewMonth)}`;
+    $('totalIn').textContent = moneyRound(totalIn);
+    $('totalSpent').textContent = moneyRound(totalOut);
     const net = Math.round((totalIn - totalOut) * 100) / 100;
-    $('net').textContent = (net > 0 ? '+' : '') + money(net);
+    $('net').textContent = (net < 0 ? '−' : '') + moneyRound(Math.abs(net));
     $('net').classList.toggle('money-in', net > 0);
     $('net').classList.toggle('over', net < 0);
 
+    // Budget: regular spending against the monthly amount you set.
+    const h = window.Insights ? Insights.headline(state.expenses, readTracker(), viewMonth) : { regular: totalOut, average: null };
     const fill = $('budgetFill');
     const remaining = $('remaining');
     fill.className = '';
     remaining.classList.remove('over');
-
     if (state.budget > 0) {
-      const left = state.budget - totalOut;
-      const pct = (totalOut / state.budget) * 100;
-      remaining.textContent = left >= 0 ? `${money(left)} left to spend` : `${money(-left)} over budget`;
+      const used = h.regular;
+      const pct = (used / state.budget) * 100;
+      const left = state.budget - used;
+      $('budgetText').textContent = `${moneyRound(used)} of ${moneyRound(state.budget)}`;
+      remaining.textContent = left >= 0 ? `${Math.round(pct)}% used · ${moneyRound(left)} left` : `${moneyRound(-left)} over budget`;
       remaining.classList.toggle('over', left < 0);
       fill.style.width = Math.min(pct, 100) + '%';
       if (pct >= 100) fill.classList.add('over');
       else if (pct >= 80) fill.classList.add('warn');
     } else {
-      remaining.textContent = '';
+      $('budgetText').textContent = 'Set a budget';
+      remaining.textContent = h.average ? `Your average is ${moneyRound(h.average)}` : 'Tap to set one';
       fill.style.width = '0';
     }
+  }
+
+  // ---- Coming up -----------------------------------------------------------
+  // What's overdue and due in the next 14 days, from Spending (always from today).
+
+  const UPCOMING_DAYS = 14;
+
+  function upcoming() {
+    if (!window.Loans) return [];
+    const tracker = readTracker();
+    const today = todayISO();
+    const now = monthKey(today);
+    const day = Number(today.slice(8));
+    const limit = new Date(Date.now() + UPCOMING_DAYS * 864e5);
+    const limitISO = `${limit.getFullYear()}-${pad(limit.getMonth() + 1)}-${pad(limit.getDate())}`;
+    const dueDate = (month, dueDay) => {
+      const [y, m] = month.split('-').map(Number);
+      const last = new Date(y, m, 0).getDate();
+      return `${month}-${pad(Math.min(dueDay || last, last))}`;
+    };
+    const out = [];
+    for (const e of Loans.unpaidBefore(tracker, now, now)) {
+      out.push({ loan: e.loan, due: dueDate(e.months[0], e.loan.dueDay), amount: e.amount, estimated: e.estimated, overdue: true, note: `${e.months.length > 1 ? `${e.months.length} payments` : '1 payment'} from earlier months` });
+    }
+    for (const month of [now, shiftMonth(now, 1)]) {
+      for (const i of Loans.monthItems(tracker, month, now, day)) {
+        if (i.paid) continue;
+        const due = dueDate(month, i.dueDay);
+        if (due > limitISO && i.status !== 'overdue') continue;
+        out.push({ loan: i.loan, due, amount: i.amount, estimated: i.estimated, overdue: i.status === 'overdue', note: i.variable ? '' : `term ${i.termNo} of ${i.loan.terms}` });
+      }
+    }
+    return out.sort((a, b) => (b.overdue - a.overdue) || a.due.localeCompare(b.due));
+  }
+
+  function renderUpcoming() {
+    const items = upcoming();
+    const total = items.reduce((t, i) => t + (i.amount || 0), 0);
+    $('upcomingCount').textContent = items.length ? `(${items.length}) · ${moneyRound(total)}` : '(0)';
+    const today = todayISO();
+    const days = (iso) => Math.round((new Date(iso + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5);
+    $('upcomingNote').textContent = items.length
+      ? `${items.filter((i) => i.overdue).length ? `${items.filter((i) => i.overdue).length} overdue · ` : ''}${moneyRound(total)} due in the next ${UPCOMING_DAYS} days${items.some((i) => i.estimated) ? ' (~ estimated)' : ''}.`
+      : `Nothing due in the next ${UPCOMING_DAYS} days.`;
+    $('upcomingList').replaceChildren(...items.map((i) => {
+      const d = days(i.due);
+      const when = i.overdue ? `Overdue · was due ${dateLabel(i.due)}` : d === 0 ? 'Due today' : `Due ${dateLabel(i.due)} · in ${d} day${d === 1 ? '' : 's'}`;
+      return el('div', { className: `bill-item compact status-${i.overdue ? 'overdue' : 'upcoming'}` }, [
+        PayIcons.billIcon(Loans.iconKind(i.loan)),
+        el('div', { className: 'bill-main' }, [
+          el('div', { className: 'bill-name' }, [document.createTextNode(i.loan.name), el('span', { className: 'sub-tag', textContent: Loans.categoryLabel(i.loan) })]),
+          el('div', { className: 'sub', textContent: [when, i.note].filter(Boolean).join(' · ') }),
+        ]),
+        el('div', { className: 'bill-side' }, [
+          el('div', { className: 'amt', textContent: i.amount === null ? 'Varies' : `${i.estimated ? '~' : ''}${money(i.amount)}` }),
+          el('span', { className: `badge ${i.overdue ? 'overdue' : (d <= 3 ? 'due-soon' : 'upcoming')}`, textContent: i.overdue ? 'Overdue' : (d <= 3 ? 'Due soon' : 'Upcoming') }),
+        ]),
+      ]);
+    }));
   }
 
   function renderBreakdown(list, empty, items) {
@@ -327,14 +408,18 @@
   // The Tracker's month dashboard, the same numbers as on the Tracker page.
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due this month', upcoming: 'Upcoming' };
 
-  // "Expenses this month" starts collapsed every time the page opens, so its
-  // details stay hidden until you choose to show them. Only the count shows.
-  let trackerOpen = false;
+  // Detail sections follow privacy mode (lib/privacy.js): collapsed while
+  // it's on, showing only their name and count. Show / Hide flips it for
+  // everything at once, like the eye in the header.
+  const isPrivate = () => !window.BalancePrivacy || window.BalancePrivacy.hidden;
 
   function applyTrackerCollapsed() {
-    $('trackerBody').hidden = !trackerOpen;
-    $('trackerToggle').setAttribute('aria-expanded', String(trackerOpen));
-    $('trackerToggle').querySelector('.section-action').textContent = trackerOpen ? 'Hide' : 'Show';
+    const open = !isPrivate();
+    for (const [body, toggle] of [['upcomingBody', 'upcomingToggle'], ['trackerBody', 'trackerToggle'], ['txnBody', 'txnToggle'], ['insightsBody', 'insightsToggle']]) {
+      $(body).hidden = !open;
+      $(toggle).setAttribute('aria-expanded', String(open));
+      $(toggle).querySelector('.section-action').textContent = open ? 'Hide' : 'Show';
+    }
   }
 
   function renderTracker(t) {
@@ -385,7 +470,6 @@
   // Spending habits (lib/insights.js). Starts collapsed every time the page
   // opens, like the other sections.
 
-  let insightsOpen = false;
   let trendAsTable = false;
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const pct = (x) => `${Math.round(x * 100)}%`;
@@ -418,11 +502,9 @@
 
   function renderInsights() {
     if (!window.Insights) return;
-    $('insightsBody').hidden = !insightsOpen;
-    $('insightsToggle').setAttribute('aria-expanded', String(insightsOpen));
-    $('insightsToggle').querySelector('.section-action').textContent = insightsOpen ? 'Hide' : 'Show';
+    applyTrackerCollapsed();
     $('insightsPeriod').textContent = `· ${monthLabel(viewMonth)}`;
-    if (!insightsOpen) return; // nothing is drawn until you choose to see it
+    if (isPrivate()) return; // nothing is drawn until you choose to see it
 
     const tracker = readTracker();
     const hasData = state.expenses.some((e) => typeOf(e) === 'in') || tracker.payments.length > 0;
@@ -810,6 +892,24 @@
     $('filterType').addEventListener('change', () => { fillCategoryFilter(); render(); });
     $('filterCategory').addEventListener('change', render);
     $('search').addEventListener('input', render);
+    $('budgetShow').addEventListener('click', () => {
+      $('budgetForm').hidden = !$('budgetForm').hidden;
+      if (!$('budgetForm').hidden) {
+        if (!state.budget) {
+          const h = window.Insights ? Insights.headline(state.expenses, readTracker(), viewMonth) : null;
+          if (h && h.average) $('budgetInput').value = Math.round(h.average);
+        }
+        $('budgetInput').focus();
+      }
+    });
+    $('budgetForm').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const v = parseFloat($('budgetInput').value);
+      state.budget = v > 0 ? v : null;
+      save();
+      $('budgetForm').hidden = true;
+      render();
+    });
     $('budgetInput').addEventListener('input', (ev) => {
       const v = parseFloat(ev.target.value);
       state.budget = v > 0 ? v : null;
@@ -821,8 +921,7 @@
       save();
       render();
     });
-    $('trackerToggle').addEventListener('click', () => { trackerOpen = !trackerOpen; applyTrackerCollapsed(); });
-    $('insightsToggle').addEventListener('click', () => { insightsOpen = !insightsOpen; renderInsights(); });
+    for (const id of ['upcomingToggle', 'trackerToggle', 'txnToggle', 'insightsToggle']) $(id).addEventListener('click', () => window.BalancePrivacy && window.BalancePrivacy.toggle());
     $('trendViewBtn').addEventListener('click', () => { trendAsTable = !trendAsTable; renderInsights(); });
     // Redraw the chart when the screen size changes (e.g. turning the iPad).
     let resizeTimer = null;
@@ -830,7 +929,7 @@
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (insightsOpen && window.innerWidth !== lastWidth) renderInsights();
+        if (!isPrivate() && window.innerWidth !== lastWidth) renderInsights();
         lastWidth = window.innerWidth;
       }, 200);
     });
