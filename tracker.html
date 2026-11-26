@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=3f2ad51c29"></script>
-  <script src="lib/privacy.js?v=3f2ad51c29"></script>
-  <link rel="stylesheet" href="style.css?v=3f2ad51c29">
-  <link rel="stylesheet" href="lending.css?v=3f2ad51c29">
-  <link rel="stylesheet" href="theme.css?v=3f2ad51c29">
+  <script src="lib/theme.js?v=33c9e30033"></script>
+  <script src="lib/privacy.js?v=33c9e30033"></script>
+  <link rel="stylesheet" href="style.css?v=33c9e30033">
+  <link rel="stylesheet" href="lending.css?v=33c9e30033">
+  <link rel="stylesheet" href="theme.css?v=33c9e30033">
 </head>
 <body>
   <header class="topbar">
@@ -32,21 +32,20 @@
         <summary id="formTitle">Add expense</summary>
         <form id="loanForm" class="bill-form" autocomplete="off">
           <fieldset class="wide seg-field">
-            <legend>Type: a <strong>bill</strong> (electricity, rent, credit card, subscription…), a <strong>loan</strong> (money you borrowed, an installment), or another <strong>expense</strong> (groceries, allowance, school…)</legend>
-            <div class="type-toggle three" id="categoryToggle" role="group" aria-label="Type">
-              <button type="button" data-category="bill" class="active">Bill</button>
-              <button type="button" data-category="loan">Loan</button>
-              <button type="button" data-category="expense">Expense</button>
-            </div>
-          </fieldset>
-          <fieldset class="wide seg-field">
-            <legend><strong>Fixed amount</strong>: the same every month for a set number of months (installments, loans). <strong>Varies each month</strong>: e.g. electricity, water.</legend>
+            <legend><strong>Fixed amount</strong>: the same every month for a set number of months (e.g. an installment). <strong>Varies each month</strong>: e.g. electricity, water.</legend>
             <div class="type-toggle" id="kindToggle" role="group" aria-label="Amount type">
               <button type="button" data-kind="fixed" class="active">Fixed amount</button>
               <button type="button" data-kind="variable">Varies each month</button>
             </div>
           </fieldset>
           <label>Name <input id="loanName" maxlength="60" required placeholder="e.g. Phone (Home Credit)"></label>
+          <label>Subcategory
+            <select id="categorySelect">
+              <option value="bill">Bill</option>
+              <option value="loan">Loan</option>
+              <option value="expense">Other</option>
+            </select>
+          </label>
           <label><span id="lenderLabel">Lender (optional)</span> <input id="loanLender" maxlength="60" placeholder="e.g. Home Credit, BPI, SSS"></label>
           <label data-kind="fixed">Amount per month <input id="loanTermAmount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="e.g. 1500"></label>
           <label data-kind="fixed">Number of months <input id="loanTerms" type="number" min="1" max="360" required inputmode="numeric" placeholder="e.g. 6"></label>
@@ -115,17 +114,17 @@
           <button type="button" data-status="done" class="chip">Paid off</button>
         </div>
         <div class="filter-selects">
-          <label>Type
+          <label>Subcategory
             <select id="typeFilter">
               <option value="">All expenses</option>
               <option value="bill">Bills</option>
               <option value="loan">Loans</option>
-              <option value="expense">Other expenses</option>
+              <option value="expense">Other</option>
               <option value="fixed">Fixed amount</option>
               <option value="variable">Varies each month</option>
             </select>
           </label>
-          <label>Provider / lender
+          <label>Paid to
             <select id="providerFilter"><option value="">All providers</option></select>
           </label>
           <label>Search
@@ -134,7 +133,7 @@
           <label>Sort by
             <select id="trackerSort">
               <option value="due">Due first</option>
-              <option value="type">Type (bills, loans, expenses)</option>
+              <option value="type">Subcategory</option>
               <option value="provider">Provider / lender</option>
               <option value="name">Name (A–Z)</option>
             </select>
@@ -156,12 +155,12 @@
 
   <p id="undoBar" class="save-status" role="status" aria-live="polite"></p>
 
-  <script src="lib/icons.js?v=3f2ad51c29"></script>
-  <script src="lib/loans.js?v=3f2ad51c29"></script>
-  <script src="tracker.js?v=3f2ad51c29"></script>
-  <script src="lib/core.js?v=3f2ad51c29"></script>
-  <script src="lib/merge.js?v=3f2ad51c29"></script>
-  <script src="lib/account.js?v=3f2ad51c29"></script>
-  <script src="lib/sync.js?v=3f2ad51c29"></script>
+  <script src="lib/icons.js?v=33c9e30033"></script>
+  <script src="lib/loans.js?v=33c9e30033"></script>
+  <script src="tracker.js?v=33c9e30033"></script>
+  <script src="lib/core.js?v=33c9e30033"></script>
+  <script src="lib/merge.js?v=33c9e30033"></script>
+  <script src="lib/account.js?v=33c9e30033"></script>
+  <script src="lib/sync.js?v=33c9e30033"></script>
 </body>
 </html>

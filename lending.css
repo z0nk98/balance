@@ -387,5 +387,5 @@ html.hide-amounts input[inputmode="decimal"]:not(:focus),
 html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .topbar .amounts-toggle { flex: none; }
 
-/* Three-way type switch (Bill / Loan / Expense). */
-.seg-field .type-toggle.three { grid-template-columns: repeat(3, 1fr); width: min(100%, 420px); }
+/* Subcategory of an expense (Bill, Loan, Other): a small, quiet tag after its name. */
+.sub-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; color: var(--muted); border: 1px solid var(--border); vertical-align: 2px; white-space: nowrap; }

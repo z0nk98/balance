@@ -109,7 +109,8 @@
         category: loan.name,
         amount: p.amount,
         date: monthKey(loggedIso) === p.month ? loggedIso : dateIn(p.month, loan.dueDay),
-        note: [Loans.categoryLabel(loan), variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
+        subcategory: Loans.categoryLabel(loan),
+        note: [variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
         color: colorFor(loan.id),
         created: p.created || 0,
       };
@@ -268,7 +269,7 @@
           el('div', { className: 'meta' }, [
             el('div', { className: 'cat' }, [
               document.createTextNode(e.category),
-              e.tracker ? el('span', { className: 'tag', textContent: 'Tracker' }) : null,
+              e.tracker ? el('span', { className: 'sub-tag', textContent: e.subcategory }) : null,
             ]),
             el('div', { className: 'sub', textContent: dateLabel(e.date) + (e.note ? ' · ' + e.note : '') }),
           ]),
@@ -326,8 +327,8 @@
       el('div', { className: `bill-item compact status-${i.status}` }, [
         PayIcons.billIcon(Loans.iconKind(i.loan)),
         el('div', { className: 'bill-main' }, [
-          el('div', { className: 'bill-name', textContent: i.loan.name + (i.variable ? '' : ` · term ${i.termNo} of ${i.loan.terms}`) }),
-          el('div', { className: 'sub', textContent: [Loans.categoryLabel(i.loan), i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
+          el('div', { className: 'bill-name' }, [document.createTextNode(i.loan.name + (i.variable ? '' : ` · term ${i.termNo} of ${i.loan.terms}`)), el('span', { className: 'sub-tag', textContent: Loans.categoryLabel(i.loan) })]),
+          el('div', { className: 'sub', textContent: [i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
         ]),
         el('div', { className: 'bill-side' }, [
           el('div', { className: 'amt', textContent: i.amount === null ? 'Varies' : `${i.estimated ? '~' : ''}${money(i.amount)}` }),

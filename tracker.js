@@ -249,7 +249,6 @@
 
   function loanCard(loan, s) {
     const meta = [
-      Loans.categoryLabel(loan),
       `${money(loan.termAmount)} × ${loan.terms} terms = ${money(s.total)}`,
       `${monthLabel(loan.firstMonth, true)} – ${monthLabel(s.lastMonth, true)}`,
       loan.dueDay ? `due on the ${ordinal(loan.dueDay)}` : '',
@@ -275,7 +274,7 @@
     return el('article', { className: `tracker-loan${editingId === loan.id ? ' editing' : ''}` }, [
       el('div', { className: 'tracker-head' }, [
         el('div', {}, [
-          el('h3', { textContent: loan.name }),
+          el('h3', {}, [document.createTextNode(loan.name), subTag(loan)]),
           loan.lender ? el('div', { className: 'sub', textContent: loan.lender }) : '',
         ]),
         el('span', { className: `badge ${STATUS[s.status]}`, textContent: statusText(s) }),
@@ -414,7 +413,7 @@
   function variableCard(bill, s) {
     const month = thisMonth();
     const meta = [
-      `${Loans.categoryLabel(bill)} · varies each month`,
+      'Varies each month',
       s.lastMonth
         ? `${monthLabel(bill.firstMonth, true)} – ${monthLabel(s.lastMonth, true)} (${plural(bill.months, 'month')})`
         : `since ${monthLabel(bill.firstMonth, true)}, no end`,
@@ -449,7 +448,7 @@
     return el('article', { className: `tracker-loan${editingId === bill.id ? ' editing' : ''}` }, [
       el('div', { className: 'tracker-head' }, [
         el('div', {}, [
-          el('h3', { textContent: bill.name }),
+          el('h3', {}, [document.createTextNode(bill.name), subTag(bill)]),
           bill.lender ? el('div', { className: 'sub', textContent: bill.lender }) : '',
         ]),
         el('span', { className: `badge ${st.cls}`, textContent: st.text }),
@@ -496,7 +495,7 @@
   function arrange(items, within) {
     if (sortBy === 'name') return [...items].sort(byName).map(card);
     if (sortBy === 'type') {
-      const groups = [['Bills', 'bill'], ['Loans', 'loan'], ['Other expenses', 'expense']]
+      const groups = [['Bills', 'bill'], ['Loans', 'loan'], ['Other', 'expense']]
         .map(([title, cat]) => [title, items.filter((r) => Loans.categoryOf(r.loan) === cat).sort(within)]);
       return groups.filter(([, list]) => list.length).flatMap(([title, list]) => [groupTitle(title, list.length), ...list.map(card)]);
     }
@@ -619,6 +618,11 @@
 
   const iconFor = (loan) => PayIcons.billIcon(Loans.iconKind(loan));
 
+  // The subcategory (Bill, Loan or Other) as a small tag after the name.
+  function subTag(item) {
+    return el('span', { className: 'sub-tag', textContent: Loans.categoryLabel(item) });
+  }
+
   const dueDayText = (item) => (item.dueDay ? `Due on the ${ordinal(item.dueDay)}` : 'Due anytime in the month');
   const amountOf = (item) => (item.amount === null ? 'Varies' : (item.estimated ? `~${money(item.amount)}` : money(item.amount)));
 
@@ -678,7 +682,7 @@
     const loan = item.loan;
     const name = loan.name + (item.variable ? '' : ` · term ${item.termNo} of ${loan.terms}`);
     const kind = item.variable ? 'Varies each month' : 'Fixed amount';
-    const sub2 = [Loans.categoryLabel(loan), kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
+    const sub2 = [kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
     let action = null;
     if (!item.paid) {
       action = el('button', {
@@ -700,7 +704,7 @@
     return el('div', { className: `bill-item status-${item.status}` }, [
       iconFor(loan),
       el('div', { className: 'bill-main' }, [
-        el('div', { className: 'bill-name', textContent: name }),
+        el('div', { className: 'bill-name' }, [document.createTextNode(name), subTag(loan)]),
         el('div', { className: 'sub', textContent: dueDayText(item) }),
         el('div', { className: 'sub', textContent: sub2 }),
       ]),
@@ -844,7 +848,7 @@
     }
 
     $('loanEmpty').hidden = main.length > 0;
-    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add expense at the top: a bill, a loan or another expense, with a fixed amount over a set number of months, or an amount that varies each month.';
+    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add expense at the top: a fixed amount over a set number of months, or an amount that varies each month.';
     else if (on && !picked.length) $('loanEmpty').textContent = 'Nothing matches these filters.';
     else if (showDoneInMain) $('loanEmpty').textContent = 'Nothing paid off yet.';
     else if (on) $('loanEmpty').textContent = pickedDone.length ? 'Only paid-off ones match: see Paid off below.' : 'Nothing matches these filters.';
@@ -879,10 +883,12 @@
   };
   let formKind = 'fixed';
   let formCategory = 'bill';
+  // The subcategory a new expense starts with: the one used last time.
+  let addCategory = 'bill';
 
   function setCategory(category) {
     formCategory = category;
-    for (const b of document.querySelectorAll('#categoryToggle button')) b.classList.toggle('active', b.dataset.category === category);
+    $('categorySelect').value = category;
     labelFields();
   }
 
@@ -901,7 +907,7 @@
     inputs.name.placeholder = text[2];
   }
 
-  for (const b of document.querySelectorAll('#categoryToggle button')) b.addEventListener('click', () => setCategory(b.dataset.category));
+  $('categorySelect').addEventListener('change', (ev) => setCategory(ev.target.value));
 
   function setKind(kind) {
     formKind = kind;
@@ -965,6 +971,7 @@
     $('loanSubmit').textContent = 'Add expense';
     $('loanCancel').hidden = true;
     lockKind(false);
+    setCategory(addCategory);
     setKind(formKind);
   }
 
@@ -1013,6 +1020,7 @@
       state.loans.push({ id: newId(), ...loan, created: Date.now() });
     }
     const message = editingId ? `${loan.name} updated` : `${loan.name} added`;
+    if (!editingId) addCategory = formCategory;
     resetForm();
     $('loanFormWrap').open = false;
     save(message);
