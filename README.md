@@ -28,15 +28,14 @@ Every page has a theme switch in the header: sun for **Light**, moon for **Dark*
 
 ## Using it on a phone
 
-On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Money lent payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are. Long overdue lists on Bills show the three most recent first, with *Show N more*.
+On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Money lent payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are.
 
 ## Pages
 
 | Page | Who it's for |
 | --- | --- |
-| `index.html` | You: money in and out (on this device; synced if you turn it on) |
-| `bills.html` | You: bills tracker (on this device; synced if you turn it on) |
-| `tracker.html` | You: Personal Bills Tracker, for loans you are paying off (on this device; synced if you turn it on) |
+| `index.html` | You: Expenses, money in minus bills paid in the Tracker (on this device; synced if you turn it on) |
+| `tracker.html` | You: Personal Bills Tracker, for your bills and loans (on this device; synced if you turn it on) |
 | `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
 
@@ -70,17 +69,7 @@ The Expenses page (`index.html`) works month by month (arrows in the header):
 - **Net** = money in − bills paid. The **Bills budget** compares bills paid with a monthly amount you set.
 - **Bills this month** shows the Tracker's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as the Tracker's *By month* view, where *Paid* is also what you logged that month.
 - *Bills paid* breaks them down by bill, *Money in by category* by category, and *Transactions* lists both (bills paid are tagged *Tracker*).
-- Money-out entries typed in before this change, and payments from the Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Tracker payments.
-
-## Bills
-
-`bills.html` keeps track of recurring bills: electricity, water, internet, rent, credit cards, subscriptions and so on.
-
-- **Add a bill** as **Fixed** (same amount every time, e.g. rent) or **Variable** (changes, e.g. electricity: enter an estimate, and the actual amount when you pay). Give it a due day, or tick **No set due date** to pay any time in the month. Then set how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
-- **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
-- **Mark paid** asks for the amount actually paid. Paid bills are saved as money-out entries, but the Expenses page now counts only bills paid in the Tracker, so these aren't in its totals. To have a bill count, add it on the Tracker.
-- **Finished bills** (ones with a last month, or one-off bills, where every payment was made) move into a collapsed *Paid off* list under *All bills*.
-- Bills are stored in this browser, like expenses, and synced to your other devices if sync is on (see below). *Download backup* and *Restore backup* still work for keeping a copy.
+- Money-out entries typed in before this change, and payments from the old Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Tracker payments.
 
 ## Tracker: bills and loans you are paying off
 
@@ -92,7 +81,7 @@ The Expenses page (`index.html`) works month by month (arrows in the header):
 - **Varies each month**: a bill whose amount changes, like electricity or water. Enter the first month due, and optionally the provider, a usual amount (used as an estimate), the due day, and a number of months (leave blank if it never ends).
   - **Record payment** asks for the bill month and the actual amount.
   - Each one shows a chip per month with the amount paid (green) or unpaid (red), the total paid, the average and last amounts, and whether it's **up to date**, **due this month**, **N months unpaid** or **paid off**.
-- **By month** (the default) works like the Bills page: use the arrows in the header to pick a month. The totals show what's due that month, what's paid, what's left and what's overdue, and the list shows every bill and loan due that month with its status (Paid, Overdue, Due this month, Upcoming). Amounts for bills that vary show with `~` until paid. **Mark paid** asks for the amount: for a bill that varies, the actual amount for that month; for a fixed-amount one, it records that term, plus any earlier unpaid terms, since terms are paid in order (the button then says *Pay 3 terms*, for example). **Undo** on a paid bill that varies removes that month's payment. On the current month, *Still unpaid from earlier months* lists anything you missed, with a button to pay it. *All*, *Unpaid* and *Paid* filter the month's list.
+- **By month** (the default): use the arrows in the header to pick a month. The totals show what's due that month, what's paid, what's left and what's overdue, and the list shows every bill and loan due that month with its status (Paid, Overdue, Due this month, Upcoming). Amounts for bills that vary show with `~` until paid. **Mark paid** asks for the amount: for a bill that varies, the actual amount for that month; for a fixed-amount one, it records that term, plus any earlier unpaid terms, since terms are paid in order (the button then says *Pay 3 terms*, for example). **Undo** on a paid bill that varies removes that month's payment. On the current month, *Still unpaid from earlier months* lists anything you missed, with a button to pay it. *All*, *Unpaid* and *Paid* filter the month's list.
 - **Undo**: after any change (a payment, *Mark paid*, adding, editing or deleting a bill or loan), a message pops up at the bottom with an **Undo** button for about 8 seconds; it puts things back exactly as they were. In the month view, every paid row also has an **Undo** button: for a bill that varies it removes that month's payment; for a fixed-amount one it removes the payment that covered that term (it tells you which terms first, since one payment can cover several).
 - **All bills & loans** shows the full cards described above, with filters and sorting. The page remembers which view you used last on that device.
 - **Filter** above the list: **All**, **Needs paying** (something due by this month isn't paid), **Up to date** or **Paid off**; **Type** (loans & fixed-amount bills, or bills that vary); **Provider / lender**; and **Search** (name, provider or note). Filters combine, and a line shows how many match with what's left and due on just those. *Clear filters* resets them. The status, type and provider are remembered on that device; the top totals always cover everything.
@@ -104,7 +93,7 @@ The Expenses page (`index.html`) works month by month (arrows in the header):
 
 ## Syncing expenses and bills across devices
 
-Expenses, bills and tracker loans are saved in each browser. To see the same ones everywhere, use the bar at the top of any of those pages: **Sync across devices**, then enter the GitHub key and passphrase from your Money lent page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
+Expenses and your Tracker bills and loans are saved in each browser. To see the same ones everywhere, use the bar at the top of any of those pages: **Sync across devices**, then enter the GitHub key and passphrase from your Money lent page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
 
 - Entries already on a device are kept and merged with the others the first time it syncs, so nothing is lost. Adds, edits and deletes from different devices all come through; if one device edits an entry another deleted, the edit wins.
 - Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.

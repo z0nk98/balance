@@ -1,14 +1,12 @@
 (() => {
   'use strict';
 
-  // Entries are kept under `expenses` for compatibility (the Bills page adds
-  // to it too). Each has type 'in' (money in) or 'out' (money out); older
+  // Entries are kept under `expenses` for compatibility. Each has type 'in' (money in) or 'out' (money out); older
   // entries without a type are money out.
   const STORAGE_KEY = 'expense-tracker:v1';
-  const BILLS_KEY = 'tracking-bills:v1';
   // Money out is the bills paid in the Personal Bills Tracker (tracker.html).
-  // Money-out entries typed in here or added by the Bills page are kept, but
-  // not counted.
+  // Money-out entries typed in here (or added by the old Bills page) are kept,
+  // but not counted.
   const LOANS_KEY = 'personal-loans:v1';
   const BILL_COLORS = ['#e07a5f', '#3d85c6', '#8e6fd1', '#f2a541', '#4fb3bf', '#d65db1', '#81b29a', '#b45f3c', '#6b4fd1', '#9aa0a8'];
   const CATEGORIES = {
@@ -61,43 +59,6 @@
       // Storage unavailable (private mode, quota): keep working in memory.
     }
     window.BalanceSync?.changed();
-  }
-
-  // ---- Bills link ---------------------------------------------------------
-  //
-  // Paid bills are money out. syncBills() adds any paid bill missing from
-  // Expenses; deleting or editing a bill payment here updates the bill too.
-
-  function readBills() {
-    try {
-      const data = JSON.parse(localStorage.getItem(BILLS_KEY) || 'null');
-      return data && Array.isArray(data.bills) ? { ...data, payments: data.payments || {} } : null;
-    } catch {
-      return null;
-    }
-  }
-
-  function writeBills(bills) {
-    try {
-      localStorage.setItem(BILLS_KEY, JSON.stringify(bills));
-    } catch {
-      // Storage unavailable: the Bills page keeps its own copy.
-    }
-    window.BalanceSync?.changed();
-  }
-
-  function syncBills() {
-    const bills = readBills();
-    if (!bills || !window.Bills) return;
-    const { billsChanged, expensesChanged } = Bills.syncExpenses(bills, state);
-    if (expensesChanged) save();
-    if (billsChanged) writeBills(bills);
-  }
-
-  function billNameFor(e) {
-    const bills = readBills();
-    const billId = e.billPayment.slice(0, e.billPayment.lastIndexOf(':'));
-    return bills?.bills.find((b) => b.id === billId)?.name || 'bill';
   }
 
   const typeOf = (e) => (e.type === 'in' ? 'in' : 'out');
@@ -231,7 +192,7 @@
     const hidden = $('hiddenNote');
     hidden.hidden = notCounted.length === 0;
     hidden.textContent = notCounted.length
-      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), typed in here or added by the Bills page. Only bills paid in the Tracker count as money out.`
+      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), saved before money out came from the Tracker. Only bills paid in the Tracker count.`
       : '';
   }
 
@@ -419,17 +380,7 @@
   function remove(id) {
     const e = state.expenses.find((x) => x.id === id);
     if (!e) return;
-    const question = e.billPayment
-      ? `This is your ${billNameFor(e)} bill payment (${money(e.amount)}). Deleting it also marks the bill as not paid. Continue?`
-      : `Delete ${typeOf(e) === 'in' ? '+' : '−'}${money(e.amount)} (${e.category})?`;
-    if (!confirm(question)) return;
-    if (e.billPayment) {
-      const bills = readBills();
-      if (bills && bills.payments[e.billPayment]) {
-        delete bills.payments[e.billPayment];
-        writeBills(bills);
-      }
-    }
+    if (!confirm(`Delete ${typeOf(e) === 'in' ? '+' : '−'}${money(e.amount)} (${e.category})?`)) return;
     state.expenses = state.expenses.filter((x) => x.id !== id);
     if ($('editId').value === id) resetForm();
     save();
@@ -452,16 +403,6 @@
     const editId = $('editId').value;
     if (editId) {
       const e = state.expenses.find((x) => x.id === editId);
-      if (e?.billPayment) {
-        // A bill payment stays money out; keep the bill's record in step.
-        data.type = 'out';
-        const bills = readBills();
-        const payment = bills?.payments[e.billPayment];
-        if (payment) {
-          Object.assign(payment, { amount: data.amount, paidOn: data.date });
-          writeBills(bills);
-        }
-      }
       if (e) Object.assign(e, data);
     } else {
       state.expenses.push({ id: uid(), created: Date.now(), ...data });
@@ -562,7 +503,6 @@
   // ---- Init -----------------------------------------------------------
 
   function init() {
-    syncBills();
     fillCategoryFilter();
     $('budgetInput').value = state.budget ?? '';
     $('currency').value = state.currency;
@@ -593,11 +533,10 @@
       ev.target.value = '';
     });
 
-    // The Bills page can add expenses from another tab: show them.
+    // Another tab, or a sync, changed money in or the Tracker: show it.
     window.addEventListener('storage', (ev) => {
       if (ev.key === STORAGE_KEY) Object.assign(state, load());
-      if (ev.key === BILLS_KEY) syncBills();
-      if (ev.key === STORAGE_KEY || ev.key === BILLS_KEY || ev.key === LOANS_KEY) render();
+      if (ev.key === STORAGE_KEY || ev.key === LOANS_KEY) render();
     });
 
     render();
