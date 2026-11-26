@@ -28,19 +28,19 @@ Every page has a theme switch in the header: sun for **Light**, moon for **Dark*
 
 ## Hiding amounts
 
-Every page has an eye button in the header, next to the theme switch. Tap it to hide all amounts on the page (they show as ₱•••••, and amount boxes in forms are masked until you tap into them); tap again to show them. The choice is remembered on that device and applies to Expenses, Tracker and Money lent together. The borrower page has its own eye button and setting, on the borrower's device.
+Every page has an eye button in the header, next to the theme switch. Tap it to hide all amounts on the page (they show as ₱•••••, and amount boxes in forms are masked until you tap into them); tap again to show them. The choice is remembered on that device and applies to Expenses, Spending and Lending together. The borrower page has its own eye button and setting, on the borrower's device.
 
 ## Using it on a phone
 
-On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Money lent payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are.
+On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Lending payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are.
 
 ## Pages
 
 | Page | Who it's for |
 | --- | --- |
-| `index.html` | You: Expenses Dashboard, money in minus bills paid in the Tracker (on this device; synced if you turn it on) |
-| `tracker.html` | You: Personal Bills Tracker, for your bills and loans (on this device; synced if you turn it on) |
-| `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
+| `index.html` | You: **Overview**, money in minus what you paid on Spending, plus Insights (on this device; synced if you turn it on) |
+| `tracker.html` | You: **Spending**, your expenses: bills, loans and others (on this device; synced if you turn it on) |
+| `lend.html` | You: **Lending**, money you lent to others. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
 
 ## Setup (one time)
@@ -65,20 +65,20 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Payments & reminders** under each borrower starts collapsed every time you open the page, even with a filter remembered. Tap it to expand. Changing a filter yourself expands the borrowers that match.
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
 
-## Expenses: money in minus bills paid
+## Overview: money in minus expenses paid
 
-The Expenses Dashboard (`index.html`, **Expenses Dashboard** in the menu) works month by month (arrows in the header):
+**Overview** (`index.html`) works month by month (arrows in the header):
 
 - **Money in**: what you add here (salary, business, freelance, gifts, refunds, interest…).
-- **Expenses paid**: every payment you log in your **Personal Bills Tracker**, at the full amount you entered, in the month you logged it under (for a fixed-amount bill or loan, the *Month paid*; for a bill that varies, its bill month). One payment covering four terms counts all four that month. They're added automatically; change them on the Tracker.
+- **Expenses paid**: every payment you log in your **Spending page**, at the full amount you entered, in the month you logged it under (for a fixed-amount bill or loan, the *Month paid*; for a bill that varies, its bill month). One payment covering four terms counts all four that month. They're added automatically; change them on Spending.
 - **Net** = money in − expenses paid. The **Budget** compares expenses paid with a monthly amount you set.
-- **Expenses this month** starts collapsed every time you open the page (only how many items it holds shows); tap **Show** to expand it. It shows the Tracker's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as the Tracker's *By month* view, where *Paid* is also what you logged that month.
-- *Bills paid* breaks them down by bill, *Money in by category* by category, and *Transactions* lists both (bills paid are tagged *Tracker*).
-- Money-out entries typed in before this change, and payments from the old Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Tracker payments.
+- **Expenses this month** starts collapsed every time you open the page (only how many items it holds shows); tap **Show** to expand it. It shows Spending's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as Spending's *By month* view, where *Paid* is also what you logged that month.
+- *Expenses paid* breaks them down by expense, *Money in by category* by category, and *Transactions* lists both (each expense paid shows its category tag: Bill, Loan or Other).
+- Money-out entries typed in before this change, and payments from the old Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Spending payments.
 
 ### Insights
 
-An **Insights** section on the Expenses Dashboard (collapsed until you tap **Show**, like the other sections) helps you see your spending habits for the month you're viewing:
+An **Insights** section on the Overview (collapsed until you tap **Show**, like the other sections) helps you see your spending habits for the month you're viewing:
 
 - **Average monthly spending** over the three months before, and how this month compares (▲ more / ▼ less).
 - **Savings rate**: how much of your money in you kept.
@@ -86,13 +86,13 @@ An **Insights** section on the Expenses Dashboard (collapsed until you tap **Sho
 - **Fixed vs varying**: how much of what you paid was fixed amounts, and how much varied.
 - **Money in vs expenses paid** for the last 6 months as a bar chart (tap or hover a month for its numbers; **Table** shows them as a table).
 - **Bills that vary**: each one's last 6 months as a small trend line, with its average, lowest and highest month. A month more than 20% above its usual amount is flagged.
-- **Paying on time**: the share of payments logged on or before their due day, your current on-time streak, and how early or late you pay on average. It goes by the day you logged each payment on the Tracker.
+- **Paying on time**: the share of payments logged on or before their due day, your current on-time streak, and how early or late you pay on average. It goes by the day you logged each payment on Spending.
 
 The eye button hides every amount here too.
 
-## Tracker: bills and loans you are paying off
+## Spending: your bills, loans and other expenses
 
-`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. Tap **+ Add expense** at the top of the page. Everything you add is an expense. Its **Category** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Category* sort and filter use. A new expense starts with the category you used last. Every expense has an **Icon**, shown on its card, in the month view and on the Expenses Dashboard. Leave it on **Auto** to pick one from the name and provider (Meralco gets electricity, Shopee shopping, an allowance the family icon, loans the loan icon), or choose one from the list; the form shows a preview. Ones added before categories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:
+`tracker.html` (**Spending** in the menu) follows each bill or loan month by month. Tap **+ Add expense** at the top of the page. Everything you add is an expense. Its **Category** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Category* sort and filter use. A new expense starts with the category you used last. Every expense has an **Icon**, shown on its card, in the month view and on the Overview. Leave it on **Auto** to pick one from the name and provider (Meralco gets electricity, Shopee shopping, an allowance the family icon, loans the loan icon), or choose one from the list; the form shows a preview. Ones added before categories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:
 
 - **Fixed amount**: the same amount every month for a set number of months (an installment, a loan, a bill split over a few months). Enter the amount per month, the number of months (e.g. 6) and the first month due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
   - **Record payment** asks for the month you paid, how many months (terms) it covers and the amount (filled in as terms × amount; change it if you paid something different). Paying three terms in one month counts as three terms.
@@ -113,11 +113,11 @@ The eye button hides every amount here too.
 
 ## Syncing expenses and bills across devices
 
-Expenses and your Tracker bills and loans are saved in each browser. To see the same ones everywhere, use the bar at the top of any of those pages: **Sync across devices**, then enter the GitHub key and passphrase from your Money lent page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
+Money in and your expenses on Spending are saved in each browser. To see the same ones everywhere, use the bar at the top of any of those pages: **Sync across devices**, then enter the GitHub key and passphrase from your Lending page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
 
 - Entries already on a device are kept and merged with the others the first time it syncs, so nothing is lost. Adds, edits and deletes from different devices all come through; if one device edits an entry another deleted, the edit wins.
 - Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.
-- **Remember passphrase on this device** (on any of the three pages) saves it in that browser, so the pages open and sync without asking. Without it, you're asked again once you close the tab. *Lock* on Money lent, or *Forget passphrase* in the sync bar, removes it. Only use it on your own devices.
+- **Remember passphrase on this device** (on any of the three pages) saves it in that browser, so the pages open and sync without asking. Without it, you're asked again once you close the tab. *Lock* on Lending, or *Forget passphrase* in the sync bar, removes it. Only use it on your own devices.
 
 ## Borrower page privacy
 

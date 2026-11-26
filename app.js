@@ -194,7 +194,7 @@
     const hidden = $('hiddenNote');
     hidden.hidden = notCounted.length === 0;
     hidden.textContent = notCounted.length
-      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), saved before money out came from the Tracker. Only what you pay in the Tracker counts.`
+      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), saved before money out came from Spending. Only what you pay on Spending counts.`
       : '';
   }
 
@@ -276,7 +276,7 @@
           ]),
           el('span', { className: `amt ${incoming ? 'money-in' : ''}`, textContent: `${incoming ? '+' : '−'}${money(e.amount)}` }),
           e.tracker
-            ? el('div', { className: 'actions' }, [el('a', { href: 'tracker.html', className: 'linkish', textContent: 'Open', title: 'Change it on the Tracker' })])
+            ? el('div', { className: 'actions' }, [el('a', { href: 'tracker.html', className: 'linkish', textContent: 'Open', title: 'Change it on Spending' })])
             : el('div', { className: 'actions' }, [
             PayIcons.iconButton('edit', `Edit ${e.category}${e.note ? ` (${e.note})` : ''}`, () => startEdit(e.id)),
             PayIcons.iconButton('delete', `Delete ${e.category}${e.note ? ` (${e.note})` : ''}`, () => remove(e.id), 'danger'),
@@ -319,7 +319,7 @@
     $('trackerTitle').textContent = viewMonth === now ? 'Expenses this month' : `Expenses in ${monthLabel(viewMonth)}`;
     if (!t || !t.hasLoans) {
       for (const id of ['tDue', 'tPaid', 'tLeft', 'tOver']) $(id).textContent = money(0);
-      $('trackerNote').textContent = 'Add your expenses (bills, loans and others) on the Tracker; the ones you mark paid count as money out here.';
+      $('trackerNote').textContent = 'Add your expenses (bills, loans and others) on Spending; the ones you mark paid count as money out here.';
       $('trackerList').replaceChildren();
       return;
     }
@@ -457,7 +457,7 @@
         tile('Average timing', avg === 0 ? 'On the day' : `${Math.abs(avg)} day${Math.abs(avg) === 1 ? '' : 's'} ${avg > 0 ? 'early' : 'late'}`,
           o.lateCount ? `${o.lateCount} late, by ${o.averageLateDays} day${o.averageLateDays === 1 ? '' : 's'} on average` : 'No late payments'),
       );
-      $('onTimeNote').textContent = 'Based on the day you logged each payment on the Tracker, against its due day.';
+      $('onTimeNote').textContent = 'Based on the day you logged each payment on Spending, against its due day.';
     }
   }
 
