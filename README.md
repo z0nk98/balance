@@ -40,7 +40,7 @@ Every page opens private: amounts show as ₱••••• and the detail sect
 
 ## Using it on a phone
 
-On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Lending payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are.
+On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page (once it's out of view, a slim bar pins to the top with its controls as icons: month arrows where the page has them, theme, the eye, and Lock or Sign out), Lending payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are.
 
 ## Pages
 

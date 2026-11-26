@@ -579,3 +579,18 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 /* "New version available · Reload" (lib/update.js). */
 .update-bar { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 999px; font-size: 0.85rem; background: var(--glass-strong, var(--surface)); border: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
 .update-bar button { padding: 4px 12px; font-size: 0.85rem; min-height: 0; }
+
+/* Phones: the slim bar that pins to the top once the header scrolls away (lib/minibar.js). */
+.mini-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 25; display: flex; align-items: center; gap: 4px; padding: calc(6px + env(safe-area-inset-top)) 10px 6px 14px; background: var(--glass-strong, var(--surface)); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-bottom: 1px solid var(--glass-edge, var(--border)); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); animation: mini-in 0.18s ease-out; }
+.mini-bar[hidden] { display: none; }
+@keyframes mini-in { from { transform: translateY(-100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .mini-bar { animation: none; } }
+.mini-title { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.mini-month { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; }
+.mini-month[hidden] { display: none; }
+.mini-month-label { font-size: 0.85rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mini-spacer { flex: 1; }
+.mini-btn { display: inline-grid; place-items: center; width: 36px; height: 36px; min-height: 0; padding: 0; border-radius: 10px; border: 0; background: transparent; box-shadow: none; color: var(--text); font-size: 1.2rem; line-height: 1; }
+.mini-btn[hidden] { display: none; }
+.mini-btn:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.mini-btn .action-icon svg, .mini-btn svg { width: 20px; height: 20px; }
