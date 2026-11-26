@@ -781,22 +781,22 @@
   $('nextMonth').addEventListener('click', () => { viewMonth = Loans.addMonths(viewMonth, 1); render(); });
   $('todayBtn').addEventListener('click', () => { viewMonth = thisMonth(); render(); });
 
-  // ---- Privacy mode ----------------------------------------------------------
-  // The lists follow privacy mode (lib/privacy.js): collapsed while it's on,
-  // with only their name and count showing. Show / Hide flips it for every
-  // section and amount at once, the same as the eye in the header.
-  const isPrivate = () => !window.BalancePrivacy || window.BalancePrivacy.hidden;
+  // ---- Collapsed sections ----------------------------------------------------
+  // Each list starts collapsed every time the page opens (only its name and
+  // count show) and opens on its own with Show. Hiding amounts with the eye
+  // (lib/privacy.js) folds them all away again.
+  const opened = { month: false, all: false };
 
   function applyCollapsed() {
-    const open = !isPrivate();
-    for (const [body, toggle] of [['monthBody', 'monthToggle'], ['allBody', 'allToggle']]) {
-      $(body).hidden = !open;
-      $(toggle).setAttribute('aria-expanded', String(open));
-      $(toggle).querySelector('.section-action').textContent = open ? 'Hide' : 'Show';
+    for (const [key, body, toggle] of [['month', 'monthBody', 'monthToggle'], ['all', 'allBody', 'allToggle']]) {
+      $(body).hidden = !opened[key];
+      $(toggle).setAttribute('aria-expanded', String(opened[key]));
+      $(toggle).querySelector('.section-action').textContent = opened[key] ? 'Hide' : 'Show';
     }
   }
 
-  for (const id of ['monthToggle', 'allToggle']) $(id).addEventListener('click', () => window.BalancePrivacy && window.BalancePrivacy.toggle());
+  $('monthToggle').addEventListener('click', () => { opened.month = !opened.month; applyCollapsed(); });
+  $('allToggle').addEventListener('click', () => { opened.all = !opened.all; applyCollapsed(); });
 
   // ---- Compact rows ----------------------------------------------------------
   // Each expense shows as one line (icon, name, what's due, status, Pay, ⋯).
@@ -1155,7 +1155,10 @@
 
   // Another tab, or a sync from another device, changed the data.
   // Amounts shown or hidden (the eye button in the header).
-  window.addEventListener('balance:amounts', () => render());
+  window.addEventListener('balance:amounts', () => {
+    if (window.BalancePrivacy && window.BalancePrivacy.hidden) { opened.month = false; opened.all = false; }
+    render();
+  });
 
   window.addEventListener('storage', (ev) => {
     if (ev.key === LOANS_KEY) {

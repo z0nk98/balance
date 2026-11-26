@@ -26,9 +26,13 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 Every page has a theme switch in the header: sun for **Light**, moon for **Dark**, half-circle for **Auto** (follow the device's setting, the default). The choice is remembered on that device for all pages.
 
-## Privacy mode
+## Privacy
 
-Every page opens in **privacy mode**: amounts show as ₱••••• and the detail sections (lists, Insights, Coming up, Transactions, a borrower's payments) are collapsed, showing only their name and count. Tap the **eye** in the header, or any section's **Show**, to reveal everything at once; tap again (or **Hide**) to make it all private again. Once revealed, moving between your pages keeps it revealed for 15 minutes after your last tap; after that, and in any new tab, pages open private again. The borrower page has its own eye and setting.
+Every page opens private: amounts show as ₱••••• and the detail sections (lists, Insights, Coming up, Transactions, a borrower's loans and payments) are collapsed, showing only their name and count.
+
+- Each section's **Show** / **Hide** opens or closes just that section.
+- The **eye** in the header shows or hides amounts. Hiding them again also folds every section shut, so one tap makes the page private.
+- Once amounts are shown, moving between your pages keeps them shown for 15 minutes after your last tap; after that, and in any new tab, pages open private again. The borrower page has its own eye and setting.
 
 ## Using it on a phone
 

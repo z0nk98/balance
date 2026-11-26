@@ -288,23 +288,27 @@
 
   const amountsHidden = () => Boolean(window.BalancePrivacy && window.BalancePrivacy.hidden);
   const maskedMoney = (n) => money(n);
-  window.addEventListener('balance:amounts', () => { if (me) render(); });
+  window.addEventListener('balance:amounts', () => {
+    if (amountsHidden()) { opened.loans = false; opened.payments = false; }
+    if (me) render();
+  });
 
   // One line per loan: what was lent, the interest, and what each payment is.
-  // ---- Privacy mode --------------------------------------------------------
-  // "My loans" and "My payments" follow privacy mode (lib/privacy.js): collapsed
-  // while it's on. Show / Hide flips it for everything, like the eye.
+  // ---- Collapsed sections --------------------------------------------------
+  // "My loans" and "My payments" start collapsed every time the page opens and
+  // each opens on its own with Show. Hiding amounts with the eye folds both.
+  const opened = { loans: false, payments: false };
+
   function applyCollapsed() {
-    const open = !amountsHidden();
-    for (const key of ['loans', 'payments']) {
-      $(`${key}Body`).hidden = !open;
-      $(`${key}Toggle`).setAttribute('aria-expanded', String(open));
-      $(`${key}Toggle`).querySelector('.section-action').textContent = open ? 'Hide' : 'Show';
+    for (const key of Object.keys(opened)) {
+      $(`${key}Body`).hidden = !opened[key];
+      $(`${key}Toggle`).setAttribute('aria-expanded', String(opened[key]));
+      $(`${key}Toggle`).querySelector('.section-action').textContent = opened[key] ? 'Hide' : 'Show';
     }
   }
 
-  for (const key of ['loans', 'payments']) {
-    $(`${key}Toggle`).addEventListener('click', () => window.BalancePrivacy && window.BalancePrivacy.toggle());
+  for (const key of Object.keys(opened)) {
+    $(`${key}Toggle`).addEventListener('click', () => { opened[key] = !opened[key]; applyCollapsed(); });
   }
 
   function renderLoans() {

@@ -408,17 +408,17 @@
   // The Tracker's month dashboard, the same numbers as on the Tracker page.
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due this month', upcoming: 'Upcoming' };
 
-  // Detail sections follow privacy mode (lib/privacy.js): collapsed while
-  // it's on, showing only their name and count. Show / Hide flips it for
-  // everything at once, like the eye in the header.
-  const isPrivate = () => !window.BalancePrivacy || window.BalancePrivacy.hidden;
+  // Detail sections start collapsed every time the page opens (only their
+  // name and count show) and each opens on its own with Show. Hiding amounts
+  // with the eye (lib/privacy.js) folds them all away again.
+  const SECTIONS = ['upcoming', 'tracker', 'txn', 'insights'];
+  const opened = Object.fromEntries(SECTIONS.map((k) => [k, false]));
 
   function applyTrackerCollapsed() {
-    const open = !isPrivate();
-    for (const [body, toggle] of [['upcomingBody', 'upcomingToggle'], ['trackerBody', 'trackerToggle'], ['txnBody', 'txnToggle'], ['insightsBody', 'insightsToggle']]) {
-      $(body).hidden = !open;
-      $(toggle).setAttribute('aria-expanded', String(open));
-      $(toggle).querySelector('.section-action').textContent = open ? 'Hide' : 'Show';
+    for (const key of SECTIONS) {
+      $(`${key}Body`).hidden = !opened[key];
+      $(`${key}Toggle`).setAttribute('aria-expanded', String(opened[key]));
+      $(`${key}Toggle`).querySelector('.section-action').textContent = opened[key] ? 'Hide' : 'Show';
     }
   }
 
@@ -504,7 +504,7 @@
     if (!window.Insights) return;
     applyTrackerCollapsed();
     $('insightsPeriod').textContent = `· ${monthLabel(viewMonth)}`;
-    if (isPrivate()) return; // nothing is drawn until you choose to see it
+    if (!opened.insights) return; // nothing is drawn until you choose to see it
 
     const tracker = readTracker();
     const hasData = state.expenses.some((e) => typeOf(e) === 'in') || tracker.payments.length > 0;
@@ -921,7 +921,13 @@
       save();
       render();
     });
-    for (const id of ['upcomingToggle', 'trackerToggle', 'txnToggle', 'insightsToggle']) $(id).addEventListener('click', () => window.BalancePrivacy && window.BalancePrivacy.toggle());
+    for (const key of SECTIONS) {
+      $(`${key}Toggle`).addEventListener('click', () => {
+        opened[key] = !opened[key];
+        if (key === 'insights') renderInsights();
+        else applyTrackerCollapsed();
+      });
+    }
     $('trendViewBtn').addEventListener('click', () => { trendAsTable = !trendAsTable; renderInsights(); });
     // Redraw the chart when the screen size changes (e.g. turning the iPad).
     let resizeTimer = null;
@@ -929,7 +935,7 @@
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (!isPrivate() && window.innerWidth !== lastWidth) renderInsights();
+        if (opened.insights && window.innerWidth !== lastWidth) renderInsights();
         lastWidth = window.innerWidth;
       }, 200);
     });
@@ -942,7 +948,10 @@
 
     // Another tab, or a sync, changed money in or the Tracker: show it.
     // Amounts shown or hidden (the eye button in the header).
-  window.addEventListener('balance:amounts', () => render());
+  window.addEventListener('balance:amounts', () => {
+    if (window.BalancePrivacy && window.BalancePrivacy.hidden) for (const key of SECTIONS) opened[key] = false;
+    render();
+  });
 
   window.addEventListener('storage', (ev) => {
       if (ev.key === STORAGE_KEY) Object.assign(state, load());
