@@ -249,6 +249,7 @@
 
   function loanCard(loan, s) {
     const meta = [
+      Loans.categoryOf(loan) === 'bill' ? 'Bill' : 'Loan',
       `${money(loan.termAmount)} × ${loan.terms} terms = ${money(s.total)}`,
       `${monthLabel(loan.firstMonth, true)} – ${monthLabel(s.lastMonth, true)}`,
       loan.dueDay ? `due on the ${ordinal(loan.dueDay)}` : '',
@@ -413,7 +414,7 @@
   function variableCard(bill, s) {
     const month = thisMonth();
     const meta = [
-      'Varies each month',
+      `${CATEGORY_LABEL[Loans.categoryOf(bill)]} · varies each month`,
       s.lastMonth
         ? `${monthLabel(bill.firstMonth, true)} – ${monthLabel(s.lastMonth, true)} (${plural(bill.months, 'month')})`
         : `since ${monthLabel(bill.firstMonth, true)}, no end`,
@@ -493,9 +494,9 @@
   function arrange(items, within) {
     if (sortBy === 'name') return [...items].sort(byName).map(card);
     if (sortBy === 'loans' || sortBy === 'bills') {
-      const loans = items.filter((r) => !Loans.isVariable(r.loan)).sort(within);
-      const bills = items.filter((r) => Loans.isVariable(r.loan)).sort(within);
-      const groups = [['Loans & fixed-amount bills', loans], ['Bills that vary each month', bills]];
+      const loans = items.filter((r) => Loans.categoryOf(r.loan) === 'loan').sort(within);
+      const bills = items.filter((r) => Loans.categoryOf(r.loan) === 'bill').sort(within);
+      const groups = [['Loans', loans], ['Bills', bills]];
       if (sortBy === 'bills') groups.reverse();
       return groups.filter(([, list]) => list.length).flatMap(([title, list]) => [groupTitle(title, list.length), ...list.map(card)]);
     }
@@ -529,7 +530,7 @@
   const filters = { status: 'all', type: '', provider: '', search: '', ...readJson(FILTER_KEY, {}) };
   filters.search = '';
   if (!['all', 'unpaid', 'current', 'done'].includes(filters.status)) filters.status = 'all';
-  if (!['', 'fixed', 'variable'].includes(filters.type)) filters.type = '';
+  if (!['', 'bill', 'loan', 'fixed', 'variable'].includes(filters.type)) filters.type = '';
 
   function saveFilters() {
     const { status, type, provider } = filters;
@@ -543,6 +544,7 @@
     if (filters.status === 'unpaid' && (done || !r.s.behind)) return false;
     if (filters.status === 'current' && (done || r.s.behind)) return false;
     if (filters.status === 'done' && !done) return false;
+    if ((filters.type === 'bill' || filters.type === 'loan') && Loans.categoryOf(r.loan) !== filters.type) return false;
     if (filters.type === 'variable' && !Loans.isVariable(r.loan)) return false;
     if (filters.type === 'fixed' && Loans.isVariable(r.loan)) return false;
     if (filters.provider) {
@@ -617,6 +619,7 @@
 
   const iconFor = (loan) => PayIcons.billIcon(Loans.iconKind(loan));
 
+  const CATEGORY_LABEL = { bill: 'Bill', loan: 'Loan' };
   const dueDayText = (item) => (item.dueDay ? `Due on the ${ordinal(item.dueDay)}` : 'Due anytime in the month');
   const amountOf = (item) => (item.amount === null ? 'Varies' : (item.estimated ? `~${money(item.amount)}` : money(item.amount)));
 
@@ -676,7 +679,7 @@
     const loan = item.loan;
     const name = loan.name + (item.variable ? '' : ` · term ${item.termNo} of ${loan.terms}`);
     const kind = item.variable ? 'Varies each month' : 'Fixed amount';
-    const sub2 = [kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
+    const sub2 = [CATEGORY_LABEL[Loans.categoryOf(loan)], kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
     let action = null;
     if (!item.paid) {
       action = el('button', {
@@ -842,7 +845,7 @@
     }
 
     $('loanEmpty').hidden = main.length > 0;
-    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add a bill or loan at the top: a fixed amount paid over a set number of months, or a bill that varies each month.';
+    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add expense at the top: a fixed amount paid over a set number of months, or a bill that varies each month.';
     else if (on && !picked.length) $('loanEmpty').textContent = 'Nothing matches these filters.';
     else if (showDoneInMain) $('loanEmpty').textContent = 'Nothing paid off yet.';
     else if (on) $('loanEmpty').textContent = pickedDone.length ? 'Only paid-off ones match: see Paid off below.' : 'Nothing matches these filters.';
@@ -876,6 +879,24 @@
     note: $('loanNote'),
   };
   let formKind = 'fixed';
+  let formCategory = 'bill';
+
+  function setCategory(category) {
+    formCategory = category;
+    for (const b of document.querySelectorAll('#categoryToggle button')) b.classList.toggle('active', b.dataset.category === category);
+    labelFields();
+  }
+
+  // Labels and examples follow whether it's a bill or a loan, and its amount type.
+  function labelFields() {
+    const loan = formCategory === 'loan';
+    const variable = formKind === 'variable';
+    $('lenderLabel').textContent = loan ? 'Lender (optional)' : 'Provider (optional)';
+    inputs.lender.placeholder = loan ? 'e.g. Home Credit, BPI, SSS' : 'e.g. Meralco, Maynilad, PLDT, BPI';
+    inputs.name.placeholder = loan ? 'e.g. Phone (Home Credit)' : (variable ? 'e.g. Electricity' : 'e.g. Rent');
+  }
+
+  for (const b of document.querySelectorAll('#categoryToggle button')) b.addEventListener('click', () => setCategory(b.dataset.category));
 
   function setKind(kind) {
     formKind = kind;
@@ -884,9 +905,7 @@
     for (const lab of form.querySelectorAll('label[data-kind]')) lab.hidden = lab.dataset.kind !== kind;
     inputs.termAmount.required = !variable;
     inputs.terms.required = !variable;
-    $('lenderLabel').textContent = variable ? 'Provider (optional)' : 'Lender (optional)';
-    inputs.lender.placeholder = variable ? 'e.g. Meralco, Maynilad, PLDT' : 'e.g. Home Credit, BPI, SSS';
-    inputs.name.placeholder = variable ? 'e.g. Electricity' : 'e.g. Phone (Home Credit)';
+    labelFields();
     updatePreview();
   }
 
@@ -895,7 +914,7 @@
   }
 
   function values() {
-    return Object.fromEntries(Object.entries(inputs).map(([k, input]) => [k, input.value]));
+    return { ...Object.fromEntries(Object.entries(inputs).map(([k, input]) => [k, input.value])), category: formCategory };
   }
 
   function updatePreview() {
@@ -935,8 +954,8 @@
     form.reset();
     editingId = null;
     inputs.firstMonth.value = view === 'month' ? viewMonth : thisMonth();
-    $('formTitle').textContent = 'Add a bill or loan';
-    $('loanSubmit').textContent = 'Add';
+    $('formTitle').textContent = 'Add expense';
+    $('loanSubmit').textContent = 'Add expense';
     $('loanCancel').hidden = true;
     lockKind(false);
     setKind(formKind);
@@ -946,6 +965,7 @@
     editingId = loan.id;
     for (const [k, input] of Object.entries(inputs)) input.value = loan[k] ?? '';
     setKind(Loans.isVariable(loan) ? 'variable' : 'fixed');
+    setCategory(Loans.categoryOf(loan));
     lockKind(state.payments.some((p) => p.loanId === loan.id));
     $('formTitle').textContent = `Edit ${loan.name}`;
     $('loanSubmit').textContent = 'Save changes';

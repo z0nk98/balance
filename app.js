@@ -109,7 +109,7 @@
         category: loan.name,
         amount: p.amount,
         date: monthKey(loggedIso) === p.month ? loggedIso : dateIn(p.month, loan.dueDay),
-        note: [variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
+        note: [Loans.categoryOf(loan) === 'loan' ? 'Loan' : 'Bill', variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
         color: colorFor(loan.id),
         created: p.created || 0,
       };
@@ -327,7 +327,7 @@
         PayIcons.billIcon(Loans.iconKind(i.loan)),
         el('div', { className: 'bill-main' }, [
           el('div', { className: 'bill-name', textContent: i.loan.name + (i.variable ? '' : ` · term ${i.termNo} of ${i.loan.terms}`) }),
-          el('div', { className: 'sub', textContent: [i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
+          el('div', { className: 'sub', textContent: [Loans.categoryOf(i.loan) === 'loan' ? 'Loan' : 'Bill', i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
         ]),
         el('div', { className: 'bill-side' }, [
           el('div', { className: 'amt', textContent: i.amount === null ? 'Varies' : `${i.estimated ? '~' : ''}${money(i.amount)}` }),

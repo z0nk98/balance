@@ -169,3 +169,18 @@ test('paid in advance: a zero balance counts as paid off', () => {
   const onTime = Loans.summary(L, [pay('e', '2027-11', 18)], '2027-11');
   assert.equal(onTime.early, false);
 });
+
+test('each expense is a bill or a loan', () => {
+  assert.equal(Loans.cleanLoan({ name: 'Rent', category: 'bill', termAmount: 8000, terms: 12, firstMonth: '2026-01' }).category, 'bill');
+  assert.equal(Loans.cleanLoan({ name: 'Phone', termAmount: 1500, terms: 12, firstMonth: '2026-01' }).category, 'loan');
+  assert.equal(Loans.cleanVariable({ name: 'Electricity', firstMonth: '2026-01' }).category, 'bill');
+  assert.equal(Loans.cleanVariable({ name: 'Credit line', category: 'loan', firstMonth: '2026-01' }).category, 'loan');
+  assert.equal(Loans.cleanLoan({ name: 'X', category: 'nope', termAmount: 1, terms: 1, firstMonth: '2026-01' }).category, 'loan');
+  // Saved before there was a choice.
+  assert.equal(Loans.categoryOf({ name: 'Old phone', termAmount: 1500 }), 'loan');
+  assert.equal(Loans.categoryOf({ name: 'Old water', kind: 'variable' }), 'bill');
+  // Icons: loans get the loan icon; a fixed bill like rent gets its own.
+  assert.equal(Loans.iconKind({ name: 'Rent', category: 'bill', termAmount: 8000 }), 'rent');
+  assert.equal(Loans.iconKind({ name: 'Electricity', kind: 'variable', lender: 'Meralco' }), 'electricity');
+  assert.equal(Loans.iconKind({ name: 'SSS loan', category: 'loan' }), 'loan');
+});
