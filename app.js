@@ -534,7 +534,10 @@
     });
 
     // Another tab, or a sync, changed money in or the Tracker: show it.
-    window.addEventListener('storage', (ev) => {
+    // Amounts shown or hidden (the eye button in the header).
+  window.addEventListener('balance:amounts', () => render());
+
+  window.addEventListener('storage', (ev) => {
       if (ev.key === STORAGE_KEY) Object.assign(state, load());
       if (ev.key === STORAGE_KEY || ev.key === LOANS_KEY) render();
     });

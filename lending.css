@@ -381,3 +381,8 @@ section.card.add-card { padding: 12px 16px; }
 .mini-stats strong { font-variant-numeric: tabular-nums; }
 .mini-stats strong.danger { color: var(--danger); }
 @media (max-width: 560px) { .mini-stats { grid-template-columns: 1fr 1fr; } }
+
+/* Hidden amounts (lib/privacy.js): amount boxes in forms are masked until tapped into. */
+html.hide-amounts input[inputmode="decimal"]:not(:focus),
+html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
+.topbar .amounts-toggle { flex: none; }

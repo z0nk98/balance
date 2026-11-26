@@ -144,30 +144,13 @@
 
   // ---- Rendering ------------------------------------------------------
 
-  // ---- Hide / show the totals (eye button) ----------------------------
+  // ---- Hidden amounts (eye button in the header: lib/privacy.js) -------
+  // money() already shows ••••• while amounts are hidden; amountsHidden()
+  // keeps warning colours off then.
 
-  const HIDE_KEY = 'balance:hide-amounts';
-  let amountsHidden = false;
-  try { amountsHidden = localStorage.getItem(HIDE_KEY) === '1'; } catch { /* storage blocked */ }
-
-  function maskedMoney(n) {
-    return amountsHidden ? '•••••' : money(n);
-  }
-
-  function renderAmountsToggle() {
-    const btn = $('toggleAmounts');
-    const label = amountsHidden ? 'Show amounts' : 'Hide amounts';
-    btn.title = label;
-    btn.setAttribute('aria-label', label);
-    btn.setAttribute('aria-pressed', String(amountsHidden));
-    btn.replaceChildren(PayIcons.actionIcon(amountsHidden ? 'eyeOff' : 'eye'));
-  }
-
-  $('toggleAmounts').addEventListener('click', () => {
-    amountsHidden = !amountsHidden;
-    try { localStorage.setItem(HIDE_KEY, amountsHidden ? '1' : '0'); } catch { /* storage blocked */ }
-    render();
-  });
+  const amountsHidden = () => Boolean(window.BalancePrivacy && window.BalancePrivacy.hidden);
+  const maskedMoney = (n) => money(n);
+  window.addEventListener('balance:amounts', () => { if (state) render(); });
 
   function render() {
     const today = Core.todayISO();
@@ -179,12 +162,11 @@
     const sum = (k) => rows.reduce((s, r) => s + r.totals[k], 0);
     $('sumRemaining').textContent = maskedMoney(sum('remaining'));
     $('sumOverdue').textContent = maskedMoney(sum('overdue'));
-    $('sumOverdue').classList.toggle('danger', !amountsHidden && sum('overdue') > 0);
+    $('sumOverdue').classList.toggle('danger', !amountsHidden() && sum('overdue') > 0);
     $('sumDueSoon').textContent = maskedMoney(sum('dueSoon'));
-    $('sumDueSoon').classList.toggle('warn', !amountsHidden && sum('dueSoon') > 0);
+    $('sumDueSoon').classList.toggle('warn', !amountsHidden() && sum('dueSoon') > 0);
     $('dueSoonLabel').textContent = Core.dueSoonLabel(rows.flatMap((r) => r.installments), state.settings.reminderDays);
     $('sumPaid').textContent = maskedMoney(sum('paid'));
-    renderAmountsToggle();
     $('sumBorrowers').textContent = rows.length;
 
     renderOwnerFilters(rows);

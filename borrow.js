@@ -282,30 +282,13 @@
     );
   }
 
-  // ---- Hide / show the totals (eye button) ----------------------------
+  // ---- Hidden amounts (eye button in the header: lib/privacy.js) -------
+  // money() already shows ••••• while amounts are hidden; amountsHidden()
+  // keeps warning colours off then.
 
-  const HIDE_KEY = 'balance:borrower-hide-amounts';
-  let amountsHidden = false;
-  try { amountsHidden = localStorage.getItem(HIDE_KEY) === '1'; } catch { /* storage blocked */ }
-
-  function maskedMoney(n) {
-    return amountsHidden ? '•••••' : money(n);
-  }
-
-  function renderAmountsToggle() {
-    const btn = $('toggleAmounts');
-    const label = amountsHidden ? 'Show amounts' : 'Hide amounts';
-    btn.title = label;
-    btn.setAttribute('aria-label', label);
-    btn.setAttribute('aria-pressed', String(amountsHidden));
-    btn.replaceChildren(PayIcons.actionIcon(amountsHidden ? 'eyeOff' : 'eye'));
-  }
-
-  $('toggleAmounts').addEventListener('click', () => {
-    amountsHidden = !amountsHidden;
-    try { localStorage.setItem(HIDE_KEY, amountsHidden ? '1' : '0'); } catch { /* storage blocked */ }
-    render();
-  });
+  const amountsHidden = () => Boolean(window.BalancePrivacy && window.BalancePrivacy.hidden);
+  const maskedMoney = (n) => money(n);
+  window.addEventListener('balance:amounts', () => { if (me) render(); });
 
   // One line per loan: what was lent, the interest, and what each payment is.
   function renderLoans() {
@@ -351,12 +334,11 @@
     $('greeting').textContent = `Hi ${me.name}! Here's your payment summary` + (me.ownerName ? ` with ${me.ownerName}.` : '.');
     $('remaining').textContent = maskedMoney(t.remaining);
     $('overdue').textContent = maskedMoney(t.overdue);
-    $('overdue').classList.toggle('danger', !amountsHidden && t.overdue > 0);
+    $('overdue').classList.toggle('danger', !amountsHidden() && t.overdue > 0);
     $('dueSoon').textContent = maskedMoney(t.dueSoon);
-    $('dueSoon').classList.toggle('warn', !amountsHidden && t.dueSoon > 0);
+    $('dueSoon').classList.toggle('warn', !amountsHidden() && t.dueSoon > 0);
     $('dueSoonLabel').textContent = Core.dueSoonLabel(me.items, me.reminderDays);
     $('nextDue').textContent = t.nextDue ? maskedMoney(t.nextDue.remaining) : '—';
-    renderAmountsToggle();
     $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';
 
     for (const chip of $('statusFilter').children) {

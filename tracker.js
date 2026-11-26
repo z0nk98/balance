@@ -998,6 +998,9 @@
   });
 
   // Another tab, or a sync from another device, changed the data.
+  // Amounts shown or hidden (the eye button in the header).
+  window.addEventListener('balance:amounts', () => render());
+
   window.addEventListener('storage', (ev) => {
     if (ev.key === LOANS_KEY) {
       state = readJson(LOANS_KEY, Loans.emptyState());

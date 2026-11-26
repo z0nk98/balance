@@ -26,6 +26,10 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 Every page has a theme switch in the header: sun for **Light**, moon for **Dark**, half-circle for **Auto** (follow the device's setting, the default). The choice is remembered on that device for all pages.
 
+## Hiding amounts
+
+Every page has an eye button in the header, next to the theme switch. Tap it to hide all amounts on the page (they show as ₱•••••, and amount boxes in forms are masked until you tap into them); tap again to show them. The choice is remembered on that device and applies to Expenses, Tracker and Money lent together. The borrower page has its own eye button and setting, on the borrower's device.
+
 ## Using it on a phone
 
 On phone screens the page links sit in a tab bar along the bottom, the header scrolls away instead of covering the page, Money lent payment rows show as small labelled cards, and *Saved* / *Not saved* pops up at the bottom wherever you are.
