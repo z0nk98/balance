@@ -712,6 +712,29 @@
     ]);
   }
 
+  // A payment logged this month that isn't one of this month's rows.
+  function otherLoggedRow(o) {
+    const loan = o.loan;
+    let text;
+    if (o.kind === 'partial') text = 'Partial payment';
+    else {
+      const terms = o.fromTerm === o.toTerm ? `Term ${o.fromTerm} of ${loan.terms}` : `Terms ${o.fromTerm}–${o.toTerm} of ${loan.terms}`;
+      const when = o.fromMonth === o.toMonth ? monthLabel(o.fromMonth) : `${monthLabel(o.fromMonth, true)} – ${monthLabel(o.toMonth, true)}`;
+      text = `${terms} · for ${when} · ${o.kind === 'earlier' ? 'caught up' : 'paid ahead'}`;
+    }
+    return el('div', { className: 'bill-item compact status-paid' }, [
+      iconFor(loan),
+      el('div', { className: 'bill-main' }, [
+        el('div', { className: 'bill-name' }, [document.createTextNode(loan.name), subTag(loan)]),
+        el('div', { className: 'sub', textContent: [text, o.payment.note].filter(Boolean).join(' · ') }),
+      ]),
+      el('div', { className: 'bill-side' }, [
+        el('div', { className: 'amt', textContent: money(o.payment.amount) }),
+        el('span', { className: 'badge paid', textContent: 'Logged' }),
+      ]),
+    ]);
+  }
+
   function earlierRow(e) {
     const loan = e.loan;
     const months = e.months.length > 4 ? `${monthList(e.months.slice(0, 3))} and ${e.months.length - 3} more` : monthList(e.months);
@@ -748,7 +771,10 @@
     $('mDueSub').textContent = items.length ? `${plural(items.length, 'expense')}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
     $('mPaid').textContent = money(t.paid);
     $('mPaidLabel').textContent = viewMonth === now ? 'Paid this month' : `Paid in ${label.split(' ')[0]}`;
-    $('mPaidSub').textContent = t.payments.length ? `${plural(t.payments.length, 'payment')} logged` : (items.length ? 'Nothing logged yet' : '');
+    const otherCount = Loans.loggedForOtherMonths(state, viewMonth, now, todayDay).length;
+    $('mPaidSub').textContent = t.payments.length
+      ? `${plural(t.payments.length, 'payment')} logged${otherCount ? ` · ${otherCount} for ${otherCount === 1 ? 'another month' : 'other months'}` : ''}`
+      : (items.length ? 'Nothing logged yet' : '');
     $('mLeft').textContent = money(t.left);
     $('mLeftSub').textContent = t.unpaidCount ? `${t.unpaidCount} to pay${estimated ? ' · estimated' : ''}` : (items.length ? 'All paid' : '');
     $('mOver').textContent = money(t.overdue);
@@ -763,7 +789,13 @@
     $('earlierTotal').textContent = total ? `(${shownEarlier.some((e) => e.estimated) ? '~' : ''}${money(total)})` : '';
     const shown = items.filter((i) => monthStatus === 'all' || (monthStatus === 'paid' ? i.paid : !i.paid));
     $('monthList').replaceChildren(...shown.map(monthRow));
-    $('monthEmpty').hidden = shown.length > 0;
+    // Payments logged this month for other months' terms (or partial): listed so the Paid total adds up.
+    const other = Loans.loggedForOtherMonths(state, viewMonth, now, todayDay);
+    const showOther = monthStatus !== 'unpaid' && other.length > 0;
+    $('otherLoggedWrap').hidden = !showOther;
+    $('otherLoggedTitle').textContent = `Also logged in ${label.split(' ')[0]}`;
+    $('otherLoggedList').replaceChildren(...(showOther ? other.map(otherLoggedRow) : []));
+    $('monthEmpty').hidden = shown.length > 0 || showOther;
     $('monthEmpty').textContent = !items.length
       ? `Nothing due in ${label}.`
       : (monthStatus === 'paid' ? 'Nothing paid yet this month.' : 'Everything due this month is paid.');

@@ -207,3 +207,20 @@ test('icons: chosen in the form, else guessed', () => {
   assert.equal(Loans.iconKind({ name: 'MayaLoan', category: 'loan' }), 'loan');
   assert.equal(Loans.iconKind({ name: 'MayaLoan', category: 'loan', icon: 'mobile' }), 'mobile');
 });
+
+test('payments logged for other months show up so the month adds up', () => {
+  // 3 x 1,100 from November; term 2 (December) paid in November; term 1 (November) logged in December.
+  const loanO = { id: 'O', name: 'Olango', category: 'loan', termAmount: 1100, terms: 3, firstMonth: '2026-11', dueDay: 30 };
+  const st = { loans: [loanO], payments: [{ id: 'x', loanId: 'O', month: '2026-12', terms: 1, amount: 1100 }] };
+  // December: the only payment logged is term 1, which is November's.
+  let other = Loans.loggedForOtherMonths(st, '2026-12', '2026-12', 5);
+  assert.deepEqual(other.map((o) => [o.kind, o.fromTerm, o.fromMonth]), [['earlier', 1, '2026-11']]);
+  // Paying December's own term (term 2) is a normal row, not listed here.
+  st.payments.push({ id: 'y', loanId: 'O', month: '2026-12', terms: 1, amount: 1100 });
+  other = Loans.loggedForOtherMonths(st, '2026-12', '2026-12', 5);
+  assert.deepEqual(other.map((o) => o.payment.id), ['x']);
+  // Paying January's term in December is "ahead"; a 0-term payment is partial.
+  st.payments.push({ id: 'z', loanId: 'O', month: '2026-12', terms: 1, amount: 1100 }, { id: 'w', loanId: 'O', month: '2026-12', terms: 0, amount: 50 });
+  other = Loans.loggedForOtherMonths(st, '2026-12', '2026-12', 5);
+  assert.deepEqual(other.map((o) => [o.payment.id, o.kind]), [['x', 'earlier'], ['z', 'ahead'], ['w', 'partial']]);
+});

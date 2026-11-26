@@ -442,6 +442,7 @@
       ? `Nothing due in ${monthLabel(viewMonth)}.`
       : [
         `${t.paidCount} of ${t.items.length} paid`,
+        (() => { const n = Loans.loggedForOtherMonths(readTracker(), viewMonth, monthKey(todayISO()), new Date().getDate()).length; return n ? `${n} logged for ${n === 1 ? 'another month' : 'other months'}` : ''; })(),
         t.payments.length ? `${t.payments.length} payment${t.payments.length === 1 ? '' : 's'} logged (${money(t.paid)})` : '',
         t.estimated ? 'amounts with ~ are estimates' : '',
         t.earlier.length ? `${t.earlier.reduce((n, e) => n + e.months.length, 0)} unpaid from earlier months (in Overdue)` : '',
