@@ -341,6 +341,9 @@ details.add-panel[open] summary { margin-bottom: 6px; }
 .term.is-paid { background: #2f9e5b; border-color: #2f9e5b; color: #fff; }
 .term.is-late { border-color: var(--danger); color: var(--danger); }
 .term.is-next { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.term.month-chip { height: auto; min-height: 26px; min-width: 40px; padding: 3px 6px; display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.term.month-chip .chip-amt { font-size: 0.68rem; font-weight: 600; }
+#kindToggle button:disabled { opacity: 0.45; cursor: not-allowed; }
 .tracker-next { font-size: 0.9rem; }
 .tracker-next.late { color: var(--danger); }
 .tracker-loan > button.primary { justify-self: start; }

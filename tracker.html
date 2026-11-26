@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=5f5ce2b234"></script>
-  <link rel="stylesheet" href="style.css?v=5f5ce2b234">
-  <link rel="stylesheet" href="lending.css?v=5f5ce2b234">
-  <link rel="stylesheet" href="theme.css?v=5f5ce2b234">
+  <script src="lib/theme.js?v=771d0ba94a"></script>
+  <link rel="stylesheet" href="style.css?v=771d0ba94a">
+  <link rel="stylesheet" href="lending.css?v=771d0ba94a">
+  <link rel="stylesheet" href="theme.css?v=771d0ba94a">
 </head>
 <body>
   <header class="topbar">
@@ -26,11 +26,11 @@
       <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="sumLeft"></span><span class="stat-sub" id="sumLeftSub"></span></div>
       <div class="stat"><span class="stat-label">Due by this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumDueSub"></span></div>
       <div class="stat"><span class="stat-label" id="paidLabel">Paid this month</span><span class="stat-value" id="sumPaid"></span><span class="stat-sub" id="sumPaidSub"></span></div>
-      <div class="stat"><span class="stat-label">Loans</span><span class="stat-value" id="sumLoans"></span><span class="stat-sub" id="sumLoansSub"></span></div>
+      <div class="stat"><span class="stat-label">Bills &amp; loans</span><span class="stat-value" id="sumLoans"></span><span class="stat-sub" id="sumLoansSub"></span></div>
     </section>
 
     <section class="card">
-      <h2>My loans</h2>
+      <h2>My bills &amp; loans</h2>
       <div id="loanList" class="tracker-list"></div>
       <p id="loanEmpty" class="empty" hidden></p>
       <details id="doneWrap" class="archive" hidden>
@@ -41,34 +41,43 @@
 
     <section class="card">
       <details id="loanFormWrap" class="add-panel">
-        <summary id="formTitle">Add a loan</summary>
+        <summary id="formTitle">Add a bill or loan</summary>
         <form id="loanForm" class="bill-form" autocomplete="off">
-          <label>Loan name <input id="loanName" maxlength="60" required placeholder="e.g. Phone (Home Credit)"></label>
-          <label>Lender (optional) <input id="loanLender" maxlength="60" placeholder="e.g. Home Credit, BPI, SSS"></label>
-          <label>Amount per term <input id="loanTermAmount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="e.g. 1500"></label>
-          <label>Number of terms <input id="loanTerms" type="number" min="1" max="360" required inputmode="numeric" placeholder="e.g. 18"></label>
-          <label>First term due <input id="loanFirstMonth" type="month" required></label>
+          <fieldset class="wide seg-field">
+            <legend><strong>Fixed amount</strong>: the same every month for a set number of months (installments, loans). <strong>Varies each month</strong>: e.g. electricity, water.</legend>
+            <div class="type-toggle" id="kindToggle" role="group" aria-label="Amount type">
+              <button type="button" data-kind="fixed" class="active">Fixed amount</button>
+              <button type="button" data-kind="variable">Varies each month</button>
+            </div>
+          </fieldset>
+          <label>Name <input id="loanName" maxlength="60" required placeholder="e.g. Phone (Home Credit)"></label>
+          <label><span id="lenderLabel">Lender (optional)</span> <input id="loanLender" maxlength="60" placeholder="e.g. Home Credit, BPI, SSS"></label>
+          <label data-kind="fixed">Amount per month <input id="loanTermAmount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="e.g. 1500"></label>
+          <label data-kind="fixed">Number of months <input id="loanTerms" type="number" min="1" max="360" required inputmode="numeric" placeholder="e.g. 6"></label>
+          <label data-kind="variable" hidden>Usual amount (optional) <input id="billEstimate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Used as an estimate"></label>
+          <label data-kind="variable" hidden>Number of months (optional) <input id="billMonths" type="number" min="1" max="360" inputmode="numeric" placeholder="Blank = every month, no end"></label>
+          <label><span id="firstMonthLabel">First month due</span> <input id="loanFirstMonth" type="month" required></label>
           <label>Due day of month (optional) <input id="loanDueDay" type="number" min="1" max="31" placeholder="e.g. 15"></label>
-          <label>Amount borrowed (optional) <input id="loanBorrowed" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Shows the interest"></label>
+          <label data-kind="fixed">Amount borrowed (optional) <input id="loanBorrowed" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Shows the interest"></label>
           <label class="wide">Note <input id="loanNote" maxlength="120" placeholder="e.g. Pay at any Bayad center"></label>
           <p class="hint wide" id="loanPreview"></p>
           <div class="form-actions wide">
-            <button type="submit" class="primary" id="loanSubmit">Add loan</button>
+            <button type="submit" class="primary" id="loanSubmit">Add</button>
             <button type="button" id="loanCancel" hidden>Cancel</button>
           </div>
         </form>
       </details>
     </section>
 
-    <p class="hint tracker-foot">Each payment records the month you paid and how many terms it covered, so paying several terms in one month is counted correctly.</p>
+    <p class="hint tracker-foot">Fixed-amount bills and loans: each payment records the month you paid and how many months (terms) it covered, so paying several at once is counted correctly. Bills that vary: record the actual amount for each month.</p>
   </main>
 
-  <script src="lib/icons.js?v=5f5ce2b234"></script>
-  <script src="lib/loans.js?v=5f5ce2b234"></script>
-  <script src="tracker.js?v=5f5ce2b234"></script>
-  <script src="lib/core.js?v=5f5ce2b234"></script>
-  <script src="lib/merge.js?v=5f5ce2b234"></script>
-  <script src="lib/account.js?v=5f5ce2b234"></script>
-  <script src="lib/sync.js?v=5f5ce2b234"></script>
+  <script src="lib/icons.js?v=771d0ba94a"></script>
+  <script src="lib/loans.js?v=771d0ba94a"></script>
+  <script src="tracker.js?v=771d0ba94a"></script>
+  <script src="lib/core.js?v=771d0ba94a"></script>
+  <script src="lib/merge.js?v=771d0ba94a"></script>
+  <script src="lib/account.js?v=771d0ba94a"></script>
+  <script src="lib/sync.js?v=771d0ba94a"></script>
 </body>
 </html>

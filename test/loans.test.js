@@ -46,3 +46,43 @@ test('paidInMonth adds up a month across loans', () => {
   const st = { loans: [L], payments: [pay('a', '2026-11', 2), { id: 'b', loanId: 'L2', month: '2026-11', terms: 1, amount: 800 }, pay('c', '2026-10', 1)] };
   assert.deepEqual(Loans.paidInMonth(st, '2026-11'), { amount: 3800, terms: 3, count: 2 });
 });
+
+const bill = { id: 'B1', ...Loans.cleanVariable({ name: 'Electricity', lender: 'Meralco', estimate: '2500', months: '', firstMonth: '2026-08', dueDay: '20' }) };
+const bpay = (id, month, amount, loanId = 'B1') => ({ id, loanId, month, terms: 0, amount });
+
+test('variable bills: unpaid months, averages and estimates', () => {
+  assert.equal(bill.kind, 'variable');
+  assert.ok(Loans.isVariable(bill));
+  assert.equal(bill.months, null);
+  const s = Loans.variableSummary(bill, [bpay('a', '2026-08', 2100), bpay('b', '2026-10', 2900)], '2026-11');
+  assert.deepEqual(s.unpaid, ['2026-09', '2026-11']);
+  assert.equal(s.behind, 2);
+  assert.equal(s.paid, 5000);
+  assert.equal(s.average, 2500);
+  assert.equal(s.lastAmount, 2900);
+  assert.equal(s.overdueEstimate, 5000); // 2 months x the usual 2500
+  assert.equal(s.remainingEstimate, null); // no end month
+  assert.equal(s.nextMonth, '2026-09');
+  assert.equal(s.status, 'behind');
+  const up = Loans.variableSummary(bill, ['08', '09', '10', '11'].map((m, i) => bpay(String(i), `2026-${m}`, 2000)), '2026-11');
+  assert.equal(up.status, 'on-track');
+  assert.equal(up.nextMonth, '2026-12');
+  // Not started yet.
+  assert.equal(Loans.variableSummary(bill, [], '2026-06').nextMonth, '2026-08');
+});
+
+test('variable bills with an end month finish, and payments are checked', () => {
+  const b = { id: 'B2', ...Loans.cleanVariable({ name: 'Water', months: '3', firstMonth: '2026-09' }) };
+  const s = Loans.variableSummary(b, [bpay('a', '2026-09', 300, 'B2')], '2026-09');
+  assert.equal(s.lastMonth, '2026-11');
+  assert.equal(s.monthsLeft, 2);
+  assert.equal(s.remainingEstimate, 600); // no usual amount, so the average
+  const done = Loans.variableSummary(b, ['09', '10', '11'].map((m) => bpay(m, `2026-${m}`, 300, 'B2')), '2027-03');
+  assert.equal(done.status, 'done');
+  assert.equal(done.nextMonth, null);
+  assert.deepEqual(Loans.cleanVariablePayment({ month: '2026-10', amount: '312.5' }, b), { terms: 0, amount: 312.5, month: '2026-10', note: '' });
+  assert.throws(() => Loans.cleanVariablePayment({ month: '2026-08', amount: 1 }, b), /before/);
+  assert.throws(() => Loans.cleanVariablePayment({ month: '2026-12', amount: 1 }, b), /after/);
+  assert.throws(() => Loans.cleanVariablePayment({ month: '2026-10', amount: '' }, b), /amount/);
+  assert.throws(() => Loans.cleanVariable({ name: 'x', firstMonth: '2026-01', months: '0' }), /between 1 and 360/);
+});

@@ -75,15 +75,19 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 - **Finished bills** (ones with a last month, or one-off bills, where every payment was made) move into a collapsed *Paid off* list under *All bills*.
 - Bills are stored in this browser, like expenses, and synced to your other devices if sync is on (see below). *Download backup* and *Restore backup* still work for keeping a copy.
 
-## Tracker: loans you are paying off
+## Tracker: bills and loans you are paying off
 
-`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each loan you took by its terms rather than by month.
+`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. When adding one, pick its type:
 
-- **Add a loan** with the amount per term, the number of terms (e.g. 18), and the month the first term is due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
-- **Record payment** asks for the month you paid, how many terms it covers and the amount (filled in as terms × amount per term; change it if you paid something different). Paying three terms in one month counts as three terms.
-- Each loan shows terms paid out of the total, a box per term (green paid, red overdue, blue next), what's paid and left, the next term and its month, and whether you're **behind**, **on track**, **ahead** or **paid off**. *Payment history* lists each payment with the terms it covered.
-- Loans you've paid off move into a collapsed *Paid off* list below the others.
-- The totals at the top show what's left on all loans, what's overdue by this month, and what you paid this month.
+- **Fixed amount**: the same amount every month for a set number of months (an installment, a loan, a bill split over a few months). Enter the amount per month, the number of months (e.g. 6) and the first month due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
+  - **Record payment** asks for the month you paid, how many months (terms) it covers and the amount (filled in as terms × amount; change it if you paid something different). Paying three terms in one month counts as three terms.
+  - Each one shows terms paid out of the total, a box per term (green paid, red overdue, blue next), what's paid and left, and whether you're **behind**, **on track**, **ahead** or **paid off**.
+- **Varies each month**: a bill whose amount changes, like electricity or water. Enter the first month due, and optionally the provider, a usual amount (used as an estimate), the due day, and a number of months (leave blank if it never ends).
+  - **Record payment** asks for the bill month and the actual amount.
+  - Each one shows a chip per month with the amount paid (green) or unpaid (red), the total paid, the average and last amounts, and whether it's **up to date**, **due this month**, **N months unpaid** or **paid off**.
+- *Payment history* lists each payment. Things you've paid off move into a collapsed *Paid off* list.
+- The totals at the top show what's left on everything, what's due by this month, and what you paid this month. For bills that vary, amounts not paid yet are estimated from the usual amount, or else the average so far, and marked *estimated*.
+- The type can't be changed once a payment is recorded.
 
 ## Syncing expenses and bills across devices
 
