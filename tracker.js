@@ -510,7 +510,7 @@
       return [...groups.values()]
         // A–Z, with the ones without a provider last.
         .sort((a, b) => (!a.name) - (!b.name) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-        .flatMap((g) => [groupTitle(g.name || 'No provider or lender', g.list.length), ...g.list.sort(within).map(card)]);
+        .flatMap((g) => [groupTitle(g.name || 'No provider', g.list.length), ...g.list.sort(within).map(card)]);
     }
     return [...items].sort(within).map(card);
   }
@@ -571,7 +571,7 @@
     if (filters.provider && !(filters.provider === NO_PROVIDER ? none : names.has(filters.provider))) filters.provider = '';
     const options = [el('option', { value: '', textContent: 'All providers' })];
     for (const [key, name] of sorted) options.push(el('option', { value: key, textContent: name }));
-    if (none) options.push(el('option', { value: NO_PROVIDER, textContent: 'No provider or lender' }));
+    if (none) options.push(el('option', { value: NO_PROVIDER, textContent: 'No provider' }));
     $('providerFilter').replaceChildren(...options);
     $('providerFilter').value = filters.provider;
   }

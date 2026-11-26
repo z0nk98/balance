@@ -38,7 +38,7 @@ On phone screens the page links sit in a tab bar along the bottom, the header sc
 
 | Page | Who it's for |
 | --- | --- |
-| `index.html` | You: Expenses, money in minus bills paid in the Tracker (on this device; synced if you turn it on) |
+| `index.html` | You: Expenses Dashboard, money in minus bills paid in the Tracker (on this device; synced if you turn it on) |
 | `tracker.html` | You: Personal Bills Tracker, for your bills and loans (on this device; synced if you turn it on) |
 | `lend.html` | You: money lent. Needs your GitHub access key and passphrase |
 | `borrow.html` | Borrowers: enter their code to see what they owe |
@@ -66,7 +66,7 @@ If you named the site repo something other than `balance`, change `repo` in `con
 
 ## Expenses: money in minus bills paid
 
-The Expenses page (`index.html`) works month by month (arrows in the header):
+The Expenses Dashboard (`index.html`, **Expenses Dashboard** in the menu) works month by month (arrows in the header):
 
 - **Money in**: what you add here (salary, business, freelance, gifts, refunds, interest…).
 - **Expenses paid**: every payment you log in your **Personal Bills Tracker**, at the full amount you entered, in the month you logged it under (for a fixed-amount bill or loan, the *Month paid*; for a bill that varies, its bill month). One payment covering four terms counts all four that month. They're added automatically; change them on the Tracker.
@@ -77,7 +77,7 @@ The Expenses page (`index.html`) works month by month (arrows in the header):
 
 ## Tracker: bills and loans you are paying off
 
-`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. Tap **+ Add expense** at the top of the page. Everything you add is an expense. Its **Subcategory** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Subcategory* sort and filter use. A new expense starts with the subcategory you used last. Ones added before subcategories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:
+`tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. Tap **+ Add expense** at the top of the page. Everything you add is an expense. Its **Category** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Category* sort and filter use. A new expense starts with the category you used last. Ones added before categories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:
 
 - **Fixed amount**: the same amount every month for a set number of months (an installment, a loan, a bill split over a few months). Enter the amount per month, the number of months (e.g. 6) and the first month due. Optionally add the lender, the due day, the amount you borrowed (to show the interest) and a note.
   - **Record payment** asks for the month you paid, how many months (terms) it covers and the amount (filled in as terms × amount; change it if you paid something different). Paying three terms in one month counts as three terms.
@@ -88,8 +88,8 @@ The Expenses page (`index.html`) works month by month (arrows in the header):
 - **By month** (the default): use the arrows in the header to pick a month. The totals show what's due that month, what's paid, what's left and what's overdue, and the list shows every bill and loan due that month with its status (Paid, Overdue, Due this month, Upcoming). Amounts for bills that vary show with `~` until paid. **Mark paid** asks for the amount: for a bill that varies, the actual amount for that month; for a fixed-amount one, it records that term, plus any earlier unpaid terms, since terms are paid in order (the button then says *Pay 3 terms*, for example). **Undo** on a paid bill that varies removes that month's payment. On the current month, *Still unpaid from earlier months* lists anything you missed, with a button to pay it. *All*, *Unpaid* and *Paid* filter the month's list.
 - **Undo**: after any change (a payment, *Mark paid*, adding, editing or deleting a bill or loan), a message pops up at the bottom with an **Undo** button for about 8 seconds; it puts things back exactly as they were. In the month view, every paid row also has an **Undo** button: for a bill that varies it removes that month's payment; for a fixed-amount one it removes the payment that covered that term (it tells you which terms first, since one payment can cover several).
 - **All bills & loans** shows the full cards described above, with filters and sorting. The page remembers which view you used last on that device.
-- **Filter** above the list: **All**, **Needs paying** (something due by this month isn't paid), **Up to date** or **Paid off**; **Subcategory** (bills, loans, other, fixed amount, or varies each month); **Paid to** (provider or lender); and **Search** (name, provider or note). Filters combine, and a line shows how many match with what's left and due on just those. *Clear filters* resets them. The status, type and provider are remembered on that device; the top totals always cover everything.
-- **Sort by**: **Due first** (the default: anything unpaid on top, then by the next month due), **Subcategory** (grouped under *Bills*, *Loans* and *Other* headings), **Provider / lender** (grouped A–Z, with ones that have none at the end), or **Name**. The choice is remembered on that device and applies to the *Paid off* list too.
+- **Filter** above the list: **All**, **Needs paying** (something due by this month isn't paid), **Up to date** or **Paid off**; **Category** (all expenses, bills, loans, other, fixed amount, or varies each month); **Providers**; and **Search** (name, provider or note). Filters combine, and a line shows how many match with what's left and due on just those. *Clear filters* resets them. The status, type and provider are remembered on that device; the top totals always cover everything.
+- **Sort by**: **Due first** (the default: anything unpaid on top, then by the next month due), **Category** (grouped under *Bills*, *Loans* and *Other* headings), **Provider** (grouped A–Z, with ones that have none at the end), or **Name**. The choice is remembered on that device and applies to the *Paid off* list too.
 - **Paying a loan off in advance**: in *Record payment*, tap **Pay off the rest** to fill in every remaining term and the balance left (change the amount if you got a discount). A fixed-amount bill or loan counts as paid off as soon as what you've paid covers its total, even if you recorded fewer terms, and moves to *Paid off* marked **Paid off early**. It no longer shows as due or overdue in the months after.
 - *Payment history* lists each payment. Things you've paid off move into a collapsed *Paid off* list.
 - The totals at the top show what's left on everything, what's due by this month, and what you paid this month. For bills that vary, amounts not paid yet are estimated from the usual amount, or else the average so far, and marked *estimated*.

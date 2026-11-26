@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=33c9e30033"></script>
-  <script src="lib/privacy.js?v=33c9e30033"></script>
-  <link rel="stylesheet" href="style.css?v=33c9e30033">
-  <link rel="stylesheet" href="lending.css?v=33c9e30033">
-  <link rel="stylesheet" href="theme.css?v=33c9e30033">
+  <script src="lib/theme.js?v=0e7f4c6547"></script>
+  <script src="lib/privacy.js?v=0e7f4c6547"></script>
+  <link rel="stylesheet" href="style.css?v=0e7f4c6547">
+  <link rel="stylesheet" href="lending.css?v=0e7f4c6547">
+  <link rel="stylesheet" href="theme.css?v=0e7f4c6547">
 </head>
 <body>
   <header class="topbar">
     <h1>Personal Bills Tracker</h1>
     <nav>
-      <a href="index.html">Expenses</a>
+      <a href="index.html">Expenses Dashboard</a>
       <a href="tracker.html" class="active">Tracker</a>
       <a href="lend.html">Money lent</a>
     </nav>
@@ -39,7 +39,7 @@
             </div>
           </fieldset>
           <label>Name <input id="loanName" maxlength="60" required placeholder="e.g. Phone (Home Credit)"></label>
-          <label>Subcategory
+          <label>Category
             <select id="categorySelect">
               <option value="bill">Bill</option>
               <option value="loan">Loan</option>
@@ -114,9 +114,9 @@
           <button type="button" data-status="done" class="chip">Paid off</button>
         </div>
         <div class="filter-selects">
-          <label>Subcategory
+          <label>Category
             <select id="typeFilter">
-              <option value="">All expenses</option>
+              <option value="">Expenses</option>
               <option value="bill">Bills</option>
               <option value="loan">Loans</option>
               <option value="expense">Other</option>
@@ -124,7 +124,7 @@
               <option value="variable">Varies each month</option>
             </select>
           </label>
-          <label>Paid to
+          <label>Providers
             <select id="providerFilter"><option value="">All providers</option></select>
           </label>
           <label>Search
@@ -133,8 +133,8 @@
           <label>Sort by
             <select id="trackerSort">
               <option value="due">Due first</option>
-              <option value="type">Subcategory</option>
-              <option value="provider">Provider / lender</option>
+              <option value="type">Category</option>
+              <option value="provider">Provider</option>
               <option value="name">Name (A–Z)</option>
             </select>
           </label>
@@ -155,12 +155,12 @@
 
   <p id="undoBar" class="save-status" role="status" aria-live="polite"></p>
 
-  <script src="lib/icons.js?v=33c9e30033"></script>
-  <script src="lib/loans.js?v=33c9e30033"></script>
-  <script src="tracker.js?v=33c9e30033"></script>
-  <script src="lib/core.js?v=33c9e30033"></script>
-  <script src="lib/merge.js?v=33c9e30033"></script>
-  <script src="lib/account.js?v=33c9e30033"></script>
-  <script src="lib/sync.js?v=33c9e30033"></script>
+  <script src="lib/icons.js?v=0e7f4c6547"></script>
+  <script src="lib/loans.js?v=0e7f4c6547"></script>
+  <script src="tracker.js?v=0e7f4c6547"></script>
+  <script src="lib/core.js?v=0e7f4c6547"></script>
+  <script src="lib/merge.js?v=0e7f4c6547"></script>
+  <script src="lib/account.js?v=0e7f4c6547"></script>
+  <script src="lib/sync.js?v=0e7f4c6547"></script>
 </body>
 </html>
