@@ -119,6 +119,10 @@ Expenses and your Tracker bills and loans are saved in each browser. To see the 
 - Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.
 - **Remember passphrase on this device** (on any of the three pages) saves it in that browser, so the pages open and sync without asking. Without it, you're asked again once you close the tab. *Lock* on Money lent, or *Forget passphrase* in the sync bar, removes it. Only use it on your own devices.
 
+## Borrower page privacy
+
+On a borrower's page (`borrow.html`), **My loans** and **My payments** start collapsed every time it opens, showing only how many loans and payments there are. The borrower taps **Show** to expand either one. The totals at the top stay visible, and the eye button in the header hides every amount.
+
 ## Borrowers sending their contact details
 
 Borrowers can enter their email or mobile number (local numbers like `0917 123 4567` are fine) under **Payment reminders** on their page and tap **Send**.

@@ -6,11 +6,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <script src="lib/theme.js?v=8afa411bf8"></script>
-  <script src="lib/privacy.js?v=8afa411bf8"></script>
-  <link rel="stylesheet" href="style.css?v=8afa411bf8">
-  <link rel="stylesheet" href="lending.css?v=8afa411bf8">
-  <link rel="stylesheet" href="theme.css?v=8afa411bf8">
+  <script src="lib/theme.js?v=5fc47b1fa9"></script>
+  <script src="lib/privacy.js?v=5fc47b1fa9"></script>
+  <link rel="stylesheet" href="style.css?v=5fc47b1fa9">
+  <link rel="stylesheet" href="lending.css?v=5fc47b1fa9">
+  <link rel="stylesheet" href="theme.css?v=5fc47b1fa9">
 </head>
 <body>
   <header class="topbar">
@@ -58,16 +58,31 @@
       </section>
 
       <section class="card" id="loansSection" hidden>
-        <h2>My loans</h2>
+        <div class="list-head">
+          <button type="button" class="section-toggle" id="loansToggle" aria-expanded="false" aria-controls="loansBody">
+            <h2>My loans</h2>
+            <span class="section-count" id="loansCount"></span>
+            <span class="section-action">Show</span>
+          </button>
+        </div>
+        <div id="loansBody" class="section-body" hidden>
         <div id="loanList" class="loan-list"></div>
         <details id="loansDoneWrap" class="archive" hidden>
           <summary id="loansDoneTitle">Paid off</summary>
           <div id="loansDone" class="loan-list"></div>
         </details>
+        </div>
       </section>
 
       <section class="card">
-        <h2>My payments</h2>
+        <div class="list-head">
+          <button type="button" class="section-toggle" id="paymentsToggle" aria-expanded="false" aria-controls="paymentsBody">
+            <h2>My payments</h2>
+            <span class="section-count" id="paymentsCount"></span>
+            <span class="section-action">Show</span>
+          </button>
+        </div>
+        <div id="paymentsBody" class="section-body" hidden>
         <div class="filters">
           <div class="chips" id="statusFilter" role="group" aria-label="Filter by status">
             <button type="button" data-status="unpaid" class="chip active">Unpaid</button>
@@ -99,6 +114,7 @@
         </div>
         <div id="months"></div>
         <p id="monthsEmpty" class="empty" hidden>No payments match these filters.</p>
+        </div>
       </section>
 
       <section class="card">
@@ -125,8 +141,8 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=8afa411bf8"></script>
-  <script src="lib/core.js?v=8afa411bf8"></script>
-  <script src="borrow.js?v=8afa411bf8"></script>
+  <script src="lib/icons.js?v=5fc47b1fa9"></script>
+  <script src="lib/core.js?v=5fc47b1fa9"></script>
+  <script src="borrow.js?v=5fc47b1fa9"></script>
 </body>
 </html>

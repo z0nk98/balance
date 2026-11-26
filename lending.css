@@ -457,3 +457,5 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   .varying-row { grid-template-columns: minmax(0, 1fr) auto; }
   .varying-row .spark { grid-column: 1 / -1; grid-row: 2; width: 100%; }
 }
+
+#loansBody, #paymentsBody { margin-top: 10px; }

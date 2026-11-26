@@ -291,6 +291,23 @@
   window.addEventListener('balance:amounts', () => { if (me) render(); });
 
   // One line per loan: what was lent, the interest, and what each payment is.
+  // ---- Collapsed sections ------------------------------------------------
+  // "My loans" and "My payments" start collapsed every time the page opens,
+  // so nothing in them shows until you choose to see it.
+  const expanded = { loans: false, payments: false };
+
+  function applyCollapsed() {
+    for (const key of Object.keys(expanded)) {
+      $(`${key}Body`).hidden = !expanded[key];
+      $(`${key}Toggle`).setAttribute('aria-expanded', String(expanded[key]));
+      $(`${key}Toggle`).querySelector('.section-action').textContent = expanded[key] ? 'Hide' : 'Show';
+    }
+  }
+
+  for (const key of Object.keys(expanded)) {
+    $(`${key}Toggle`).addEventListener('click', () => { expanded[key] = !expanded[key]; applyCollapsed(); });
+  }
+
   function renderLoans() {
     const loans = new Map();
     for (const i of me.items) {
@@ -326,6 +343,7 @@
     $('loansDoneWrap').hidden = done.length === 0;
     $('loansDoneTitle').textContent = `Paid off (${done.length})`;
     $('loansSection').hidden = loans.size === 0;
+    $('loansCount').textContent = `(${loans.size})`;
   }
 
   function render() {
@@ -354,6 +372,8 @@
       : '';
 
     renderLoans();
+    $('paymentsCount').textContent = `(${me.items.length})`;
+    applyCollapsed();
 
     const months = groupPayments(shown);
     $('months').replaceChildren(...months.map((m) =>
