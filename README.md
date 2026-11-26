@@ -85,6 +85,7 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 - **Varies each month**: a bill whose amount changes, like electricity or water. Enter the first month due, and optionally the provider, a usual amount (used as an estimate), the due day, and a number of months (leave blank if it never ends).
   - **Record payment** asks for the bill month and the actual amount.
   - Each one shows a chip per month with the amount paid (green) or unpaid (red), the total paid, the average and last amounts, and whether it's **up to date**, **due this month**, **N months unpaid** or **paid off**.
+- **Sort by** (next to *My bills & loans*): **Due first** (the default: anything unpaid on top, then by the next month due), **Loans first** or **Bills first** (grouped under headings: fixed-amount loans and bills, and bills that vary), **Provider / lender** (grouped A–Z, with ones that have none at the end), or **Name**. The choice is remembered on that device and applies to the *Paid off* list too.
 - *Payment history* lists each payment. Things you've paid off move into a collapsed *Paid off* list.
 - The totals at the top show what's left on everything, what's due by this month, and what you paid this month. For bills that vary, amounts not paid yet are estimated from the usual amount, or else the average so far, and marked *estimated*.
 - The type can't be changed once a payment is recorded.

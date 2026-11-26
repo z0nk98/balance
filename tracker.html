@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=771d0ba94a"></script>
-  <link rel="stylesheet" href="style.css?v=771d0ba94a">
-  <link rel="stylesheet" href="lending.css?v=771d0ba94a">
-  <link rel="stylesheet" href="theme.css?v=771d0ba94a">
+  <script src="lib/theme.js?v=f8a9b917e8"></script>
+  <link rel="stylesheet" href="style.css?v=f8a9b917e8">
+  <link rel="stylesheet" href="lending.css?v=f8a9b917e8">
+  <link rel="stylesheet" href="theme.css?v=f8a9b917e8">
 </head>
 <body>
   <header class="topbar">
@@ -30,7 +30,18 @@
     </section>
 
     <section class="card">
-      <h2>My bills &amp; loans</h2>
+      <div class="list-head">
+        <h2>My bills &amp; loans</h2>
+        <label class="sort-by">Sort by
+          <select id="trackerSort">
+            <option value="due">Due first</option>
+            <option value="loans">Loans first, then bills</option>
+            <option value="bills">Bills first, then loans</option>
+            <option value="provider">Provider / lender</option>
+            <option value="name">Name (A–Z)</option>
+          </select>
+        </label>
+      </div>
       <div id="loanList" class="tracker-list"></div>
       <p id="loanEmpty" class="empty" hidden></p>
       <details id="doneWrap" class="archive" hidden>
@@ -72,12 +83,12 @@
     <p class="hint tracker-foot">Fixed-amount bills and loans: each payment records the month you paid and how many months (terms) it covered, so paying several at once is counted correctly. Bills that vary: record the actual amount for each month.</p>
   </main>
 
-  <script src="lib/icons.js?v=771d0ba94a"></script>
-  <script src="lib/loans.js?v=771d0ba94a"></script>
-  <script src="tracker.js?v=771d0ba94a"></script>
-  <script src="lib/core.js?v=771d0ba94a"></script>
-  <script src="lib/merge.js?v=771d0ba94a"></script>
-  <script src="lib/account.js?v=771d0ba94a"></script>
-  <script src="lib/sync.js?v=771d0ba94a"></script>
+  <script src="lib/icons.js?v=f8a9b917e8"></script>
+  <script src="lib/loans.js?v=f8a9b917e8"></script>
+  <script src="tracker.js?v=f8a9b917e8"></script>
+  <script src="lib/core.js?v=f8a9b917e8"></script>
+  <script src="lib/merge.js?v=f8a9b917e8"></script>
+  <script src="lib/account.js?v=f8a9b917e8"></script>
+  <script src="lib/sync.js?v=f8a9b917e8"></script>
 </body>
 </html>

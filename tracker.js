@@ -418,6 +418,53 @@
     ]);
   }
 
+  // ---- Sorting -------------------------------------------------------------
+  // Remembered on this device.
+  const SORT_KEY = 'tracker-sort:v1';
+  const SORTS = ['due', 'loans', 'bills', 'provider', 'name'];
+  let sortBy = SORTS.includes(localStorage.getItem(SORT_KEY)) ? localStorage.getItem(SORT_KEY) : 'due';
+
+  const byName = (a, b) => a.loan.name.localeCompare(b.loan.name, undefined, { sensitivity: 'base', numeric: true });
+  const providerOf = (r) => (r.loan.lender || '').trim();
+
+  function groupTitle(text, count) {
+    return el('h3', { className: 'bill-group-title' }, [document.createTextNode(text + ' '), el('span', { textContent: `(${count})` })]);
+  }
+
+  // Sorted cards, with group headings when sorting by type or provider.
+  // `within` orders the items inside the list or each group.
+  function arrange(items, within) {
+    if (sortBy === 'name') return [...items].sort(byName).map(card);
+    if (sortBy === 'loans' || sortBy === 'bills') {
+      const loans = items.filter((r) => !Loans.isVariable(r.loan)).sort(within);
+      const bills = items.filter((r) => Loans.isVariable(r.loan)).sort(within);
+      const groups = [['Loans & fixed-amount bills', loans], ['Bills that vary each month', bills]];
+      if (sortBy === 'bills') groups.reverse();
+      return groups.filter(([, list]) => list.length).flatMap(([title, list]) => [groupTitle(title, list.length), ...list.map(card)]);
+    }
+    if (sortBy === 'provider') {
+      const groups = new Map();
+      for (const r of items) {
+        const name = providerOf(r);
+        const key = name.toLowerCase();
+        if (!groups.has(key)) groups.set(key, { name, list: [] });
+        groups.get(key).list.push(r);
+      }
+      return [...groups.values()]
+        // A–Z, with the ones without a provider last.
+        .sort((a, b) => (!a.name) - (!b.name) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+        .flatMap((g) => [groupTitle(g.name || 'No provider or lender', g.list.length), ...g.list.sort(within).map(card)]);
+    }
+    return [...items].sort(within).map(card);
+  }
+
+  $('trackerSort').value = sortBy;
+  $('trackerSort').addEventListener('change', (ev) => {
+    sortBy = ev.target.value;
+    try { localStorage.setItem(SORT_KEY, sortBy); } catch { /* not saved; still applies now */ }
+    render();
+  });
+
   const card = (r) => (Loans.isVariable(r.loan) ? variableCard(r.loan, r.s) : loanCard(r.loan, r.s));
 
   function render() {
@@ -450,17 +497,18 @@
     $('sumLoans').textContent = String(active.length);
     $('sumLoansSub').textContent = `active${rows.length > active.length ? ` · ${rows.length - active.length} paid off` : ''}`;
 
-    const shown = active
-      // Behind first, then by the next term's month.
-      .sort((a, b) => (b.s.behind > 0) - (a.s.behind > 0) || String(a.s.nextMonth || '9999').localeCompare(String(b.s.nextMonth || '9999')) || a.loan.name.localeCompare(b.loan.name));
-    $('loanList').replaceChildren(...shown.map(card));
-    // Paid-off loans are kept in a collapsed archive, most recent first.
+    const shown = arrange(active, (a, b) =>
+      // Behind first, then by the next month due.
+      (b.s.behind > 0) - (a.s.behind > 0) || String(a.s.nextMonth || '9999').localeCompare(String(b.s.nextMonth || '9999')) || byName(a, b));
+    $('loanList').replaceChildren(...shown);
+    // Paid-off ones are kept in a collapsed archive, most recent first.
     const lastPaid = (r) => (r.s.history.length ? r.s.history[r.s.history.length - 1].month : '');
-    const done = rows.filter((r) => r.s.status === 'done').sort((a, b) => lastPaid(b).localeCompare(lastPaid(a)));
-    $('doneList').replaceChildren(...done.map(card));
+    const doneRows = rows.filter((r) => r.s.status === 'done');
+    $('doneList').replaceChildren(...arrange(doneRows, (a, b) => lastPaid(b).localeCompare(lastPaid(a)) || byName(a, b)));
+    const done = doneRows;
     $('doneWrap').hidden = done.length === 0;
     $('doneTitle').textContent = `Paid off (${done.length})`;
-    $('loanEmpty').hidden = shown.length > 0;
+    $('loanEmpty').hidden = active.length > 0;
     $('loanEmpty').textContent = rows.length
       ? 'Everything here is paid off.'
       : 'Nothing here yet. Add a bill or loan below: a fixed amount paid over a set number of months, or a bill that varies each month.';
