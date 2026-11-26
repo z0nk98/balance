@@ -521,7 +521,9 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .row-menu-list button { text-align: left; border: 0; background: none; box-shadow: none; padding: 8px 10px; border-radius: 8px; min-height: 0; }
 .row-menu-list button:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .row-menu-list .danger-text { color: var(--danger); }
-.collapse-btn { font-size: 0.85rem; white-space: nowrap; }
+.collapse-btn { font-size: 1.05rem; line-height: 1; padding-top: 4px !important; }
+.loan-actions .icon-btn, .row-actions .row-menu-btn { width: 34px; height: 34px; }
+.loan-actions { align-items: center; gap: 6px; }
 .row-chevron { display: none; }
 /* Phones: a plain list row (icon · name and due date · amount and status · ›).
    Tapping it opens the full card, where Pay, Edit and Delete are. */
@@ -568,8 +570,9 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   /* Opened card: name gets the full width; status, Less and ⋯ go on the next line. */
   .tracker-loan .tracker-head { flex-wrap: wrap; row-gap: 8px; }
   .tracker-loan .tracker-head > .pay-icon + div { flex: 1 1 calc(100% - 56px); }
-  .tracker-loan .tracker-head > .badge { margin-left: 50px; }
-  .tracker-loan .tracker-head > .loan-actions { margin-left: auto; }
+  /* Second line: status under the name (lined up with it), buttons on the right. */
+  .tracker-loan .tracker-head > .badge { margin-left: 48px; align-self: center; }
+  .tracker-loan .tracker-head > .loan-actions { margin-left: auto; align-self: center; }
   /* Status chips on one line, scrolling sideways if needed. */
   #allBody .chips, #monthBody .chips { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
   #allBody .chips::-webkit-scrollbar, #monthBody .chips::-webkit-scrollbar { display: none; }

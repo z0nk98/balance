@@ -804,7 +804,10 @@
   const expandedRows = new Set();
 
   function collapseButton(loan) {
-    return el('button', { type: 'button', className: 'linkish collapse-btn', textContent: 'Less ▴', title: 'Back to one line', onclick: () => { expandedRows.delete(loan.id); openPay.delete(loan.id); render(); } });
+    // A round button matching ⋯, with an up-arrow.
+    const b = el('button', { type: 'button', className: 'icon-btn collapse-btn', textContent: '⌃', title: 'Show less', onclick: () => { expandedRows.delete(loan.id); openPay.delete(loan.id); render(); } });
+    b.setAttribute('aria-label', `Show less of ${loan.name}`);
+    return b;
   }
 
   // Edit and Delete live in a small menu, so they're hard to hit by accident.
