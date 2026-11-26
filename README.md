@@ -22,6 +22,10 @@ What someone without a code *can* see: roughly how many borrowers you have, and 
 
 **If you forget your passphrase, the data can't be recovered.** Write it down, and use *Download backup* now and then.
 
+## Always the newest version
+
+GitHub Pages lets browsers reuse a page for up to 10 minutes, so right after an update you could see the old one. Each page checks `version.json` when it opens and whenever you come back to it; if a newer version is out, it reloads itself once. If you're in the middle of typing, it shows **New version available · Reload** instead, so nothing is lost.
+
 ## Light or dark
 
 Every page has a theme switch in the header: sun for **Light**, moon for **Dark**, half-circle for **Auto** (follow the device's setting, the default). The choice is remembered on that device for all pages.

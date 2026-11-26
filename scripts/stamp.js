@@ -5,6 +5,9 @@
 // so without this a fresh page can run with an old script. The fingerprint
 // is a hash of the files' contents, so it only changes when they do.
 //
+// It also writes version.json with the same fingerprint, which lib/update.js
+// checks so open pages reload themselves when a newer version is published.
+//
 //   node scripts/stamp.js          # update the pages
 //   node scripts/stamp.js --check  # exit 1 if a page is out of date
 
@@ -42,6 +45,13 @@ function run({ check = false } = {}) {
       stale.push(p);
       if (!check) fs.writeFileSync(file, next);
     }
+  }
+  const versionFile = path.join(ROOT, 'version.json');
+  const versionJson = `${JSON.stringify({ v: version })}\n`;
+  const current = fs.existsSync(versionFile) ? fs.readFileSync(versionFile, 'utf8') : '';
+  if (current !== versionJson) {
+    stale.push('version.json');
+    if (!check) fs.writeFileSync(versionFile, versionJson);
   }
   return { version, stale };
 }

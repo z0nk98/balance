@@ -575,3 +575,7 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   #allBody .chips::-webkit-scrollbar, #monthBody .chips::-webkit-scrollbar { display: none; }
   #allBody .chips .chip, #monthBody .chips .chip { flex: none; }
 }
+
+/* "New version available · Reload" (lib/update.js). */
+.update-bar { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 999px; font-size: 0.85rem; background: var(--glass-strong, var(--surface)); border: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
+.update-bar button { padding: 4px 12px; font-size: 0.85rem; min-height: 0; }
