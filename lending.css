@@ -605,3 +605,10 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   body:has(.topbar nav) main { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
   body:has(.topbar nav) .save-status, body:has(.topbar nav) .update-bar { bottom: calc(96px + env(safe-area-inset-bottom)); top: auto; }
 }
+
+/* Spending: By month / All expenses switch, slimmer; full width on phones so it lines up with the cards. */
+#viewToggle.view-toggle { padding: 3px; gap: 3px; border-radius: 12px; }
+#viewToggle.view-toggle button { padding: 6px 12px; min-height: 0; font-size: 0.9rem; border-radius: 9px; }
+@media (max-width: 720px) {
+  #viewToggle.view-toggle { width: 100%; margin: 0 0 12px; }
+}
