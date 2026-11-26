@@ -61,9 +61,16 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Paid-off loans** move into a collapsed *Paid off loans* section in each borrower's card (it opens by itself under the *Paid* filter). Borrowers see theirs under a collapsed *Paid off* in *My loans*.
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
 
-## Expenses: money in and out
+## Expenses: money in minus bills paid
 
-Each entry is **Money out** (food, transport, utilities…) or **Money in** (salary, business, freelance, loan repayments, gifts, refunds, interest…). For each month you see money in, money out and net, a spending budget for money out, a category breakdown for each side, and a transactions list you can filter by type and category. CSV export/import includes a `type` column (`in` / `out`); entries saved before this change count as money out. A **Bills this month** box summarises the Bills page.
+The Expenses page (`index.html`) works month by month (arrows in the header):
+
+- **Money in**: what you add here (salary, business, freelance, gifts, refunds, interest…).
+- **Bills paid**: the bills and loans you mark paid in your **Personal Bills Tracker** for that month. They're added automatically; change them on the Tracker.
+- **Net** = money in − bills paid. The **Bills budget** compares bills paid with a monthly amount you set.
+- **Bills this month** shows the Tracker's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as the Tracker's *By month* view.
+- *Bills paid* breaks them down by bill, *Money in by category* by category, and *Transactions* lists both (bills paid are tagged *Tracker*).
+- Money-out entries typed in before this change, and payments from the Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Tracker payments.
 
 ## Bills
 
@@ -71,7 +78,7 @@ Each entry is **Money out** (food, transport, utilities…) or **Money in** (sal
 
 - **Add a bill** as **Fixed** (same amount every time, e.g. rent) or **Variable** (changes, e.g. electricity: enter an estimate, and the actual amount when you pay). Give it a due day, or tick **No set due date** to pay any time in the month. Then set how often it repeats (monthly, every 2/3/6 months, yearly, or once), and optionally a last month, an account number, a note, and whether it's auto-debited.
 - **Each month** lists the bills due with their status (Paid, Overdue, Due soon, Upcoming) and totals. Alerts at the top show anything overdue, including from earlier months, and anything due in the next 5 days.
-- **Mark paid** asks for the amount actually paid. Every paid bill counts as **money out** on the Expenses page, tagged *Bill*. The two pages stay in step: undoing on Bills removes it from Expenses, and deleting or editing it on Expenses marks the bill unpaid or updates its amount.
+- **Mark paid** asks for the amount actually paid. Paid bills are saved as money-out entries, but the Expenses page now counts only bills paid in the Tracker, so these aren't in its totals. To have a bill count, add it on the Tracker.
 - **Finished bills** (ones with a last month, or one-off bills, where every payment was made) move into a collapsed *Paid off* list under *All bills*.
 - Bills are stored in this browser, like expenses, and synced to your other devices if sync is on (see below). *Download backup* and *Restore backup* still work for keeping a copy.
 

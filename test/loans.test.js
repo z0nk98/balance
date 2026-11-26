@@ -117,3 +117,26 @@ test('month view: what is due, paid and overdue in a month', () => {
     ['L1', ['2026-08', '2026-09', '2026-10'], 4500],
   ]);
 });
+
+test('month totals: what the Tracker and Expenses pages both show', () => {
+  const st = {
+    loans: [L, bill],
+    // Terms 1-2 paid at 1,600 each; a partial 500 in November; electricity paid 2,900 in October.
+    payments: [pay('a', '2026-06', 2, 3200), { id: 'pp', loanId: 'L1', month: '2026-11', terms: 0, amount: 500 }, bpay('e', '2026-10', 2900)],
+  };
+  // July: term 2, paid at the actual 1,600, not the planned 1,500.
+  const jul = Loans.monthTotals(st, '2026-07', '2026-11', 25);
+  assert.equal(jul.paid, 1600);
+  assert.equal(jul.left, 0);
+  // October: phone term 5 unpaid (1,500), electricity paid 2,900.
+  const oct = Loans.monthTotals(st, '2026-10', '2026-11', 25);
+  assert.deepEqual([oct.due, oct.paid, oct.left, oct.overdue], [4400, 2900, 1500, 1500]);
+  assert.equal(oct.earlier.length, 0); // earlier months only on the current month
+  // November: the partial payment counts as paid; electricity estimated at 2,500.
+  const nov = Loans.monthTotals(st, '2026-11', '2026-11', 25);
+  assert.equal(nov.paid, 500);
+  assert.equal(nov.left, 4000);
+  assert.equal(nov.due, 4500);
+  assert.equal(nov.estimated, true);
+  assert.ok(nov.earlier.length > 0);
+});

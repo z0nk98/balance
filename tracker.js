@@ -558,23 +558,7 @@
   let monthStatus = 'all';
   const ITEM_STATUS = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due this month', upcoming: 'Upcoming' };
 
-  // A picture for the row: loans get the loan icon, bills a guess from the name.
-  function iconFor(loan) {
-    if (!Loans.isVariable(loan)) return PayIcons.billIcon('loan');
-    const t = `${loan.name} ${loan.lender}`.toLowerCase();
-    const guess = [
-      ['electricity', /electric|meralco|veco|davao light|power|kuryente/],
-      ['water', /water|maynilad|tubig/],
-      ['internet', /internet|wifi|wi-fi|pldt|converge|globe at home|sky ?cable|fiber|broadband/],
-      ['mobile', /mobile|phone|postpaid|load|smart|globe|dito/],
-      ['rent', /rent|upa|condo|apartment|dues/],
-      ['card', /credit card|card/],
-      ['insurance', /insurance|philhealth|pag-?ibig|sss/],
-      ['subscription', /netflix|spotify|youtube|disney|subscription/],
-      ['school', /school|tuition/],
-    ].find(([, re]) => re.test(t));
-    return PayIcons.billIcon(guess ? guess[0] : 'other');
-  }
+  const iconFor = (loan) => PayIcons.billIcon(Loans.iconKind(loan));
 
   const dueDayText = (item) => (item.dueDay ? `Due on the ${ordinal(item.dueDay)}` : 'Due anytime in the month');
   const amountOf = (item) => (item.amount === null ? 'Varies' : (item.estimated ? `~${money(item.amount)}` : money(item.amount)));
@@ -679,25 +663,18 @@
     $('todayBtn').hidden = viewMonth === now;
     $('mDueLabel').textContent = viewMonth === now ? 'Due this month' : `Due in ${label.split(' ')[0]}`;
 
-    const items = Loans.monthItems(state, viewMonth, now, todayDay);
-    const sum = (list) => list.reduce((t, i) => t + (i.amount || 0), 0);
-    const paidItems = items.filter((i) => i.paid);
-    const unpaidItems = items.filter((i) => !i.paid);
-    const overdueItems = items.filter((i) => i.status === 'overdue');
-    const earlier = viewMonth === now ? Loans.unpaidBefore(state, viewMonth, now) : [];
-    const estimated = unpaidItems.some((i) => i.estimated);
+    const t = Loans.monthTotals(state, viewMonth, now, todayDay);
+    const { items, earlier, estimated } = t;
 
-    $('mDue').textContent = money(sum(items));
+    $('mDue').textContent = money(t.due);
     $('mDueSub').textContent = items.length ? `${items.length} ${items.length === 1 ? 'bill or loan' : 'bills & loans'}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
-    $('mPaid').textContent = money(sum(paidItems));
-    $('mPaidSub').textContent = items.length ? `${paidItems.length} of ${items.length}` : '';
-    $('mLeft').textContent = money(sum(unpaidItems));
-    $('mLeftSub').textContent = unpaidItems.length ? `${unpaidItems.length} to pay${estimated ? ' · estimated' : ''}` : (items.length ? 'All paid' : '');
-    const overAmount = sum(overdueItems) + earlier.reduce((t, e) => t + (e.amount || 0), 0);
-    const overCount = overdueItems.length + earlier.reduce((t, e) => t + e.months.length, 0);
-    $('mOver').textContent = money(overAmount);
-    $('mOver').classList.toggle('danger', overCount > 0);
-    $('mOverSub').textContent = overCount ? `${plural(overCount, 'payment')}${earlier.length ? ' incl. earlier months' : ''}` : 'None';
+    $('mPaid').textContent = money(t.paid);
+    $('mPaidSub').textContent = items.length ? `${t.paidCount} of ${items.length}${t.partial.length ? ` · ${plural(t.partial.length, 'partial payment')}` : ''}` : '';
+    $('mLeft').textContent = money(t.left);
+    $('mLeftSub').textContent = t.unpaidCount ? `${t.unpaidCount} to pay${estimated ? ' · estimated' : ''}` : (items.length ? 'All paid' : '');
+    $('mOver').textContent = money(t.overdue);
+    $('mOver').classList.toggle('danger', t.overdueCount > 0);
+    $('mOverSub').textContent = t.overdueCount ? `${plural(t.overdueCount, 'payment')}${earlier.length ? ' incl. earlier months' : ''}` : 'None';
 
     for (const c of document.querySelectorAll('#monthStatus .chip')) c.classList.toggle('active', c.dataset.status === monthStatus);
     const shownEarlier = monthStatus === 'paid' ? [] : earlier;

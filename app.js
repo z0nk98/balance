@@ -6,6 +6,11 @@
   // entries without a type are money out.
   const STORAGE_KEY = 'expense-tracker:v1';
   const BILLS_KEY = 'tracking-bills:v1';
+  // Money out is the bills paid in the Personal Bills Tracker (tracker.html).
+  // Money-out entries typed in here or added by the Bills page are kept, but
+  // not counted.
+  const LOANS_KEY = 'personal-loans:v1';
+  const BILL_COLORS = ['#e07a5f', '#3d85c6', '#8e6fd1', '#f2a541', '#4fb3bf', '#d65db1', '#81b29a', '#b45f3c', '#6b4fd1', '#9aa0a8'];
   const CATEGORIES = {
     out: {
       Food: '#e07a5f',
@@ -37,7 +42,7 @@
 
   const state = load();
   let viewMonth = monthKey(todayISO());
-  let formType = 'out';
+  const formType = 'in';
 
   function load() {
     const fallback = { expenses: [], budget: null, currency: 'USD' };
@@ -96,7 +101,50 @@
   }
 
   const typeOf = (e) => (e.type === 'in' ? 'in' : 'out');
-  const colorOf = (e) => CATEGORIES[typeOf(e)][e.category] || '#9aa0a8';
+  const colorOf = (e) => e.color || CATEGORIES[typeOf(e)][e.category] || '#9aa0a8';
+
+  // ---- Tracker link -------------------------------------------------------
+
+  function readTracker() {
+    try {
+      const data = JSON.parse(localStorage.getItem(LOANS_KEY) || 'null');
+      return data && Array.isArray(data.loans) ? { loans: data.loans, payments: Array.isArray(data.payments) ? data.payments : [] } : { loans: [], payments: [] };
+    } catch {
+      return { loans: [], payments: [] };
+    }
+  }
+
+  // The Tracker's dashboard for the month being viewed.
+  function trackerMonth() {
+    const tracker = readTracker();
+    if (!window.Loans) return null;
+    const t = Loans.monthTotals(tracker, viewMonth, monthKey(todayISO()), new Date().getDate());
+    // A colour per bill or loan, the same every month.
+    const order = tracker.loans.map((l) => l.id);
+    const colorFor = (id) => BILL_COLORS[Math.max(0, order.indexOf(id)) % BILL_COLORS.length];
+    const dateIn = (month, day) => {
+      const [y, m] = month.split('-').map(Number);
+      const last = new Date(y, m, 0).getDate();
+      return `${month}-${pad(Math.min(day || 1, last))}`;
+    };
+    // Bills paid, as list entries (read-only: change them on the Tracker).
+    const paid = t.items.filter((i) => i.paid).map((i) => ({
+      id: `tracker:${i.loan.id}:${i.month}`,
+      tracker: true,
+      type: 'out',
+      category: i.loan.name,
+      amount: i.amount,
+      date: dateIn(i.month, i.dueDay),
+      note: [i.variable ? 'Varies each month' : `Term ${i.termNo} of ${i.loan.terms}`, i.loan.lender].filter(Boolean).join(' · '),
+      color: colorFor(i.loan.id),
+      created: 0,
+    }));
+    for (const p of t.partial) {
+      const loan = tracker.loans.find((l) => l.id === p.loanId);
+      paid.push({ id: `tracker:${p.id}`, tracker: true, type: 'out', category: loan ? loan.name : 'Loan', amount: p.amount, date: dateIn(p.month, loan && loan.dueDay), note: 'Partial payment', color: colorFor(p.loanId), created: 0 });
+    }
+    return { ...t, paidEntries: paid, hasLoans: tracker.loans.length > 0 };
+  }
 
   // ---- Helpers --------------------------------------------------------
 
@@ -159,14 +207,22 @@
   function render() {
     $('monthLabel').textContent = monthLabel(viewMonth);
     const items = monthEntries();
-    const outs = items.filter((e) => typeOf(e) === 'out');
     const ins = items.filter((e) => typeOf(e) === 'in');
+    const notCounted = items.filter((e) => typeOf(e) === 'out');
+    const t = trackerMonth();
+    const billsPaid = t ? t.paidEntries : [];
 
-    renderStats(sum(ins), sum(outs));
-    renderBreakdown($('breakdown'), $('breakdownEmpty'), outs);
+    renderStats(sum(ins), t ? t.paid : 0);
+    renderBreakdown($('breakdown'), $('breakdownEmpty'), billsPaid);
     renderBreakdown($('breakdownIn'), $('breakdownInEmpty'), ins);
-    renderList(items);
-    renderBills();
+    renderList([...ins, ...billsPaid]);
+    renderTracker(t);
+
+    const hidden = $('hiddenNote');
+    hidden.hidden = notCounted.length === 0;
+    hidden.textContent = notCounted.length
+      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), typed in here or added by the Bills page. Only bills paid in the Tracker count as money out.`
+      : '';
   }
 
   function renderStats(totalIn, totalOut) {
@@ -227,8 +283,8 @@
 
     const shown = items
       .filter((e) => !type || typeOf(e) === type)
-      .filter((e) => !cat || e.category === cat)
-      .filter((e) => !q || e.note.toLowerCase().includes(q) || e.category.toLowerCase().includes(q))
+      .filter((e) => !cat || (typeOf(e) === 'in' && e.category === cat))
+      .filter((e) => !q || (e.note || '').toLowerCase().includes(q) || e.category.toLowerCase().includes(q))
       .sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
 
     $('expenseList').replaceChildren(
@@ -241,15 +297,17 @@
           el('div', { className: 'meta' }, [
             el('div', { className: 'cat' }, [
               document.createTextNode(e.category),
-              e.billPayment ? el('span', { className: 'tag', textContent: 'Bill' }) : null,
+              e.tracker ? el('span', { className: 'tag', textContent: 'Tracker' }) : null,
             ]),
-            el('div', { className: 'sub', textContent: dateLabel(e.date) + (e.note ? ' · ' + e.note : '') }),
+            el('div', { className: 'sub', textContent: (e.tracker ? monthLabel(monthKey(e.date)) : dateLabel(e.date)) + (e.note ? ' · ' + e.note : '') }),
           ]),
           el('span', { className: `amt ${incoming ? 'money-in' : ''}`, textContent: `${incoming ? '+' : '−'}${money(e.amount)}` }),
-          el('div', { className: 'actions' }, [
+          e.tracker
+            ? el('div', { className: 'actions' }, [el('a', { href: 'tracker.html', className: 'linkish', textContent: 'Open', title: 'Change it on the Tracker' })])
+            : el('div', { className: 'actions' }, [
             PayIcons.iconButton('edit', `Edit ${e.category}${e.note ? ` (${e.note})` : ''}`, () => startEdit(e.id)),
             PayIcons.iconButton('delete', `Delete ${e.category}${e.note ? ` (${e.note})` : ''}`, () => remove(e.id), 'danger'),
-          ]),
+            ]),
         ]);
       })
     );
@@ -260,7 +318,7 @@
   function fillCategoryFilter() {
     const type = $('filterType').value;
     const current = $('filterCategory').value;
-    const groups = type ? [type] : ['out', 'in'];
+    const groups = type === 'out' ? [] : ['in'];
     $('filterCategory').replaceChildren(
       el('option', { value: '', textContent: 'All categories' }),
       ...groups.flatMap((t) => Object.keys(CATEGORIES[t]).map((c) => el('option', { value: c, textContent: c })))
@@ -268,54 +326,53 @@
     $('filterCategory').value = [...$('filterCategory').options].some((o) => o.value === current) ? current : '';
   }
 
-  // A summary of this month's bills from the Bills page (same device).
-  function renderBills() {
-    let bills = null;
-    try {
-      bills = JSON.parse(localStorage.getItem(BILLS_KEY) || 'null');
-    } catch {
-      bills = null;
-    }
-    const card = $('billsCard');
-    if (!bills || !Array.isArray(bills.bills) || !bills.bills.length || !window.Bills) {
-      card.hidden = true;
+  // The Tracker's month dashboard, the same numbers as on the Tracker page.
+  const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due this month', upcoming: 'Upcoming' };
+
+  function renderTracker(t) {
+    const now = monthKey(todayISO());
+    $('trackerTitle').textContent = viewMonth === now ? 'Bills this month' : `Bills in ${monthLabel(viewMonth)}`;
+    if (!t || !t.hasLoans) {
+      for (const id of ['tDue', 'tPaid', 'tLeft', 'tOver']) $(id).textContent = money(0);
+      $('trackerNote').textContent = 'Add your bills and loans on the Tracker; the ones you mark paid count as money out here.';
+      $('trackerList').replaceChildren();
       return;
     }
-    const today = todayISO();
-    const items = Bills.forMonth({ bills: bills.bills, payments: bills.payments || {} }, viewMonth, today);
-    const t = Bills.totals(items);
-    card.hidden = false;
-    $('billsSummary').textContent = items.length
-      ? `${money(t.due)} due · ${money(t.paid)} paid · ${money(t.left)} left` +
-        (t.overdue > 0 ? ` · ${money(t.overdue)} overdue` : '') +
-        ` (fixed ${money(t.fixed)}, variable ~${money(t.variable)})`
-      : `No bills due in ${monthLabel(viewMonth)}.`;
-    const unpaid = items.filter((i) => !i.payment);
-    $('billsList').replaceChildren(
-      ...unpaid.map((i) =>
-        el('div', { className: `bill-item compact status-${i.status}` }, [
-          PayIcons.billIcon(i.bill.kind),
-          el('div', { className: 'bill-main' }, [
-            el('div', { className: 'bill-name', textContent: i.bill.name }),
-            el('div', { className: 'sub', textContent: (i.anytime ? `Anytime by ${dateLabel(i.dueDate)}` : `Due ${dateLabel(i.dueDate)}`) + ` · ${i.type === 'variable' ? 'Variable' : 'Fixed'}` }),
-          ]),
-          el('div', { className: 'bill-side' }, [
-            el('div', { className: 'amt', textContent: i.amount > 0 ? `${i.type === 'variable' ? '~' : ''}${money(i.amount)}` : 'Varies' }),
-            el('span', { className: `badge ${i.status}`, textContent: { overdue: 'Overdue', 'due-soon': 'Due soon', upcoming: 'Upcoming' }[i.status] }),
-          ]),
-        ]))
-    );
-    if (items.length && !unpaid.length) $('billsList').replaceChildren(el('p', { className: 'ok', textContent: 'All bills paid for this month.' }));
+    $('tDue').textContent = money(t.due);
+    $('tPaid').textContent = money(t.paid);
+    $('tLeft').textContent = money(t.left);
+    $('tOver').textContent = money(t.overdue);
+    $('tOver').classList.toggle('danger', t.overdueCount > 0);
+    $('trackerNote').textContent = !t.items.length
+      ? `Nothing due in ${monthLabel(viewMonth)}.`
+      : [
+        `${t.paidCount} of ${t.items.length} paid`,
+        t.estimated ? 'amounts with ~ are estimates' : '',
+        t.earlier.length ? `${t.earlier.reduce((n, e) => n + e.months.length, 0)} unpaid from earlier months (in Overdue)` : '',
+      ].filter(Boolean).join(' · ');
+    $('trackerList').replaceChildren(...t.items.map((i) =>
+      el('div', { className: `bill-item compact status-${i.status}` }, [
+        PayIcons.billIcon(Loans.iconKind(i.loan)),
+        el('div', { className: 'bill-main' }, [
+          el('div', { className: 'bill-name', textContent: i.loan.name + (i.variable ? '' : ` · term ${i.termNo} of ${i.loan.terms}`) }),
+          el('div', { className: 'sub', textContent: [i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
+        ]),
+        el('div', { className: 'bill-side' }, [
+          el('div', { className: 'amt', textContent: i.amount === null ? 'Varies' : `${i.estimated ? '~' : ''}${money(i.amount)}` }),
+          el('span', { className: `badge ${i.status}`, textContent: STATUS_LABEL[i.status] }),
+        ]),
+      ])));
+  }
+
+  function ordinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
   // ---- Form -----------------------------------------------------------
 
   function setFormType(type) {
-    formType = type;
-    for (const btn of $('typeToggle').children) {
-      btn.classList.toggle('active', btn.dataset.type === type);
-      btn.setAttribute('aria-pressed', btn.dataset.type === type);
-    }
     const current = $('category').value;
     $('category').replaceChildren(...Object.keys(CATEGORIES[type]).map((c) => el('option', { value: c, textContent: c })));
     if (CATEGORIES[type][current]) $('category').value = current;
@@ -327,9 +384,8 @@
     $('expenseForm').reset();
     $('editId').value = '';
     $('date').value = todayISO();
-    $('formTitle').textContent = 'Add money in or out';
+    $('formTitle').textContent = 'Add money in';
     $('cancelEdit').hidden = true;
-    $('typeToggle').classList.remove('locked');
     setFormType(formType);
   }
 
@@ -338,7 +394,6 @@
     if (!e) return;
     $('editId').value = e.id;
     setFormType(typeOf(e));
-    $('typeToggle').classList.toggle('locked', Boolean(e.billPayment));
     $('amount').value = e.amount;
     $('category').value = e.category;
     $('date').value = e.date;
@@ -502,10 +557,6 @@
     $('currency').value = state.currency;
     resetForm();
 
-    $('typeToggle').addEventListener('click', (ev) => {
-      const type = ev.target.closest('[data-type]')?.dataset.type;
-      if (type && !$('typeToggle').classList.contains('locked')) setFormType(type);
-    });
     $('expenseForm').addEventListener('submit', onSubmit);
     $('cancelEdit').addEventListener('click', resetForm);
     $('prevMonth').addEventListener('click', () => { viewMonth = shiftMonth(viewMonth, -1); render(); });
@@ -535,7 +586,7 @@
     window.addEventListener('storage', (ev) => {
       if (ev.key === STORAGE_KEY) Object.assign(state, load());
       if (ev.key === BILLS_KEY) syncBills();
-      if (ev.key === STORAGE_KEY || ev.key === BILLS_KEY) render();
+      if (ev.key === STORAGE_KEY || ev.key === BILLS_KEY || ev.key === LOANS_KEY) render();
     });
 
     render();
