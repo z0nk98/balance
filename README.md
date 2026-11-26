@@ -76,6 +76,20 @@ The Expenses Dashboard (`index.html`, **Expenses Dashboard** in the menu) works 
 - *Bills paid* breaks them down by bill, *Money in by category* by category, and *Transactions* lists both (bills paid are tagged *Tracker*).
 - Money-out entries typed in before this change, and payments from the old Bills page, are kept but not counted; a note under Transactions says when a month has some. CSV export still includes every saved entry; it doesn't include Tracker payments.
 
+### Insights
+
+An **Insights** section on the Expenses Dashboard (collapsed until you tap **Show**, like the other sections) helps you see your spending habits for the month you're viewing:
+
+- **Average monthly spending** over the three months before, and how this month compares (▲ more / ▼ less).
+- **Savings rate**: how much of your money in you kept.
+- **Loan payments vs income**, marked *Healthy* (under 30%), *Worth watching* (30–40%) or *High* (over 40%).
+- **Fixed vs varying**: how much of what you paid was fixed amounts, and how much varied.
+- **Money in vs expenses paid** for the last 6 months as a bar chart (tap or hover a month for its numbers; **Table** shows them as a table).
+- **Bills that vary**: each one's last 6 months as a small trend line, with its average, lowest and highest month. A month more than 20% above its usual amount is flagged.
+- **Paying on time**: the share of payments logged on or before their due day, your current on-time streak, and how early or late you pay on average. It goes by the day you logged each payment on the Tracker.
+
+The eye button hides every amount here too.
+
 ## Tracker: bills and loans you are paying off
 
 `tracker.html` (**Tracker** in the menu, titled *Personal Bills Tracker*) follows each bill or loan month by month. Tap **+ Add expense** at the top of the page. Everything you add is an expense. Its **Category** (in the form, next to the name) is **Bill**, **Loan** or **Other**; it shows as a small tag after the name on cards and rows, and is what the *Category* sort and filter use. A new expense starts with the category you used last. Ones added before categories existed count as a loan if they have a fixed amount and a bill if the amount varies; edit one to change it. Then pick how the amount works:

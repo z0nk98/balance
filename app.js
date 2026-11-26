@@ -189,6 +189,7 @@
     renderBreakdown($('breakdownIn'), $('breakdownInEmpty'), ins);
     renderList([...ins, ...billsPaid]);
     renderTracker(t);
+    renderInsights();
 
     const hidden = $('hiddenNote');
     hidden.hidden = notCounted.length === 0;
@@ -353,6 +354,246 @@
     const s = ['th', 'st', 'nd', 'rd'];
     const v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  // ---- Insights ---------------------------------------------------------
+  // Spending habits (lib/insights.js). Starts collapsed every time the page
+  // opens, like the other sections.
+
+  let insightsOpen = false;
+  let trendAsTable = false;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  const shortMonth = (key) => {
+    const [y, m] = key.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'short' });
+  };
+
+  function svg(tag, attrs = {}, children = []) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    for (const c of children) if (c) node.append(c);
+    return node;
+  }
+
+  function tile(label, value, sub, extra) {
+    return el('div', { className: 'insight-tile' }, [
+      el('span', { className: 'tile-label', textContent: label }),
+      el('strong', { className: 'tile-value', textContent: value }),
+      sub ? el('span', { className: 'tile-sub', textContent: sub }) : null,
+      extra || null,
+    ]);
+  }
+
+  const LEVEL = {
+    ok: ['paid', '✓ Healthy · under 30%'],
+    watch: ['due-soon', '! Worth watching · 30–40%'],
+    high: ['overdue', '▲ High · over 40%'],
+  };
+
+  function renderInsights() {
+    if (!window.Insights) return;
+    $('insightsBody').hidden = !insightsOpen;
+    $('insightsToggle').setAttribute('aria-expanded', String(insightsOpen));
+    $('insightsToggle').querySelector('.section-action').textContent = insightsOpen ? 'Hide' : 'Show';
+    $('insightsPeriod').textContent = `· ${monthLabel(viewMonth)}`;
+    if (!insightsOpen) return; // nothing is drawn until you choose to see it
+
+    const tracker = readTracker();
+    const hasData = state.expenses.some((e) => typeOf(e) === 'in') || tracker.payments.length > 0;
+    $('insightsEmpty').hidden = hasData;
+    $('insightsContent').hidden = !hasData;
+    if (!hasData) return;
+
+    const month = shortMonth(viewMonth);
+    const h = Insights.headline(state.expenses, tracker, viewMonth);
+
+    // Headline figures
+    const level = Insights.loanLevel(h.loanShare);
+    $('insightTiles').replaceChildren(
+      tile('Average monthly spending',
+        h.average !== null ? money(h.average) : '—',
+        h.average !== null
+          ? `last ${h.averageMonths} month${h.averageMonths === 1 ? '' : 's'}` + (h.change !== null ? ` · ${month} ${h.change >= 0 ? '▲' : '▼'} ${pct(Math.abs(h.change))} ${h.change >= 0 ? 'more' : 'less'}` : '')
+          : 'Shows once there’s an earlier month'),
+      tile(`Savings rate · ${month}`,
+        h.savingsRate !== null ? pct(h.savingsRate) : '—',
+        h.savingsRate === null ? 'Add money in to see it'
+          : (h.net >= 0 ? `${money(h.net)} kept of ${money(h.in)}` : `Spent ${money(-h.net)} more than came in`)),
+      tile(`Loan payments vs income · ${month}`,
+        h.loanShare !== null ? pct(h.loanShare) : '—',
+        h.loanShare !== null ? `${money(h.loanPaid)} on loans` : 'Add money in to see it',
+        level ? el('span', { className: `badge ${LEVEL[level][0]}`, textContent: LEVEL[level][1] }) : null),
+      tile(`Fixed vs varying · ${month}`,
+        h.fixedShare !== null ? `${pct(h.fixedShare)} fixed` : '—',
+        h.fixedShare !== null ? `${money(h.fixedPaid)} fixed · ${money(h.varyingPaid)} varying` : 'Nothing paid yet this month'),
+    );
+
+    // Trend chart (or table)
+    const series = Insights.trend(state.expenses, tracker, viewMonth, 6);
+    $('trendViewBtn').textContent = trendAsTable ? 'Chart' : 'Table';
+    $('trendViewBtn').setAttribute('aria-pressed', String(trendAsTable));
+    $('trendChart').hidden = trendAsTable;
+    $('trendTableWrap').hidden = !trendAsTable;
+    if (trendAsTable) $('trendTableWrap').replaceChildren(trendTable(series));
+    else $('trendChart').replaceChildren(trendChart(series));
+
+    // Bills that vary
+    const varying = Insights.varyingBills(tracker, viewMonth, 6);
+    $('varyingList').replaceChildren(...(varying.length
+      ? varying.map((v) => varyingRow(v, month))
+      : [el('p', { className: 'empty', textContent: 'No bills that vary have payments yet.' })]));
+
+    // Paying on time
+    const o = Insights.onTime(tracker);
+    if (!o.count) {
+      $('onTimeTiles').replaceChildren();
+      $('onTimeNote').textContent = 'Shows once you log payments for expenses that have a due day.';
+    } else {
+      const avg = o.averageDays;
+      $('onTimeTiles').replaceChildren(
+        tile('On-time rate', pct(o.rate), `${o.onTimeCount} of ${o.count} payments on or before the due day`),
+        tile('Current streak', String(o.streak), `payment${o.streak === 1 ? '' : 's'} on time in a row`),
+        tile('Average timing', avg === 0 ? 'On the day' : `${Math.abs(avg)} day${Math.abs(avg) === 1 ? '' : 's'} ${avg > 0 ? 'early' : 'late'}`,
+          o.lateCount ? `${o.lateCount} late, by ${o.averageLateDays} day${o.averageLateDays === 1 ? '' : 's'} on average` : 'No late payments'),
+      );
+      $('onTimeNote').textContent = 'Based on the day you logged each payment on the Tracker, against its due day.';
+    }
+  }
+
+  function trendTable(series) {
+    return el('table', { className: 'trend-table' }, [
+      el('thead', {}, [el('tr', {}, ['Month', 'Money in', 'Expenses paid', 'Net'].map((t, i) => el('th', { textContent: t, className: i ? 'num' : '' })))]),
+      el('tbody', {}, series.map((r) => el('tr', {}, [
+        el('td', { textContent: monthLabel(r.month) }),
+        el('td', { className: 'num', textContent: money(r.in) }),
+        el('td', { className: 'num', textContent: money(r.out) }),
+        el('td', { className: 'num', textContent: (r.net > 0 ? '+' : '') + money(r.net) }),
+      ]))),
+    ]);
+  }
+
+  // Grouped bars: money in and expenses paid per month, one axis, hover for details.
+  // Short axis labels like ₱70K (still masked while amounts are hidden).
+  function moneyShort(n) {
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency, notation: 'compact', maximumFractionDigits: 1 }).format(n);
+    } catch {
+      return money(n);
+    }
+  }
+
+  function trendChart(series) {
+    // Drawn at a narrower size on small screens so labels stay readable.
+    const space = $('insightsBody').clientWidth || window.innerWidth;
+    const W = space < 520 ? 360 : 640;
+    const H = space < 520 ? 200 : 220;
+    const pad = { l: 52, r: 6, t: 12, b: 24 };
+    const plotW = W - pad.l - pad.r;
+    const plotH = H - pad.t - pad.b;
+    const top = Math.max(...series.map((r) => Math.max(r.in, r.out)));
+    if (!(top > 0)) return el('p', { className: 'empty', textContent: 'Nothing in or out in these months yet.' });
+    const step = 10 ** Math.floor(Math.log10(top));
+    const max = Math.ceil(top / step) * step;
+    const y = (v) => pad.t + plotH - (v / max) * plotH;
+    const chart = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'trend-svg', role: 'img', 'aria-label': 'Money in and expenses paid for the last 6 months. Use Table for the numbers.' });
+
+    // Recessive grid and axis labels
+    for (const v of [0, max / 2, max]) {
+      chart.append(
+        svg('line', { x1: pad.l, x2: W - pad.r, y1: y(v), y2: y(v), class: v === 0 ? 'axis' : 'grid' }),
+        svg('text', { x: pad.l - 8, y: y(v) + 4, class: 'tick', 'text-anchor': 'end' }, [document.createTextNode(moneyShort(v))]),
+      );
+    }
+
+    const gw = plotW / series.length;
+    const bw = Math.min(22, gw * 0.3);
+    const bar = (x, v, cls) => {
+      const h = (v / max) * plotH;
+      if (h <= 0) return null;
+      const r = Math.min(4, h, bw / 2);
+      const yt = pad.t + plotH - h;
+      const d = `M${x},${pad.t + plotH} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + bw - r} Q${x + bw},${yt} ${x + bw},${yt + r} V${pad.t + plotH} Z`;
+      return svg('path', { d, class: `bar ${cls}` });
+    };
+
+    const wrap = el('div', { className: 'trend-inner' });
+    const tip = el('div', { className: 'chart-tip', hidden: true });
+    const groups = [];
+    series.forEach((r, i) => {
+      const cx = pad.l + gw * i + gw / 2;
+      // 2px gap between the pair
+      const g = svg('g', { class: 'bar-group' }, [bar(cx - bw - 1, r.in, 's-in'), bar(cx + 1, r.out, 's-out')]);
+      const label = svg('text', { x: cx, y: H - 8, class: 'tick', 'text-anchor': 'middle' }, [document.createTextNode(shortMonth(r.month))]);
+      // Hit target: the whole column, bigger than the bars.
+      const hit = svg('rect', { x: pad.l + gw * i, y: pad.t, width: gw, height: plotH + pad.b - 4, class: 'hit', tabindex: '0', 'aria-label': `${monthLabel(r.month)}: money in ${money(r.in)}, expenses paid ${money(r.out)}, net ${money(r.net)}` });
+      const show = () => {
+        for (const other of groups) other.classList.toggle('dim', other !== g);
+        tip.replaceChildren(
+          el('div', { className: 'tip-title', textContent: monthLabel(r.month) }),
+          el('div', {}, [el('i', { className: 'swatch s-in' }), document.createTextNode(`Money in ${money(r.in)}`)]),
+          el('div', {}, [el('i', { className: 'swatch s-out' }), document.createTextNode(`Expenses paid ${money(r.out)}`)]),
+          el('div', { className: 'tip-net', textContent: `Net ${(r.net > 0 ? '+' : '') + money(r.net)}` }),
+        );
+        tip.hidden = false;
+        const left = ((cx / W) * 100);
+        tip.style.left = `${Math.min(Math.max(left, 18), 82)}%`;
+      };
+      const hide = () => { tip.hidden = true; for (const other of groups) other.classList.remove('dim'); };
+      hit.addEventListener('pointerenter', show);
+      hit.addEventListener('click', show);
+      hit.addEventListener('focus', show);
+      hit.addEventListener('pointerleave', hide);
+      hit.addEventListener('blur', hide);
+      groups.push(g);
+      chart.append(g, label, hit);
+    });
+    wrap.append(chart, tip);
+    return wrap;
+  }
+
+  // A small trend line for one bill, with its usual range.
+  function sparkline(months) {
+    const W = 132;
+    const H = 34;
+    const vals = months.map((m) => m.amount).filter((v) => v !== null);
+    const lo = Math.min(...vals);
+    const hi = Math.max(...vals);
+    const x = (i) => 6 + (i * (W - 12)) / Math.max(1, months.length - 1);
+    const y = (v) => (hi === lo ? H / 2 : 6 + (1 - (v - lo) / (hi - lo)) * (H - 12));
+    const line = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'spark', 'aria-hidden': 'true' });
+    let d = '';
+    let pen = false;
+    months.forEach((m, i) => {
+      if (m.amount === null) { pen = false; return; }
+      d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)},${y(m.amount).toFixed(1)} `;
+      pen = true;
+    });
+    if (d) line.append(svg('path', { d, class: 'spark-line' }));
+    months.forEach((m, i) => {
+      if (m.amount === null) return;
+      const last = i === months.length - 1;
+      line.append(svg('circle', { cx: x(i), cy: y(m.amount), r: last ? 4 : 2.5, class: last ? 'spark-end' : 'spark-dot' }));
+    });
+    return line;
+  }
+
+  function varyingRow(v, month) {
+    let flag = null;
+    if (v.flagged) flag = el('span', { className: 'badge overdue', textContent: `▲ ${pct(v.above)} above usual` });
+    else if (v.above !== null && v.above < -0.1) flag = el('span', { className: 'badge paid', textContent: `▼ ${pct(-v.above)} below usual` });
+    return el('div', { className: 'varying-row' }, [
+      el('div', { className: 'varying-name' }, [
+        el('strong', { textContent: v.loan.name }),
+        el('span', { className: 'tile-sub', textContent: `avg ${money(v.average)} · low ${money(v.min)} · high ${money(v.max)}` }),
+      ]),
+      sparkline(v.months),
+      el('div', { className: 'varying-now' }, [
+        el('span', { className: 'tile-sub', textContent: month }),
+        el('strong', { textContent: v.current !== null ? money(v.current) : 'Not paid yet' }),
+        flag,
+      ]),
+    ]);
   }
 
   // ---- Form -----------------------------------------------------------
@@ -540,6 +781,18 @@
       render();
     });
     $('trackerToggle').addEventListener('click', () => { trackerOpen = !trackerOpen; applyTrackerCollapsed(); });
+    $('insightsToggle').addEventListener('click', () => { insightsOpen = !insightsOpen; renderInsights(); });
+    $('trendViewBtn').addEventListener('click', () => { trendAsTable = !trendAsTable; renderInsights(); });
+    // Redraw the chart when the screen size changes (e.g. turning the iPad).
+    let resizeTimer = null;
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (insightsOpen && window.innerWidth !== lastWidth) renderInsights();
+        lastWidth = window.innerWidth;
+      }, 200);
+    });
     $('exportCsv').addEventListener('click', exportCsv);
     $('importCsv').addEventListener('change', (ev) => {
       const file = ev.target.files[0];

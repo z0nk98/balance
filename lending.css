@@ -400,3 +400,60 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 #allBody > .filters, #monthBody > .chips { margin-top: 10px; }
 
 #trackerBody > .mini-stats { margin-top: 10px; }
+
+/* ---- Expenses Dashboard: Insights ---------------------------------------
+   Series colours: validated categorical slots 1-2 (blue, orange), with their
+   own dark-mode steps. Text uses text colours, never the series colour. */
+.insights { --series-in: #257de0; --series-out: #f47230; }
+:root[data-theme="dark"] .insights { --series-in: #338ced; --series-out: #e76624; }
+#insightsBody { margin-top: 12px; display: grid; gap: 18px; }
+#insightsContent { display: grid; gap: 22px; }
+.insight-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.insight-tiles.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.insight-tile { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; min-width: 0; }
+.insight-tile .tile-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.insight-tile .tile-value { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.tile-sub { font-size: 0.82rem; color: var(--muted); }
+.insight-tile .badge { align-self: flex-start; margin-top: 2px; }
+.insight-block h3 { margin: 0 0 10px; font-size: 1rem; }
+.insight-block h3 .muted { font-weight: 400; color: var(--muted); font-size: 0.88rem; }
+.insight-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 8px; }
+.insight-head h3 { margin: 0; flex: 1 1 auto; }
+.legend { display: flex; gap: 14px; font-size: 0.85rem; color: var(--text); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.swatch.s-in { background: var(--series-in); }
+.swatch.s-out { background: var(--series-out); }
+.trend-inner { position: relative; }
+.trend-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.trend-svg .grid { stroke: var(--border); stroke-width: 1; opacity: 0.7; }
+.trend-svg .axis { stroke: var(--border); stroke-width: 1; }
+.trend-svg .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.trend-svg .bar.s-in { fill: var(--series-in); }
+.trend-svg .bar.s-out { fill: var(--series-out); }
+.trend-svg .bar-group { transition: opacity 0.15s; }
+.trend-svg .bar-group.dim { opacity: 0.35; }
+.trend-svg .hit { fill: transparent; cursor: pointer; outline: none; }
+.trend-svg .hit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+.chart-tip { position: absolute; top: 0; transform: translateX(-50%); pointer-events: none; padding: 8px 10px; border-radius: 10px; font-size: 0.82rem; background: var(--glass-strong, var(--card)); border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); display: grid; gap: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.chart-tip[hidden] { display: none; }
+.chart-tip .tip-title { font-weight: 600; }
+.chart-tip div { display: flex; align-items: center; gap: 6px; }
+.chart-tip .tip-net { color: var(--muted); }
+.trend-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.trend-table th, .trend-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; }
+.trend-table .num { text-align: right; }
+.varying-list { display: grid; gap: 4px; }
+.varying-row { display: grid; grid-template-columns: minmax(0, 1fr) 132px auto; align-items: center; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.varying-row:last-child { border-bottom: 0; }
+.varying-name, .varying-now { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.varying-now { align-items: flex-end; text-align: right; font-variant-numeric: tabular-nums; }
+.spark { width: 132px; height: 34px; }
+.spark-line { fill: none; stroke: var(--series-in); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark-dot { fill: var(--series-in); }
+.spark-end { fill: var(--series-in); stroke: var(--neu-bg, #fff); stroke-width: 2; }
+@media (max-width: 700px) {
+  .insight-tiles, .insight-tiles.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .varying-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .varying-row .spark { grid-column: 1 / -1; grid-row: 2; width: 100%; }
+}
