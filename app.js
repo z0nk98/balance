@@ -97,8 +97,10 @@
       if (!h || !h.fromTerm) return `${p.terms} term${p.terms === 1 ? '' : 's'}`;
       return (h.terms === 1 ? `Term ${h.fromTerm}` : `Terms ${h.fromTerm}–${h.toTerm}`) + ` of ${loan.terms}`;
     };
+    const split = window.Insights ? Insights.splitPayments(tracker) : new Map();
     const paid = t.payments.map((p) => {
       const loan = tracker.loans.find((l) => l.id === p.loanId);
+      const ahead = split.get(p.id)?.extra || 0;
       const variable = Loans.isVariable(loan);
       const logged = p.created ? new Date(p.created) : null;
       const loggedIso = logged ? `${logged.getFullYear()}-${pad(logged.getMonth() + 1)}-${pad(logged.getDate())}` : '';
@@ -110,7 +112,7 @@
         amount: p.amount,
         date: monthKey(loggedIso) === p.month ? loggedIso : dateIn(p.month, loan.dueDay),
         subcategory: Loans.categoryLabel(loan),
-        note: [variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
+        note: [variable ? 'Varies each month' : termsText(loan, p), ahead > 0 ? `${money(ahead)} paid ahead` : '', loan.lender, p.note].filter(Boolean).join(' · '),
         color: colorFor(loan.id),
         created: p.created || 0,
       };
@@ -185,6 +187,7 @@
     const billsPaid = t ? t.paidEntries : [];
 
     renderStats(sum(ins), t ? t.paid : 0);
+    renderVerdict();
     renderBreakdown($('breakdown'), $('breakdownEmpty'), billsPaid);
     renderBreakdown($('breakdownIn'), $('breakdownInEmpty'), ins);
     renderList([...ins, ...billsPaid]);
@@ -196,6 +199,28 @@
     hidden.textContent = notCounted.length
       ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), saved before money out came from Spending. Only what you pay on Spending counts.`
       : '';
+  }
+
+  // Expenses paid split into regular and paid ahead, and a one-line verdict.
+  function renderVerdict() {
+    const v = $('verdict');
+    if (!window.Insights) { v.hidden = true; return; }
+    const h = Insights.headline(state.expenses, readTracker(), viewMonth);
+    $('spentSub').textContent = h.extra > 0 ? `${money(h.regular)} regular · ${money(h.extra)} paid ahead` : 'on your Spending page';
+    if (!(h.in > 0 || h.out > 0)) { v.hidden = true; return; }
+    let text;
+    if (h.net < 0) {
+      text = `Spent ${money(-h.net)} more than came in`;
+      if (h.extra > 0) text += h.regularNet >= 0
+        ? `, but ${money(h.extra)} of it was paid ahead. Without that, ${money(h.regularNet)} would be left.`
+        : `, ${money(h.extra)} of it paid ahead.`;
+      else text += '.';
+    } else {
+      text = `${money(h.net)} left after expenses` + (h.extra > 0 ? `, after paying ${money(h.extra)} ahead.` : '.');
+    }
+    v.textContent = text;
+    v.classList.toggle('is-over', h.regularNet < 0);
+    v.hidden = false;
   }
 
   function renderStats(totalIn, totalOut) {
@@ -411,7 +436,7 @@
     // Headline figures
     const level = Insights.loanLevel(h.loanShare);
     $('insightTiles').replaceChildren(
-      tile('Average monthly spending',
+      tile('Average regular spending',
         h.average !== null ? money(h.average) : '—',
         h.average !== null
           ? `last ${h.averageMonths} month${h.averageMonths === 1 ? '' : 's'}` + (h.change !== null ? ` · ${month} ${h.change >= 0 ? '▲' : '▼'} ${pct(Math.abs(h.change))} ${h.change >= 0 ? 'more' : 'less'}` : '')
@@ -419,10 +444,10 @@
       tile(`Savings rate · ${month}`,
         h.savingsRate !== null ? pct(h.savingsRate) : '—',
         h.savingsRate === null ? 'Add money in to see it'
-          : (h.net >= 0 ? `${money(h.net)} kept of ${money(h.in)}` : `Spent ${money(-h.net)} more than came in`)),
+          : (h.regularNet >= 0 ? `${money(h.regularNet)} kept of ${money(h.in)}` : `Spent ${money(-h.regularNet)} more than came in`) + (h.extra > 0 ? `, not counting ${money(h.extra)} paid ahead` : '')),
       tile(`Loan payments vs income · ${month}`,
         h.loanShare !== null ? pct(h.loanShare) : '—',
-        h.loanShare !== null ? `${money(h.loanPaid)} on loans` : 'Add money in to see it',
+        h.loanShare !== null ? `${money(h.loanPaid)} on loans` + (h.loanExtra > 0 ? ` · plus ${money(h.loanExtra)} paid ahead` : '') : 'Add money in to see it',
         level ? el('span', { className: `badge ${LEVEL[level][0]}`, textContent: LEVEL[level][1] }) : null),
       tile(`Fixed vs varying · ${month}`,
         h.fixedShare !== null ? `${pct(h.fixedShare)} fixed` : '—',
@@ -463,11 +488,12 @@
 
   function trendTable(series) {
     return el('table', { className: 'trend-table' }, [
-      el('thead', {}, [el('tr', {}, ['Month', 'Money in', 'Expenses paid', 'Net'].map((t, i) => el('th', { textContent: t, className: i ? 'num' : '' })))]),
+      el('thead', {}, [el('tr', {}, ['Month', 'Money in', 'Regular spending', 'Paid ahead', 'Net'].map((t, i) => el('th', { textContent: t, className: i ? 'num' : '' })))]),
       el('tbody', {}, series.map((r) => el('tr', {}, [
         el('td', { textContent: monthLabel(r.month) }),
         el('td', { className: 'num', textContent: money(r.in) }),
-        el('td', { className: 'num', textContent: money(r.out) }),
+        el('td', { className: 'num', textContent: money(r.regular) }),
+        el('td', { className: 'num', textContent: money(r.extra) }),
         el('td', { className: 'num', textContent: (r.net > 0 ? '+' : '') + money(r.net) }),
       ]))),
     ]);
@@ -491,7 +517,7 @@
     const pad = { l: 52, r: 6, t: 12, b: 24 };
     const plotW = W - pad.l - pad.r;
     const plotH = H - pad.t - pad.b;
-    const top = Math.max(...series.map((r) => Math.max(r.in, r.out)));
+    const top = Math.max(...series.map((r) => Math.max(r.in, r.regular + r.extra)));
     if (!(top > 0)) return el('p', { className: 'empty', textContent: 'Nothing in or out in these months yet.' });
     const step = 10 ** Math.floor(Math.log10(top));
     const max = Math.ceil(top / step) * step;
@@ -508,14 +534,18 @@
 
     const gw = plotW / series.length;
     const bw = Math.min(22, gw * 0.3);
-    const bar = (x, v, cls) => {
+    // A bar from `from` up to `from + v`; only the top segment gets rounded corners.
+    const bar = (x, v, cls, from = 0, rounded = true) => {
       const h = (v / max) * plotH;
       if (h <= 0) return null;
-      const r = Math.min(4, h, bw / 2);
-      const yt = pad.t + plotH - h;
-      const d = `M${x},${pad.t + plotH} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + bw - r} Q${x + bw},${yt} ${x + bw},${yt + r} V${pad.t + plotH} Z`;
+      const base = pad.t + plotH - (from / max) * plotH;
+      const yt = base - h;
+      const r = rounded ? Math.min(4, h, bw / 2) : 0;
+      const d = `M${x},${base} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + bw - r} Q${x + bw},${yt} ${x + bw},${yt + r} V${base} Z`;
       return svg('path', { d, class: `bar ${cls}` });
     };
+    // 2px gap between stacked segments.
+    const gapV = (2 / plotH) * max;
 
     const wrap = el('div', { className: 'trend-inner' });
     const tip = el('div', { className: 'chart-tip', hidden: true });
@@ -523,21 +553,30 @@
     series.forEach((r, i) => {
       const cx = pad.l + gw * i + gw / 2;
       // 2px gap between the pair
-      const g = svg('g', { class: 'bar-group' }, [bar(cx - bw - 1, r.in, 's-in'), bar(cx + 1, r.out, 's-out')]);
+      const g = svg('g', { class: 'bar-group' }, [
+        bar(cx - bw - 1, r.in, 's-in'),
+        bar(cx + 1, r.regular, 's-out', 0, !(r.extra > 0)),
+        r.extra > 0 ? bar(cx + 1, Math.max(0, r.extra - gapV), 's-extra', r.regular + gapV) : null,
+      ]);
       const label = svg('text', { x: cx, y: H - 8, class: 'tick', 'text-anchor': 'middle' }, [document.createTextNode(shortMonth(r.month))]);
       // Hit target: the whole column, bigger than the bars.
-      const hit = svg('rect', { x: pad.l + gw * i, y: pad.t, width: gw, height: plotH + pad.b - 4, class: 'hit', tabindex: '0', 'aria-label': `${monthLabel(r.month)}: money in ${money(r.in)}, expenses paid ${money(r.out)}, net ${money(r.net)}` });
+      const hit = svg('rect', { x: pad.l + gw * i, y: pad.t, width: gw, height: plotH + pad.b - 4, class: 'hit', tabindex: '0', 'aria-label': `${monthLabel(r.month)}: money in ${money(r.in)}, regular spending ${money(r.regular)}, paid ahead ${money(r.extra)}, net ${money(r.net)}` });
       const show = () => {
         for (const other of groups) other.classList.toggle('dim', other !== g);
         tip.replaceChildren(
           el('div', { className: 'tip-title', textContent: monthLabel(r.month) }),
           el('div', {}, [el('i', { className: 'swatch s-in' }), document.createTextNode(`Money in ${money(r.in)}`)]),
-          el('div', {}, [el('i', { className: 'swatch s-out' }), document.createTextNode(`Expenses paid ${money(r.out)}`)]),
+          el('div', {}, [el('i', { className: 'swatch s-out' }), document.createTextNode(`Regular spending ${money(r.regular)}`)]),
+          r.extra > 0 ? el('div', {}, [el('i', { className: 'swatch s-extra' }), document.createTextNode(`Paid ahead ${money(r.extra)}`)]) : null,
           el('div', { className: 'tip-net', textContent: `Net ${(r.net > 0 ? '+' : '') + money(r.net)}` }),
         );
         tip.hidden = false;
-        const left = ((cx / W) * 100);
-        tip.style.left = `${Math.min(Math.max(left, 18), 82)}%`;
+        // Beside the month, never over its bars: to the left on the right half.
+        const half = ((gw / 2) / W) * 100;
+        const centre = (cx / W) * 100;
+        const onRight = centre > 50;
+        tip.style.left = `${onRight ? centre - half : centre + half}%`;
+        tip.style.transform = onRight ? 'translateX(-100%)' : 'none';
       };
       const hide = () => { tip.hidden = true; for (const other of groups) other.classList.remove('dim'); };
       hit.addEventListener('pointerenter', show);
@@ -625,6 +664,7 @@
     $('date').value = e.date;
     $('note').value = e.note;
     $('formTitle').textContent = typeOf(e) === 'in' ? 'Edit money in' : 'Edit money out';
+    $('moneyInWrap').open = true;
     $('submitBtn').textContent = 'Save';
     $('cancelEdit').hidden = false;
     $('amount').focus();
@@ -666,6 +706,7 @@
     viewMonth = monthKey(data.date);
     save();
     resetForm();
+    $('moneyInWrap').open = false;
     render();
   }
 
@@ -763,7 +804,7 @@
     resetForm();
 
     $('expenseForm').addEventListener('submit', onSubmit);
-    $('cancelEdit').addEventListener('click', resetForm);
+    $('cancelEdit').addEventListener('click', () => { resetForm(); $('moneyInWrap').open = false; });
     $('prevMonth').addEventListener('click', () => { viewMonth = shiftMonth(viewMonth, -1); render(); });
     $('nextMonth').addEventListener('click', () => { viewMonth = shiftMonth(viewMonth, 1); render(); });
     $('filterType').addEventListener('change', () => { fillCategoryFilter(); render(); });

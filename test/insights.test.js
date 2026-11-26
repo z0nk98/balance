@@ -90,3 +90,37 @@ test('paying on time', () => {
   assert.equal(noDates.count, 0);
   assert.equal(noDates.rate, null);
 });
+
+test('paid ahead: advance terms and early payoffs are split from regular spending', () => {
+  const t = {
+    loans: [
+      // 6 x 1,000 from September.
+      { id: 'M', name: 'MayaLoan', category: 'loan', termAmount: 1000, terms: 6, firstMonth: '2026-09', dueDay: 23 },
+      { id: 'V', name: 'CreditCard', category: 'bill', kind: 'variable', months: null, firstMonth: '2026-09', dueDay: 9 },
+    ],
+    payments: [
+      { id: 'a', loanId: 'M', month: '2026-09', terms: 1, amount: 1000 }, // Sep: regular
+      { id: 'b', loanId: 'M', month: '2026-11', terms: 3, amount: 3000 }, // Nov: Oct caught up + Nov regular, Dec ahead
+      { id: 'c', loanId: 'M', month: '2026-11', terms: 1, amount: 2000 }, // Nov: pays off the rest early: all ahead
+      { id: 'd', loanId: 'V', month: '2026-11', terms: 0, amount: 9000 }, // varies: always regular
+    ],
+  };
+  const split = Insights.splitPayments(t);
+  assert.deepEqual(split.get('a'), { regular: 1000, extra: 0 });
+  assert.deepEqual(split.get('b'), { regular: 2000, extra: 1000 });
+  assert.deepEqual(split.get('c'), { regular: 0, extra: 2000 });
+  assert.deepEqual(split.get('d'), { regular: 9000, extra: 0 });
+  const nov = Insights.paidSplit(t, '2026-11');
+  assert.deepEqual([nov.total, nov.regular, nov.extra], [14000, 11000, 3000]);
+  // Habits use regular spending; net keeps the full amount.
+  const h = Insights.headline([{ id: 'i', type: 'in', amount: 20000, date: '2026-11-15' }], t, '2026-11');
+  assert.equal(h.out, 14000);
+  assert.equal(h.extra, 3000);
+  assert.equal(h.net, 6000);
+  assert.equal(h.regularNet, 9000);
+  assert.ok(Math.abs(h.savingsRate - 9000 / 20000) < 1e-9);
+  assert.equal(h.loanPaid, 2000);
+  assert.equal(h.loanExtra, 3000);
+  const tr = Insights.trend([], t, '2026-11', 1)[0];
+  assert.deepEqual([tr.out, tr.regular, tr.extra], [14000, 11000, 3000]);
+});

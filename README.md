@@ -71,6 +71,8 @@ If you named the site repo something other than `balance`, change `repo` in `con
 
 - **Money in**: what you add here (salary, business, freelance, gifts, refunds, interest…).
 - **Expenses paid**: every payment you log in your **Spending page**, at the full amount you entered, in the month you logged it under (for a fixed-amount bill or loan, the *Month paid*; for a bill that varies, its bill month). One payment covering four terms counts all four that month. They're added automatically; change them on Spending.
+- **Paid ahead**: when a payment covers more than was due by its month (terms paid in advance, paying a loan off early, paying extra), that part counts as *paid ahead* and the rest as *regular*. Catching up on overdue terms is regular. Expenses that vary are always regular. The Expenses paid box shows both, a line under the boxes sums up the month (e.g. *Spent ₱18,450 more than came in, but ₱42,000 of it was paid ahead*), and Insights use regular spending for the savings rate, loan share and average, so paying ahead doesn't make a month look bad. Net and Expenses paid always include everything.
+- **+ Add money in** opens the form, and it closes again after you save.
 - **Net** = money in − expenses paid. The **Budget** compares expenses paid with a monthly amount you set.
 - **Expenses this month** starts collapsed every time you open the page (only how many items it holds shows); tap **Show** to expand it. It shows Spending's dashboard for the month (due, paid, left to pay, overdue) with each bill or loan and its status: the same numbers as Spending's *By month* view, where *Paid* is also what you logged that month.
 - *Expenses paid* breaks them down by expense, *Money in by category* by category, and *Transactions* lists both (each expense paid shows its category tag: Bill, Loan or Other).
@@ -80,11 +82,11 @@ If you named the site repo something other than `balance`, change `repo` in `con
 
 An **Insights** section on the Overview (collapsed until you tap **Show**, like the other sections) helps you see your spending habits for the month you're viewing:
 
-- **Average monthly spending** over the three months before, and how this month compares (▲ more / ▼ less).
+- **Average regular spending** over the three months before, and how this month compares (▲ more / ▼ less).
 - **Savings rate**: how much of your money in you kept.
 - **Loan payments vs income**, marked *Healthy* (under 30%), *Worth watching* (30–40%) or *High* (over 40%).
 - **Fixed vs varying**: how much of what you paid was fixed amounts, and how much varied.
-- **Money in vs expenses paid** for the last 6 months as a bar chart (tap or hover a month for its numbers; **Table** shows them as a table).
+- **Money in vs expenses paid** for the last 6 months as a bar chart, with regular spending and paid ahead stacked (tap or hover a month for its numbers; **Table** shows them as a table).
 - **Bills that vary**: each one's last 6 months as a small trend line, with its average, lowest and highest month. A month more than 20% above its usual amount is flagged.
 - **Paying on time**: the share of payments logged on or before their due day, your current on-time streak, and how early or late you pay on average. It goes by the day you logged each payment on Spending.
 

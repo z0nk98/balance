@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Overview</title>
-  <script src="lib/theme.js?v=6d13b7e57a"></script>
-  <script src="lib/privacy.js?v=6d13b7e57a"></script>
-  <link rel="stylesheet" href="style.css?v=6d13b7e57a">
-  <link rel="stylesheet" href="lending.css?v=6d13b7e57a">
-  <link rel="stylesheet" href="theme.css?v=6d13b7e57a">
+  <script src="lib/theme.js?v=e07088b91e"></script>
+  <script src="lib/privacy.js?v=e07088b91e"></script>
+  <link rel="stylesheet" href="style.css?v=e07088b91e">
+  <link rel="stylesheet" href="lending.css?v=e07088b91e">
+  <link rel="stylesheet" href="theme.css?v=e07088b91e">
 </head>
 <body>
   <header class="topbar">
@@ -34,7 +34,7 @@
       <div class="stat">
         <span class="stat-label">Expenses paid</span>
         <span class="stat-value" id="totalSpent">0</span>
-        <span class="stat-sub">on your Spending page</span>
+        <span class="stat-sub" id="spentSub">on your Spending page</span>
       </div>
       <div class="stat">
         <span class="stat-label">Net (in − expenses paid)</span>
@@ -49,9 +49,11 @@
       </div>
       <div class="budget-bar" aria-hidden="true"><div id="budgetFill"></div></div>
     </section>
+    <p id="verdict" class="verdict" hidden></p>
 
-    <section class="card">
-      <h2 id="formTitle">Add money in</h2>
+    <section class="card add-card">
+      <details id="moneyInWrap" class="add-panel">
+      <summary id="formTitle">Add money in</summary>
       <p class="hint">Money out is what you mark paid on your <a href="tracker.html">Spending</a> page.</p>
       <form id="expenseForm" autocomplete="off">
         <input type="hidden" id="editId">
@@ -72,6 +74,7 @@
           <button type="button" id="cancelEdit" hidden>Cancel</button>
         </div>
       </form>
+      </details>
     </section>
 
     <section class="card" id="trackerCard">
@@ -113,7 +116,8 @@
               <h3>Money in vs expenses paid <span class="muted">· last 6 months</span></h3>
               <div class="legend" aria-hidden="true">
                 <span><i class="swatch s-in"></i>Money in</span>
-                <span><i class="swatch s-out"></i>Expenses paid</span>
+                <span><i class="swatch s-out"></i>Regular spending</span>
+                <span><i class="swatch s-extra"></i>Paid ahead</span>
               </div>
               <button type="button" class="linkish" id="trendViewBtn" aria-pressed="false">Table</button>
             </div>
@@ -181,13 +185,13 @@
     </section>
   </main>
 
-  <script src="lib/icons.js?v=6d13b7e57a"></script>
-  <script src="lib/loans.js?v=6d13b7e57a"></script>
-  <script src="lib/insights.js?v=6d13b7e57a"></script>
-  <script src="app.js?v=6d13b7e57a"></script>
-  <script src="lib/core.js?v=6d13b7e57a"></script>
-  <script src="lib/merge.js?v=6d13b7e57a"></script>
-  <script src="lib/account.js?v=6d13b7e57a"></script>
-  <script src="lib/sync.js?v=6d13b7e57a"></script>
+  <script src="lib/icons.js?v=e07088b91e"></script>
+  <script src="lib/loans.js?v=e07088b91e"></script>
+  <script src="lib/insights.js?v=e07088b91e"></script>
+  <script src="app.js?v=e07088b91e"></script>
+  <script src="lib/core.js?v=e07088b91e"></script>
+  <script src="lib/merge.js?v=e07088b91e"></script>
+  <script src="lib/account.js?v=e07088b91e"></script>
+  <script src="lib/sync.js?v=e07088b91e"></script>
 </body>
 </html>

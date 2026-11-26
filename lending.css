@@ -410,8 +410,8 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 /* ---- Expenses Dashboard: Insights ---------------------------------------
    Series colours: validated categorical slots 1-2 (blue, orange), with their
    own dark-mode steps. Text uses text colours, never the series colour. */
-.insights { --series-in: #257de0; --series-out: #f47230; }
-:root[data-theme="dark"] .insights { --series-in: #338ced; --series-out: #e76624; }
+.insights { --series-in: #257de0; --series-out: #f47230; --series-extra: #00b894; }
+:root[data-theme="dark"] .insights { --series-in: #338ced; --series-out: #e76624; --series-extra: #00a888; }
 #insightsBody { margin-top: 12px; display: grid; gap: 18px; }
 #insightsContent { display: grid; gap: 22px; }
 .insight-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -484,3 +484,13 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .sync-bar.is-synced .sync-text { color: var(--muted); }
 .sync-bar.is-synced .sync-text::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2f9e5b; margin-right: 6px; vertical-align: 1px; }
 .sync-bar.is-synced .linkish, .sync-bar.is-syncing .linkish, .sync-bar.is-off .linkish { font-size: 0.75rem; padding: 0; min-height: 0; color: var(--muted); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+
+.swatch.s-extra { background: var(--series-extra); }
+.trend-svg .bar.s-extra { fill: var(--series-extra); }
+/* Overview: one-line verdict under the headline figures. */
+.verdict { margin: -4px 4px 14px; font-size: 0.9rem; color: var(--muted); }
+.verdict.is-over { color: var(--danger); }
+/* Overview: the Add money in button uses the money-in green. */
+#moneyInWrap > summary { background: #2f9e5b; }
+#moneyInWrap[open] > summary { background: transparent; }
+#moneyInWrap > .hint { margin: 0 0 10px; }
