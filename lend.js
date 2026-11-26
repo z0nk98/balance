@@ -22,7 +22,11 @@
   const pendingDeletes = new Set(); // borrower files to remove on next save
   const pendingQr = new Map(); // QR file id -> encrypted content, or null to delete
   const pendingPathDeletes = new Set(); // other files to delete on next save (saved borrower updates)
+  // Borrowers whose "Payments & reminders" is expanded. Empty each time the
+  // page opens, so payments stay hidden until you choose to show them.
   const openPanels = new Set();
+  // Set when you change a filter yourself: the matching borrowers then open.
+  let revealFiltered = false;
   const archiveOpen = new Set(); // borrower ids with "Paid off loans" open
   const addPanels = new Map(); // borrower id -> "add a loan" section open?
 
@@ -182,6 +186,8 @@
         (ft.overdue > 0 ? ` · ${maskedMoney(ft.overdue)} overdue` : '')
       : active ? 'No payments match these filters.' : '';
 
+    if (revealFiltered && active) for (const r of shownRows) openPanels.add(r.b.id);
+    revealFiltered = false;
     $('borrowers').replaceChildren(...shownRows.map((r) => borrowerCard(r, active)));
     $('borrowersEmpty').hidden = rows.length > 0;
     $('viewFilters').hidden = rows.length === 0;
@@ -212,6 +218,8 @@
 
   function setOwnerFilter(changes) {
     Object.assign(ownerFilters, changes);
+    // Changing what's filtered (not just the sort) shows the matching payments.
+    if (Object.keys(changes).some((k) => k !== 'sort')) revealFiltered = true;
     try {
       localStorage.setItem(FILTER_KEY, JSON.stringify(ownerFilters));
     } catch {
@@ -318,7 +326,7 @@
         else archiveOpen.delete(b.id);
       });
     }
-    const details = el('details', { open: filtered || openPanels.has(b.id) }, [
+    const details = el('details', { className: 'payments-panel', open: openPanels.has(b.id) }, [
       el('summary', { textContent: filtered
         ? `Payments & reminders (showing ${shown.length} of ${installments.length})`
         : `Payments & reminders (${installments.length})` }),

@@ -62,6 +62,7 @@ If you named the site repo something other than `balance`, change `repo` in `con
 - **Add a loan.** Enter the amount, number of months and first due date; it's split into monthly payments. Or add single payments.
 - **Record payments** with *Mark paid* or *Record payment* (partial).
 - **Paid-off loans** move into a collapsed *Paid off loans* section in each borrower's card (it opens by itself under the *Paid* filter). Borrowers see theirs under a collapsed *Paid off* in *My loans*.
+- **Payments & reminders** under each borrower starts collapsed every time you open the page, even with a filter remembered. Tap it to expand. Changing a filter yourself expands the borrowers that match.
 - **Every change is saved straight to the site repo.** Borrowers see it within about a minute.
 
 ## Expenses: money in minus bills paid
