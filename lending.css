@@ -594,3 +594,11 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .mini-btn[hidden] { display: none; }
 .mini-btn:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .mini-btn .action-icon svg, .mini-btn svg { width: 20px; height: 20px; }
+
+/* Phones: room below the last item for the bottom tab bar and Safari's
+   floating address bar, so nothing ends up hidden behind them. */
+@media (max-width: 720px) {
+  main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  body:has(.topbar nav) main { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+  body:has(.topbar nav) .save-status, body:has(.topbar nav) .update-bar { bottom: calc(96px + env(safe-area-inset-bottom)); top: auto; }
+}
