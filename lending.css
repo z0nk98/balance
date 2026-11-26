@@ -522,10 +522,21 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .row-menu-list button:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .row-menu-list .danger-text { color: var(--danger); }
 .collapse-btn { font-size: 0.85rem; white-space: nowrap; }
-@media (max-width: 560px) {
-  .expense-row { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .expense-row .row-actions { grid-column: 2 / -1; justify-content: flex-end; }
-  .expense-row .row-side { grid-row: 1; grid-column: 3; }
+.row-chevron { display: none; }
+/* Phones: a plain list row (icon · name and due date · amount and status · ›).
+   Tapping it opens the full card, where Pay, Edit and Delete are. */
+@media (max-width: 600px) {
+  .tracker-list:has(> .expense-row) { gap: 0; }
+  .expense-row { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: none; }
+  .expense-row:last-of-type { border-bottom: 0; }
+  .expense-row .row-actions { display: none; }
+  .expense-row .row-chevron { display: block; font-size: 1.4rem; line-height: 1; color: var(--muted); padding-left: 2px; }
+  .expense-row > .pay-icon { width: 34px; height: 34px; }
+  .row-name { font-size: 0.98rem; }
+  .row-name .sub-tag { display: none; }
+  .row-main .sub { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-side .amt { font-size: 0.95rem; }
+  .row-side .badge { font-size: 0.68rem; padding: 1px 7px; }
 }
 
 /* Overview: hero ("Left this month") with three smaller tiles. */
@@ -553,3 +564,14 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   .hero-tiles .budget-tile { grid-column: 1 / -1; }
 }
 .upcoming-link { display: inline-block; margin-top: 10px; font-size: 0.9rem; }
+@media (max-width: 600px) {
+  /* Opened card: name gets the full width; status, Less and ⋯ go on the next line. */
+  .tracker-loan .tracker-head { flex-wrap: wrap; row-gap: 8px; }
+  .tracker-loan .tracker-head > .pay-icon + div { flex: 1 1 calc(100% - 56px); }
+  .tracker-loan .tracker-head > .badge { margin-left: 50px; }
+  .tracker-loan .tracker-head > .loan-actions { margin-left: auto; }
+  /* Status chips on one line, scrolling sideways if needed. */
+  #allBody .chips, #monthBody .chips { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+  #allBody .chips::-webkit-scrollbar, #monthBody .chips::-webkit-scrollbar { display: none; }
+  #allBody .chips .chip, #monthBody .chips .chip { flex: none; }
+}

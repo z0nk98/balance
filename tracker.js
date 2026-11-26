@@ -879,6 +879,7 @@
         el('span', { className: `badge ${info.badge.cls}`, textContent: info.badge.text }),
       ]),
       el('div', { className: 'row-actions' }, [pay, actionMenu(loan, s)]),
+      el('span', { className: 'row-chevron', 'aria-hidden': 'true', textContent: '›' }),
     ]);
     row.setAttribute('aria-label', `${loan.name}: ${info.note}. Open details.`);
     row.addEventListener('click', (ev) => { if (!ev.target.closest('button, a, input, select')) open(); });
