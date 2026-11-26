@@ -398,3 +398,5 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .section-toggle .section-action::after { content: ' ▾'; }
 .section-toggle[aria-expanded="true"] .section-action::after { content: ' ▴'; }
 #allBody > .filters, #monthBody > .chips { margin-top: 10px; }
+
+#trackerBody > .mini-stats { margin-top: 10px; }

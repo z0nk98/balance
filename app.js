@@ -301,8 +301,20 @@
   // The Tracker's month dashboard, the same numbers as on the Tracker page.
   const STATUS_LABEL = { paid: 'Paid', overdue: 'Overdue', 'due-soon': 'Due this month', upcoming: 'Upcoming' };
 
+  // "Expenses this month" starts collapsed every time the page opens, so its
+  // details stay hidden until you choose to show them. Only the count shows.
+  let trackerOpen = false;
+
+  function applyTrackerCollapsed() {
+    $('trackerBody').hidden = !trackerOpen;
+    $('trackerToggle').setAttribute('aria-expanded', String(trackerOpen));
+    $('trackerToggle').querySelector('.section-action').textContent = trackerOpen ? 'Hide' : 'Show';
+  }
+
   function renderTracker(t) {
     const now = monthKey(todayISO());
+    $('trackerCount').textContent = t && t.hasLoans ? `(${t.items.length})` : '';
+    applyTrackerCollapsed();
     $('trackerTitle').textContent = viewMonth === now ? 'Expenses this month' : `Expenses in ${monthLabel(viewMonth)}`;
     if (!t || !t.hasLoans) {
       for (const id of ['tDue', 'tPaid', 'tLeft', 'tOver']) $(id).textContent = money(0);
@@ -527,6 +539,7 @@
       save();
       render();
     });
+    $('trackerToggle').addEventListener('click', () => { trackerOpen = !trackerOpen; applyTrackerCollapsed(); });
     $('exportCsv').addEventListener('click', exportCsv);
     $('importCsv').addEventListener('change', (ev) => {
       const file = ev.target.files[0];

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Expenses Dashboard</title>
-  <script src="lib/theme.js?v=1c25095d11"></script>
-  <script src="lib/privacy.js?v=1c25095d11"></script>
-  <link rel="stylesheet" href="style.css?v=1c25095d11">
-  <link rel="stylesheet" href="lending.css?v=1c25095d11">
-  <link rel="stylesheet" href="theme.css?v=1c25095d11">
+  <script src="lib/theme.js?v=c8c9145e02"></script>
+  <script src="lib/privacy.js?v=c8c9145e02"></script>
+  <link rel="stylesheet" href="style.css?v=c8c9145e02">
+  <link rel="stylesheet" href="lending.css?v=c8c9145e02">
+  <link rel="stylesheet" href="theme.css?v=c8c9145e02">
 </head>
 <body>
   <header class="topbar">
@@ -76,9 +76,14 @@
 
     <section class="card" id="trackerCard">
       <div class="list-head">
-        <h2 id="trackerTitle">Expenses this month</h2>
+        <button type="button" class="section-toggle" id="trackerToggle" aria-expanded="false" aria-controls="trackerBody">
+          <h2 id="trackerTitle">Expenses this month</h2>
+          <span class="section-count" id="trackerCount"></span>
+          <span class="section-action">Show</span>
+        </button>
         <a href="tracker.html" class="linkish">Open Tracker</a>
       </div>
+      <div id="trackerBody" hidden>
       <div class="mini-stats">
         <div><span>Due</span><strong id="tDue"></strong></div>
         <div><span>Paid (logged)</span><strong id="tPaid"></strong></div>
@@ -87,6 +92,7 @@
       </div>
       <p id="trackerNote" class="hint"></p>
       <div id="trackerList" class="bill-list"></div>
+      </div>
     </section>
 
     <div class="grid">
@@ -135,12 +141,12 @@
     </section>
   </main>
 
-  <script src="lib/icons.js?v=1c25095d11"></script>
-  <script src="lib/loans.js?v=1c25095d11"></script>
-  <script src="app.js?v=1c25095d11"></script>
-  <script src="lib/core.js?v=1c25095d11"></script>
-  <script src="lib/merge.js?v=1c25095d11"></script>
-  <script src="lib/account.js?v=1c25095d11"></script>
-  <script src="lib/sync.js?v=1c25095d11"></script>
+  <script src="lib/icons.js?v=c8c9145e02"></script>
+  <script src="lib/loans.js?v=c8c9145e02"></script>
+  <script src="app.js?v=c8c9145e02"></script>
+  <script src="lib/core.js?v=c8c9145e02"></script>
+  <script src="lib/merge.js?v=c8c9145e02"></script>
+  <script src="lib/account.js?v=c8c9145e02"></script>
+  <script src="lib/sync.js?v=c8c9145e02"></script>
 </body>
 </html>
