@@ -249,7 +249,7 @@
 
   function loanCard(loan, s) {
     const meta = [
-      Loans.categoryOf(loan) === 'bill' ? 'Bill' : 'Loan',
+      Loans.categoryLabel(loan),
       `${money(loan.termAmount)} × ${loan.terms} terms = ${money(s.total)}`,
       `${monthLabel(loan.firstMonth, true)} – ${monthLabel(s.lastMonth, true)}`,
       loan.dueDay ? `due on the ${ordinal(loan.dueDay)}` : '',
@@ -414,7 +414,7 @@
   function variableCard(bill, s) {
     const month = thisMonth();
     const meta = [
-      `${CATEGORY_LABEL[Loans.categoryOf(bill)]} · varies each month`,
+      `${Loans.categoryLabel(bill)} · varies each month`,
       s.lastMonth
         ? `${monthLabel(bill.firstMonth, true)} – ${monthLabel(s.lastMonth, true)} (${plural(bill.months, 'month')})`
         : `since ${monthLabel(bill.firstMonth, true)}, no end`,
@@ -479,8 +479,10 @@
   // ---- Sorting -------------------------------------------------------------
   // Remembered on this device.
   const SORT_KEY = 'tracker-sort:v1';
-  const SORTS = ['due', 'loans', 'bills', 'provider', 'name'];
-  let sortBy = SORTS.includes(localStorage.getItem(SORT_KEY)) ? localStorage.getItem(SORT_KEY) : 'due';
+  const SORTS = ['due', 'type', 'provider', 'name'];
+  // 'loans' and 'bills' were the type sorts before there was one.
+  const savedSort = { loans: 'type', bills: 'type' }[localStorage.getItem(SORT_KEY)] || localStorage.getItem(SORT_KEY);
+  let sortBy = SORTS.includes(savedSort) ? savedSort : 'due';
 
   const byName = (a, b) => a.loan.name.localeCompare(b.loan.name, undefined, { sensitivity: 'base', numeric: true });
   const providerOf = (r) => (r.loan.lender || '').trim();
@@ -493,11 +495,9 @@
   // `within` orders the items inside the list or each group.
   function arrange(items, within) {
     if (sortBy === 'name') return [...items].sort(byName).map(card);
-    if (sortBy === 'loans' || sortBy === 'bills') {
-      const loans = items.filter((r) => Loans.categoryOf(r.loan) === 'loan').sort(within);
-      const bills = items.filter((r) => Loans.categoryOf(r.loan) === 'bill').sort(within);
-      const groups = [['Loans', loans], ['Bills', bills]];
-      if (sortBy === 'bills') groups.reverse();
+    if (sortBy === 'type') {
+      const groups = [['Bills', 'bill'], ['Loans', 'loan'], ['Other expenses', 'expense']]
+        .map(([title, cat]) => [title, items.filter((r) => Loans.categoryOf(r.loan) === cat).sort(within)]);
       return groups.filter(([, list]) => list.length).flatMap(([title, list]) => [groupTitle(title, list.length), ...list.map(card)]);
     }
     if (sortBy === 'provider') {
@@ -530,7 +530,7 @@
   const filters = { status: 'all', type: '', provider: '', search: '', ...readJson(FILTER_KEY, {}) };
   filters.search = '';
   if (!['all', 'unpaid', 'current', 'done'].includes(filters.status)) filters.status = 'all';
-  if (!['', 'bill', 'loan', 'fixed', 'variable'].includes(filters.type)) filters.type = '';
+  if (!['', 'bill', 'loan', 'expense', 'fixed', 'variable'].includes(filters.type)) filters.type = '';
 
   function saveFilters() {
     const { status, type, provider } = filters;
@@ -544,7 +544,7 @@
     if (filters.status === 'unpaid' && (done || !r.s.behind)) return false;
     if (filters.status === 'current' && (done || r.s.behind)) return false;
     if (filters.status === 'done' && !done) return false;
-    if ((filters.type === 'bill' || filters.type === 'loan') && Loans.categoryOf(r.loan) !== filters.type) return false;
+    if (['bill', 'loan', 'expense'].includes(filters.type) && Loans.categoryOf(r.loan) !== filters.type) return false;
     if (filters.type === 'variable' && !Loans.isVariable(r.loan)) return false;
     if (filters.type === 'fixed' && Loans.isVariable(r.loan)) return false;
     if (filters.provider) {
@@ -619,7 +619,6 @@
 
   const iconFor = (loan) => PayIcons.billIcon(Loans.iconKind(loan));
 
-  const CATEGORY_LABEL = { bill: 'Bill', loan: 'Loan' };
   const dueDayText = (item) => (item.dueDay ? `Due on the ${ordinal(item.dueDay)}` : 'Due anytime in the month');
   const amountOf = (item) => (item.amount === null ? 'Varies' : (item.estimated ? `~${money(item.amount)}` : money(item.amount)));
 
@@ -679,7 +678,7 @@
     const loan = item.loan;
     const name = loan.name + (item.variable ? '' : ` · term ${item.termNo} of ${loan.terms}`);
     const kind = item.variable ? 'Varies each month' : 'Fixed amount';
-    const sub2 = [CATEGORY_LABEL[Loans.categoryOf(loan)], kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
+    const sub2 = [Loans.categoryLabel(loan), kind, loan.lender, item.paidIn && item.paidIn !== item.month ? `paid in ${monthLabel(item.paidIn, true)}` : ''].filter(Boolean).join(' · ');
     let action = null;
     if (!item.paid) {
       action = el('button', {
@@ -745,7 +744,7 @@
     const { items, earlier, estimated } = t;
 
     $('mDue').textContent = money(t.due);
-    $('mDueSub').textContent = items.length ? `${items.length} ${items.length === 1 ? 'bill or loan' : 'bills & loans'}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
+    $('mDueSub').textContent = items.length ? `${plural(items.length, 'expense')}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
     $('mPaid').textContent = money(t.paid);
     $('mPaidLabel').textContent = viewMonth === now ? 'Paid this month' : `Paid in ${label.split(' ')[0]}`;
     $('mPaidSub').textContent = t.payments.length ? `${plural(t.payments.length, 'payment')} logged` : (items.length ? 'Nothing logged yet' : '');
@@ -845,7 +844,7 @@
     }
 
     $('loanEmpty').hidden = main.length > 0;
-    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add expense at the top: a fixed amount paid over a set number of months, or a bill that varies each month.';
+    if (!rows.length) $('loanEmpty').textContent = 'Nothing here yet. Tap Add expense at the top: a bill, a loan or another expense, with a fixed amount over a set number of months, or an amount that varies each month.';
     else if (on && !picked.length) $('loanEmpty').textContent = 'Nothing matches these filters.';
     else if (showDoneInMain) $('loanEmpty').textContent = 'Nothing paid off yet.';
     else if (on) $('loanEmpty').textContent = pickedDone.length ? 'Only paid-off ones match: see Paid off below.' : 'Nothing matches these filters.';
@@ -889,11 +888,17 @@
 
   // Labels and examples follow whether it's a bill or a loan, and its amount type.
   function labelFields() {
-    const loan = formCategory === 'loan';
     const variable = formKind === 'variable';
-    $('lenderLabel').textContent = loan ? 'Lender (optional)' : 'Provider (optional)';
-    inputs.lender.placeholder = loan ? 'e.g. Home Credit, BPI, SSS' : 'e.g. Meralco, Maynilad, PLDT, BPI';
-    inputs.name.placeholder = loan ? 'e.g. Phone (Home Credit)' : (variable ? 'e.g. Electricity' : 'e.g. Rent');
+    const text = {
+      loan: ['Lender (optional)', 'e.g. Home Credit, BPI, SSS', 'e.g. Phone (Home Credit)'],
+      bill: ['Provider (optional)', 'e.g. Meralco, Maynilad, PLDT, BPI', variable ? 'e.g. Electricity' : 'e.g. Rent'],
+      expense: ['Paid to (optional)', 'e.g. SM, Puregold, school', variable ? 'e.g. Groceries' : 'e.g. Allowance'],
+    }[formCategory];
+    // Amount borrowed (to show the interest) is only for fixed-amount loans.
+    $('borrowedField').hidden = variable || formCategory !== 'loan';
+    $('lenderLabel').textContent = text[0];
+    inputs.lender.placeholder = text[1];
+    inputs.name.placeholder = text[2];
   }
 
   for (const b of document.querySelectorAll('#categoryToggle button')) b.addEventListener('click', () => setCategory(b.dataset.category));
@@ -914,7 +919,9 @@
   }
 
   function values() {
-    return { ...Object.fromEntries(Object.entries(inputs).map(([k, input]) => [k, input.value])), category: formCategory };
+    const v = { ...Object.fromEntries(Object.entries(inputs).map(([k, input]) => [k, input.value])), category: formCategory };
+    if (formCategory !== 'loan') v.borrowed = '';
+    return v;
   }
 
   function updatePreview() {

@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=9d884db851"></script>
-  <script src="lib/privacy.js?v=9d884db851"></script>
-  <link rel="stylesheet" href="style.css?v=9d884db851">
-  <link rel="stylesheet" href="lending.css?v=9d884db851">
-  <link rel="stylesheet" href="theme.css?v=9d884db851">
+  <script src="lib/theme.js?v=3f2ad51c29"></script>
+  <script src="lib/privacy.js?v=3f2ad51c29"></script>
+  <link rel="stylesheet" href="style.css?v=3f2ad51c29">
+  <link rel="stylesheet" href="lending.css?v=3f2ad51c29">
+  <link rel="stylesheet" href="theme.css?v=3f2ad51c29">
 </head>
 <body>
   <header class="topbar">
@@ -32,10 +32,11 @@
         <summary id="formTitle">Add expense</summary>
         <form id="loanForm" class="bill-form" autocomplete="off">
           <fieldset class="wide seg-field">
-            <legend>Is it a <strong>bill</strong> (electricity, rent, credit card, subscription…) or a <strong>loan</strong> (money you borrowed, an installment)?</legend>
-            <div class="type-toggle" id="categoryToggle" role="group" aria-label="Bill or loan">
+            <legend>Type: a <strong>bill</strong> (electricity, rent, credit card, subscription…), a <strong>loan</strong> (money you borrowed, an installment), or another <strong>expense</strong> (groceries, allowance, school…)</legend>
+            <div class="type-toggle three" id="categoryToggle" role="group" aria-label="Type">
               <button type="button" data-category="bill" class="active">Bill</button>
               <button type="button" data-category="loan">Loan</button>
+              <button type="button" data-category="expense">Expense</button>
             </div>
           </fieldset>
           <fieldset class="wide seg-field">
@@ -53,7 +54,7 @@
           <label data-kind="variable" hidden>Number of months (optional) <input id="billMonths" type="number" min="1" max="360" inputmode="numeric" placeholder="Blank = every month, no end"></label>
           <label><span id="firstMonthLabel">First month due</span> <input id="loanFirstMonth" type="month" required></label>
           <label>Due day of month (optional) <input id="loanDueDay" type="number" min="1" max="31" placeholder="e.g. 15"></label>
-          <label data-kind="fixed">Amount borrowed (optional) <input id="loanBorrowed" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Shows the interest"></label>
+          <label data-kind="fixed" id="borrowedField">Amount borrowed (optional) <input id="loanBorrowed" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Shows the interest"></label>
           <label class="wide">Note <input id="loanNote" maxlength="120" placeholder="e.g. Pay at any Bayad center"></label>
           <p class="hint wide" id="loanPreview"></p>
           <div class="form-actions wide">
@@ -66,7 +67,7 @@
 
     <div class="type-toggle view-toggle" id="viewToggle" role="group" aria-label="View">
       <button type="button" data-view="month" class="active">By month</button>
-      <button type="button" data-view="all">All bills &amp; loans</button>
+      <button type="button" data-view="all">All expenses</button>
     </div>
 
     <section class="stats four" id="monthStats">
@@ -99,12 +100,12 @@
       <div class="stat"><span class="stat-label">Left to pay</span><span class="stat-value" id="sumLeft"></span><span class="stat-sub" id="sumLeftSub"></span></div>
       <div class="stat"><span class="stat-label">Due by this month</span><span class="stat-value" id="sumDue"></span><span class="stat-sub" id="sumDueSub"></span></div>
       <div class="stat"><span class="stat-label" id="paidLabel">Paid this month</span><span class="stat-value" id="sumPaid"></span><span class="stat-sub" id="sumPaidSub"></span></div>
-      <div class="stat"><span class="stat-label">Bills &amp; loans</span><span class="stat-value" id="sumLoans"></span><span class="stat-sub" id="sumLoansSub"></span></div>
+      <div class="stat"><span class="stat-label">Expenses</span><span class="stat-value" id="sumLoans"></span><span class="stat-sub" id="sumLoansSub"></span></div>
     </section>
 
     <section class="card" id="allCard">
       <div class="list-head">
-        <h2>My bills &amp; loans</h2>
+        <h2>My expenses</h2>
       </div>
       <div class="filters">
         <div class="chips" id="statusFilter" role="group" aria-label="Filter by status">
@@ -116,9 +117,10 @@
         <div class="filter-selects">
           <label>Type
             <select id="typeFilter">
-              <option value="">Bills &amp; loans</option>
+              <option value="">All expenses</option>
               <option value="bill">Bills</option>
               <option value="loan">Loans</option>
+              <option value="expense">Other expenses</option>
               <option value="fixed">Fixed amount</option>
               <option value="variable">Varies each month</option>
             </select>
@@ -127,13 +129,12 @@
             <select id="providerFilter"><option value="">All providers</option></select>
           </label>
           <label>Search
-            <input id="trackerSearch" type="search" placeholder="Name, provider, note" aria-label="Search bills and loans">
+            <input id="trackerSearch" type="search" placeholder="Name, provider, note" aria-label="Search expenses">
           </label>
           <label>Sort by
             <select id="trackerSort">
               <option value="due">Due first</option>
-              <option value="loans">Loans first, then bills</option>
-              <option value="bills">Bills first, then loans</option>
+              <option value="type">Type (bills, loans, expenses)</option>
               <option value="provider">Provider / lender</option>
               <option value="name">Name (A–Z)</option>
             </select>
@@ -150,17 +151,17 @@
       </details>
     </section>
 
-    <p class="hint tracker-foot">Fixed-amount bills and loans: each payment records the month you paid and how many months (terms) it covered, so paying several at once is counted correctly. Bills that vary: record the actual amount for each month.</p>
+    <p class="hint tracker-foot">Fixed-amount expenses: each payment records the month you paid and how many months (terms) it covered, so paying several at once is counted correctly. Expenses that vary: record the actual amount for each month.</p>
   </main>
 
   <p id="undoBar" class="save-status" role="status" aria-live="polite"></p>
 
-  <script src="lib/icons.js?v=9d884db851"></script>
-  <script src="lib/loans.js?v=9d884db851"></script>
-  <script src="tracker.js?v=9d884db851"></script>
-  <script src="lib/core.js?v=9d884db851"></script>
-  <script src="lib/merge.js?v=9d884db851"></script>
-  <script src="lib/account.js?v=9d884db851"></script>
-  <script src="lib/sync.js?v=9d884db851"></script>
+  <script src="lib/icons.js?v=3f2ad51c29"></script>
+  <script src="lib/loans.js?v=3f2ad51c29"></script>
+  <script src="tracker.js?v=3f2ad51c29"></script>
+  <script src="lib/core.js?v=3f2ad51c29"></script>
+  <script src="lib/merge.js?v=3f2ad51c29"></script>
+  <script src="lib/account.js?v=3f2ad51c29"></script>
+  <script src="lib/sync.js?v=3f2ad51c29"></script>
 </body>
 </html>

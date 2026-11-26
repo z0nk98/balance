@@ -184,3 +184,13 @@ test('each expense is a bill or a loan', () => {
   assert.equal(Loans.iconKind({ name: 'Electricity', kind: 'variable', lender: 'Meralco' }), 'electricity');
   assert.equal(Loans.iconKind({ name: 'SSS loan', category: 'loan' }), 'loan');
 });
+
+test('a third type: other expenses', () => {
+  const e = Loans.cleanVariable({ name: 'Groceries', category: 'expense', firstMonth: '2026-01' });
+  assert.equal(e.category, 'expense');
+  assert.equal(Loans.categoryLabel(e), 'Expense');
+  assert.equal(Loans.categoryLabel({ name: 'Old phone', termAmount: 1 }), 'Loan');
+  assert.equal(Loans.cleanLoan({ name: 'Allowance', category: 'expense', termAmount: 3500, terms: 12, firstMonth: '2026-01' }).category, 'expense');
+  assert.equal(Loans.iconKind({ name: 'Groceries', category: 'expense', kind: 'variable' }), 'other');
+  assert.equal(Loans.iconKind({ name: 'Tuition', category: 'expense', termAmount: 5000 }), 'school');
+});

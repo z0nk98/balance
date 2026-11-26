@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Expense Tracker</title>
-  <script src="lib/theme.js?v=9d884db851"></script>
-  <script src="lib/privacy.js?v=9d884db851"></script>
-  <link rel="stylesheet" href="style.css?v=9d884db851">
-  <link rel="stylesheet" href="lending.css?v=9d884db851">
-  <link rel="stylesheet" href="theme.css?v=9d884db851">
+  <script src="lib/theme.js?v=3f2ad51c29"></script>
+  <script src="lib/privacy.js?v=3f2ad51c29"></script>
+  <link rel="stylesheet" href="style.css?v=3f2ad51c29">
+  <link rel="stylesheet" href="lending.css?v=3f2ad51c29">
+  <link rel="stylesheet" href="theme.css?v=3f2ad51c29">
 </head>
 <body>
   <header class="topbar">
@@ -32,16 +32,16 @@
         <span class="stat-value money-in" id="totalIn">0</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Bills paid</span>
+        <span class="stat-label">Expenses paid</span>
         <span class="stat-value" id="totalSpent">0</span>
-        <span class="stat-sub">in your Bills Tracker</span>
+        <span class="stat-sub">in your Tracker</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Net (in − bills paid)</span>
+        <span class="stat-label">Net (in − expenses paid)</span>
         <span class="stat-value" id="net">0</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Bills budget</span>
+        <span class="stat-label">Budget</span>
         <span class="stat-value">
           <input id="budgetInput" type="number" min="0" step="1" placeholder="Set budget">
         </span>
@@ -52,7 +52,7 @@
 
     <section class="card">
       <h2 id="formTitle">Add money in</h2>
-      <p class="hint">Money out is the bills you mark paid in your <a href="tracker.html">Personal Bills Tracker</a>.</p>
+      <p class="hint">Money out is what you mark paid in your <a href="tracker.html">Personal Bills Tracker</a>.</p>
       <form id="expenseForm" autocomplete="off">
         <input type="hidden" id="editId">
         <label>Amount
@@ -76,7 +76,7 @@
 
     <section class="card" id="trackerCard">
       <div class="list-head">
-        <h2 id="trackerTitle">Bills this month</h2>
+        <h2 id="trackerTitle">Expenses this month</h2>
         <a href="tracker.html" class="linkish">Open Tracker</a>
       </div>
       <div class="mini-stats">
@@ -91,9 +91,9 @@
 
     <div class="grid">
       <section class="card">
-        <h2>Bills paid</h2>
+        <h2>Expenses paid</h2>
         <ul id="breakdown" class="breakdown"></ul>
-        <p id="breakdownEmpty" class="empty">No bills paid this month.</p>
+        <p id="breakdownEmpty" class="empty">No expenses paid this month.</p>
         <h2 class="breakdown-in-title">Money in by category</h2>
         <ul id="breakdownIn" class="breakdown"></ul>
         <p id="breakdownInEmpty" class="empty">No money in this month.</p>
@@ -104,9 +104,9 @@
           <h2>Transactions</h2>
           <div class="list-filters">
             <select id="filterType" aria-label="Filter by type">
-              <option value="">In &amp; bills paid</option>
+              <option value="">In &amp; expenses paid</option>
               <option value="in">Money in</option>
-              <option value="out">Bills paid</option>
+              <option value="out">Expenses paid</option>
             </select>
             <select id="filterCategory" aria-label="Filter by category">
               <option value="">All categories</option>
@@ -135,12 +135,12 @@
     </section>
   </main>
 
-  <script src="lib/icons.js?v=9d884db851"></script>
-  <script src="lib/loans.js?v=9d884db851"></script>
-  <script src="app.js?v=9d884db851"></script>
-  <script src="lib/core.js?v=9d884db851"></script>
-  <script src="lib/merge.js?v=9d884db851"></script>
-  <script src="lib/account.js?v=9d884db851"></script>
-  <script src="lib/sync.js?v=9d884db851"></script>
+  <script src="lib/icons.js?v=3f2ad51c29"></script>
+  <script src="lib/loans.js?v=3f2ad51c29"></script>
+  <script src="app.js?v=3f2ad51c29"></script>
+  <script src="lib/core.js?v=3f2ad51c29"></script>
+  <script src="lib/merge.js?v=3f2ad51c29"></script>
+  <script src="lib/account.js?v=3f2ad51c29"></script>
+  <script src="lib/sync.js?v=3f2ad51c29"></script>
 </body>
 </html>

@@ -386,3 +386,6 @@ section.card.add-card { padding: 12px 16px; }
 html.hide-amounts input[inputmode="decimal"]:not(:focus),
 html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .topbar .amounts-toggle { flex: none; }
+
+/* Three-way type switch (Bill / Loan / Expense). */
+.seg-field .type-toggle.three { grid-template-columns: repeat(3, 1fr); width: min(100%, 420px); }

@@ -109,7 +109,7 @@
         category: loan.name,
         amount: p.amount,
         date: monthKey(loggedIso) === p.month ? loggedIso : dateIn(p.month, loan.dueDay),
-        note: [Loans.categoryOf(loan) === 'loan' ? 'Loan' : 'Bill', variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
+        note: [Loans.categoryLabel(loan), variable ? 'Varies each month' : termsText(loan, p), loan.lender, p.note].filter(Boolean).join(' · '),
         color: colorFor(loan.id),
         created: p.created || 0,
       };
@@ -192,7 +192,7 @@
     const hidden = $('hiddenNote');
     hidden.hidden = notCounted.length === 0;
     hidden.textContent = notCounted.length
-      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), saved before money out came from the Tracker. Only bills paid in the Tracker count.`
+      ? `Not counted: ${notCounted.length} older money-out entr${notCounted.length === 1 ? 'y' : 'ies'} this month (${money(sum(notCounted))}), saved before money out came from the Tracker. Only what you pay in the Tracker counts.`
       : '';
   }
 
@@ -302,10 +302,10 @@
 
   function renderTracker(t) {
     const now = monthKey(todayISO());
-    $('trackerTitle').textContent = viewMonth === now ? 'Bills this month' : `Bills in ${monthLabel(viewMonth)}`;
+    $('trackerTitle').textContent = viewMonth === now ? 'Expenses this month' : `Expenses in ${monthLabel(viewMonth)}`;
     if (!t || !t.hasLoans) {
       for (const id of ['tDue', 'tPaid', 'tLeft', 'tOver']) $(id).textContent = money(0);
-      $('trackerNote').textContent = 'Add your bills and loans on the Tracker; the ones you mark paid count as money out here.';
+      $('trackerNote').textContent = 'Add your expenses (bills, loans and others) on the Tracker; the ones you mark paid count as money out here.';
       $('trackerList').replaceChildren();
       return;
     }
@@ -327,7 +327,7 @@
         PayIcons.billIcon(Loans.iconKind(i.loan)),
         el('div', { className: 'bill-main' }, [
           el('div', { className: 'bill-name', textContent: i.loan.name + (i.variable ? '' : ` · term ${i.termNo} of ${i.loan.terms}`) }),
-          el('div', { className: 'sub', textContent: [Loans.categoryOf(i.loan) === 'loan' ? 'Loan' : 'Bill', i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
+          el('div', { className: 'sub', textContent: [Loans.categoryLabel(i.loan), i.dueDay ? `Due on the ${ordinal(i.dueDay)}` : 'Due anytime in the month', i.loan.lender].filter(Boolean).join(' · ') }),
         ]),
         el('div', { className: 'bill-side' }, [
           el('div', { className: 'amt', textContent: i.amount === null ? 'Varies' : `${i.estimated ? '~' : ''}${money(i.amount)}` }),
