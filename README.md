@@ -115,6 +115,7 @@ The eye button hides every amount here too.
 
 Money in and your expenses on Spending are saved in each browser. To see the same ones everywhere, use the bar at the top of any of those pages: **Sync across devices**, then enter the GitHub key and passphrase from your Lending page. After that, every change is merged into an encrypted copy (`data/money.json`) and pulled in whenever the page is opened.
 
+- Once it's working, the sync bar shrinks to a small grey line under the header (*● Synced · 1:20 AM · Sync now · Forget passphrase*). It only grows back into a box when it needs you: to enter your passphrase, or after an error.
 - Entries already on a device are kept and merged with the others the first time it syncs, so nothing is lost. Adds, edits and deletes from different devices all come through; if one device edits an entry another deleted, the edit wins.
 - Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.
 - **Remember passphrase on this device** (on any of the three pages) saves it in that browser, so the pages open and sync without asking. Without it, you're asked again once you close the tab. *Lock* on Lending, or *Forget passphrase* in the sync bar, removes it. Only use it on your own devices.

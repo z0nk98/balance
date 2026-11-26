@@ -474,3 +474,13 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .icon-preview .pay-icon { width: 34px; height: 34px; border-radius: 9px; }
 .icon-preview .pay-icon svg { width: 20px; height: 20px; }
 .tracker-head > .pay-icon + div { flex: 1 1 0; min-width: 0; }
+
+/* Sync bar: a small, quiet line while all is well (synced, syncing, or off).
+   It goes back to a full box when it needs you (passphrase, error). */
+.sync-bar.is-synced, .sync-bar.is-syncing, .sync-bar.is-off {
+  background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  padding: 0 4px; margin: -6px 0 10px; gap: 4px 12px; font-size: 0.75rem; color: var(--muted);
+}
+.sync-bar.is-synced .sync-text { color: var(--muted); }
+.sync-bar.is-synced .sync-text::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2f9e5b; margin-right: 6px; vertical-align: 1px; }
+.sync-bar.is-synced .linkish, .sync-bar.is-syncing .linkish, .sync-bar.is-off .linkish { font-size: 0.75rem; padding: 0; min-height: 0; color: var(--muted); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--muted) 50%, transparent); }
