@@ -389,3 +389,12 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 
 /* Subcategory of an expense (Bill, Loan, Other): a small, quiet tag after its name. */
 .sub-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; color: var(--muted); border: 1px solid var(--border); vertical-align: 2px; white-space: nowrap; }
+
+/* Tracker: collapsible lists (start collapsed for privacy). */
+.section-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; box-shadow: none; color: inherit; cursor: pointer; text-align: left; }
+.section-toggle h2 { margin: 0; }
+.section-toggle .section-count { color: var(--muted); font-size: 0.9rem; font-weight: 500; }
+.section-toggle .section-action { font-size: 0.85rem; font-weight: 600; color: var(--accent); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); }
+.section-toggle .section-action::after { content: ' ▾'; }
+.section-toggle[aria-expanded="true"] .section-action::after { content: ' ▴'; }
+#allBody > .filters, #monthBody > .chips { margin-top: 10px; }

@@ -746,6 +746,7 @@
 
     const t = Loans.monthTotals(state, viewMonth, now, todayDay);
     const { items, earlier, estimated } = t;
+    $('monthCount').textContent = `(${items.length})`;
 
     $('mDue').textContent = money(t.due);
     $('mDueSub').textContent = items.length ? `${plural(items.length, 'expense')}${estimated ? ' · includes estimates' : ''}` : 'Nothing due';
@@ -784,6 +785,22 @@
   $('nextMonth').addEventListener('click', () => { viewMonth = Loans.addMonths(viewMonth, 1); render(); });
   $('todayBtn').addEventListener('click', () => { viewMonth = thisMonth(); render(); });
 
+  // ---- Collapsed lists -------------------------------------------------------
+  // Both lists start collapsed every time the page opens, so nothing in them
+  // shows until you choose to expand it. Only the count is shown meanwhile.
+  const expanded = { month: false, all: false };
+
+  function applyCollapsed() {
+    for (const [key, body, toggle] of [['month', 'monthBody', 'monthToggle'], ['all', 'allBody', 'allToggle']]) {
+      $(body).hidden = !expanded[key];
+      $(toggle).setAttribute('aria-expanded', String(expanded[key]));
+      $(toggle).querySelector('.section-action').textContent = expanded[key] ? 'Hide' : 'Show';
+    }
+  }
+
+  $('monthToggle').addEventListener('click', () => { expanded.month = !expanded.month; applyCollapsed(); });
+  $('allToggle').addEventListener('click', () => { expanded.all = !expanded.all; applyCollapsed(); });
+
   const card = (r) => (Loans.isVariable(r.loan) ? variableCard(r.loan, r.s) : loanCard(r.loan, r.s));
 
   function render() {
@@ -814,6 +831,7 @@
     $('sumPaid').textContent = money(paid.amount);
     $('sumPaidSub').textContent = paid.count ? plural(paid.count, 'payment') : '';
     $('sumLoans').textContent = String(active.length);
+    $('allCount').textContent = `(${rows.length})`;
     $('sumLoansSub').textContent = `active${rows.length > active.length ? ` · ${rows.length - active.length} paid off` : ''}`;
 
     // ---- The list, after filters ----
@@ -864,6 +882,7 @@
     $('allStats').hidden = byMonth;
     $('allCard').hidden = byMonth;
     if (byMonth) renderMonth();
+    applyCollapsed();
   }
 
   // ---- Adding / editing bills and loans -------------------------------------

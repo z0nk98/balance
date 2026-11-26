@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com">
   <title>Personal Bills Tracker</title>
-  <script src="lib/theme.js?v=0e7f4c6547"></script>
-  <script src="lib/privacy.js?v=0e7f4c6547"></script>
-  <link rel="stylesheet" href="style.css?v=0e7f4c6547">
-  <link rel="stylesheet" href="lending.css?v=0e7f4c6547">
-  <link rel="stylesheet" href="theme.css?v=0e7f4c6547">
+  <script src="lib/theme.js?v=565eff0571"></script>
+  <script src="lib/privacy.js?v=565eff0571"></script>
+  <link rel="stylesheet" href="style.css?v=565eff0571">
+  <link rel="stylesheet" href="lending.css?v=565eff0571">
+  <link rel="stylesheet" href="theme.css?v=565eff0571">
 </head>
 <body>
   <header class="topbar">
@@ -78,9 +78,14 @@
 
     <section class="card" id="monthCard">
       <div class="list-head">
-        <h2 id="monthTitle">This month</h2>
+        <button type="button" class="section-toggle" id="monthToggle" aria-expanded="false" aria-controls="monthBody">
+          <h2 id="monthTitle">This month</h2>
+          <span class="section-count" id="monthCount"></span>
+          <span class="section-action"></span>
+        </button>
         <button type="button" id="todayBtn" class="linkish" hidden>Back to this month</button>
       </div>
+      <div id="monthBody" hidden>
       <div class="chips" id="monthStatus" role="group" aria-label="Filter by status">
         <button type="button" data-status="all" class="chip active">All</button>
         <button type="button" data-status="unpaid" class="chip">Unpaid</button>
@@ -93,6 +98,7 @@
       </div>
       <div id="monthList" class="bill-list"></div>
       <p id="monthEmpty" class="empty" hidden></p>
+      </div>
     </section>
 
     <section class="stats four" id="allStats">
@@ -104,8 +110,13 @@
 
     <section class="card" id="allCard">
       <div class="list-head">
-        <h2>My expenses</h2>
+        <button type="button" class="section-toggle" id="allToggle" aria-expanded="false" aria-controls="allBody">
+          <h2>My expenses</h2>
+          <span class="section-count" id="allCount"></span>
+          <span class="section-action"></span>
+        </button>
       </div>
+      <div id="allBody" hidden>
       <div class="filters">
         <div class="chips" id="statusFilter" role="group" aria-label="Filter by status">
           <button type="button" data-status="all" class="chip active">All</button>
@@ -148,6 +159,7 @@
         <summary id="doneTitle">Paid off</summary>
         <div id="doneList" class="tracker-list"></div>
       </details>
+      </div>
     </section>
 
     <p class="hint tracker-foot">Fixed-amount expenses: each payment records the month you paid and how many months (terms) it covered, so paying several at once is counted correctly. Expenses that vary: record the actual amount for each month.</p>
@@ -155,12 +167,12 @@
 
   <p id="undoBar" class="save-status" role="status" aria-live="polite"></p>
 
-  <script src="lib/icons.js?v=0e7f4c6547"></script>
-  <script src="lib/loans.js?v=0e7f4c6547"></script>
-  <script src="tracker.js?v=0e7f4c6547"></script>
-  <script src="lib/core.js?v=0e7f4c6547"></script>
-  <script src="lib/merge.js?v=0e7f4c6547"></script>
-  <script src="lib/account.js?v=0e7f4c6547"></script>
-  <script src="lib/sync.js?v=0e7f4c6547"></script>
+  <script src="lib/icons.js?v=565eff0571"></script>
+  <script src="lib/loans.js?v=565eff0571"></script>
+  <script src="tracker.js?v=565eff0571"></script>
+  <script src="lib/core.js?v=565eff0571"></script>
+  <script src="lib/merge.js?v=565eff0571"></script>
+  <script src="lib/account.js?v=565eff0571"></script>
+  <script src="lib/sync.js?v=565eff0571"></script>
 </body>
 </html>
