@@ -185,16 +185,20 @@
       .filter((r) => !active || r.shown.length > 0 || ownerFilters.borrower === r.b.id);
     const all = shownRows.flatMap((r) => r.shown);
     const ft = Core.totals(all);
-    $('ownerFilterSummary').textContent = all.length
-      ? `${active ? 'Showing ' : ''}${all.length} payment${all.length === 1 ? '' : 's'} · ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` +
+    // Only while filtering: what the filters show, next to their tags.
+    $('ownerFilterSummary').textContent = !active ? '' : all.length
+      ? `${all.length} payment${all.length === 1 ? '' : 's'} · ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` +
         (ft.overdue > 0 ? ` · ${maskedMoney(ft.overdue)} overdue` : '')
-      : active ? 'No payments match these filters.' : '';
+      : 'No payments match these filters.';
+    $('activeFilters').hidden = !active;
 
     if (revealFiltered && active) for (const r of shownRows) openPanels.add(r.b.id);
     revealFiltered = false;
     $('borrowers').replaceChildren(...shownRows.map((r) => borrowerCard(r, active)));
     $('borrowersEmpty').hidden = rows.length > 0;
     $('viewFilters').hidden = rows.length === 0;
+    // No borrowers yet: open the add form straight away.
+    if (!rows.length && !addOpenedOnce) { addOpenedOnce = true; setAddOpen(true); }
     renderPayMethods();
     renderInbox();
     renderNotifySetup();
@@ -282,6 +286,20 @@
     if (!SORTS[ownerFilters.sort]) ownerFilters.sort = 'date';
     $('ownerSort').value = ownerFilters.sort;
     $('ownerClearFilters').hidden = !filtersActive();
+    // Filter button counts the dropdown filters; each active one shows as a removable tag.
+    const picked = [['borrower', 'ownerBorrowerFilter'], ['loan', 'ownerLoanFilter'], ['month', 'ownerMonthFilter']]
+      .filter(([key]) => ownerFilters[key]);
+    $('filterBtn').textContent = picked.length ? `Filter (${picked.length})` : 'Filter';
+    $('filterBtn').classList.toggle('has-filters', picked.length > 0);
+    $('filterTags').replaceChildren(...picked.map(([key, id]) => {
+      const select = $(id);
+      const label = select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : ownerFilters[key];
+      const tag = el('button', { type: 'button', className: 'filter-tag', title: `Remove: ${label}`, onclick: () => setOwnerFilter({ [key]: '' }) }, [
+        document.createTextNode(label), el('span', { className: 'tag-x', textContent: '✕' }),
+      ]);
+      tag.setAttribute('aria-label', `Remove filter: ${label}`);
+      return tag;
+    }));
   }
 
   $('ownerStatusFilter').addEventListener('click', (ev) => {
@@ -293,6 +311,22 @@
   $('ownerMonthFilter').addEventListener('change', (ev) => setOwnerFilter({ month: ev.target.value }));
   $('ownerSort').addEventListener('change', (ev) => setOwnerFilter({ sort: ev.target.value }));
   $('ownerClearFilters').addEventListener('click', () => setOwnerFilter({ status: 'all', borrower: '', loan: '', month: '' }));
+
+  // ---- Toolbar: Add borrower and Filter open their panels ----------------
+  let addOpenedOnce = false;
+  function setAddOpen(open) {
+    $('addBorrowerPanel').hidden = !open;
+    $('addBorrowerBtn').setAttribute('aria-expanded', String(open));
+    if (open) { setFilterOpen(false); $('borrowerName').focus(); }
+  }
+  function setFilterOpen(open) {
+    $('filterPanel').hidden = !open;
+    $('filterBtn').setAttribute('aria-expanded', String(open));
+    if (open) $('addBorrowerPanel').hidden = true;
+  }
+  $('addBorrowerBtn').addEventListener('click', () => setAddOpen($('addBorrowerPanel').hidden));
+  $('addBorrowerCancel').addEventListener('click', () => { $('borrowerName').value = ''; setAddOpen(false); });
+  $('filterBtn').addEventListener('click', () => setFilterOpen($('filterPanel').hidden));
 
   function borrowerCard({ b, installments, totals: t, shown }, filtered) {
     const c = b.contact;
@@ -1272,6 +1306,7 @@
     openPanels.add(b.id);
     change(() => { state.borrowers.push(b); });
     $('borrowerName').value = '';
+    setAddOpen(false);
     showCode(b);
   });
 

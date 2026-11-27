@@ -6,13 +6,13 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>Lending</title>
-  <script src="lib/update.js?v=8e9328fb69"></script>
-  <script src="lib/theme.js?v=8e9328fb69"></script>
-  <script src="lib/privacy.js?v=8e9328fb69"></script>
-  <script src="lib/minibar.js?v=8e9328fb69"></script>
-  <link rel="stylesheet" href="style.css?v=8e9328fb69">
-  <link rel="stylesheet" href="lending.css?v=8e9328fb69">
-  <link rel="stylesheet" href="theme.css?v=8e9328fb69">
+  <script src="lib/update.js?v=3bf5166213"></script>
+  <script src="lib/theme.js?v=3bf5166213"></script>
+  <script src="lib/privacy.js?v=3bf5166213"></script>
+  <script src="lib/minibar.js?v=3bf5166213"></script>
+  <link rel="stylesheet" href="style.css?v=3bf5166213">
+  <link rel="stylesheet" href="lending.css?v=3bf5166213">
+  <link rel="stylesheet" href="theme.css?v=3bf5166213">
 </head>
 <body>
   <header class="topbar">
@@ -89,49 +89,57 @@
         <div class="stat"><span class="stat-label">Borrowers</span><span class="stat-value" id="sumBorrowers"></span></div>
       </section>
 
-      <section class="card">
-        <h2>Add borrower</h2>
-        <form id="addBorrower" class="inline-form" autocomplete="off">
-          <label>Name <input id="borrowerName" class="grow" maxlength="60" required></label>
-          <label class="check"><input type="checkbox" id="customCode"> I'll choose the code</label>
-          <button type="submit" class="primary">Add &amp; create code</button>
-        </form>
-      </section>
+      <section class="card lend-toolbar">
+        <div class="toolbar-row">
+          <button type="button" class="primary add-borrower-btn" id="addBorrowerBtn" aria-expanded="false" aria-controls="addBorrowerPanel">+ Add borrower</button>
+          <div class="toolbar-filters" id="viewFilters">
+            <div class="chips" id="ownerStatusFilter" role="group" aria-label="Filter by status">
+              <button type="button" data-status="all" class="chip active">All</button>
+              <button type="button" data-status="unpaid" class="chip">Unpaid</button>
+              <button type="button" data-status="overdue" class="chip">Overdue</button>
+              <button type="button" data-status="due-soon" class="chip">Due soon</button>
+              <button type="button" data-status="paid" class="chip">Paid</button>
+            </div>
+            <button type="button" class="filter-btn" id="filterBtn" aria-expanded="false" aria-controls="filterPanel">Filter</button>
+          </div>
+        </div>
 
-      <section class="card" id="viewFilters">
-        <h2>View payments</h2>
-        <div class="filters">
-          <div class="chips" id="ownerStatusFilter" role="group" aria-label="Filter by status">
-            <button type="button" data-status="all" class="chip active">All</button>
-            <button type="button" data-status="unpaid" class="chip">Unpaid</button>
-            <button type="button" data-status="overdue" class="chip">Overdue</button>
-            <button type="button" data-status="due-soon" class="chip">Due soon</button>
-            <button type="button" data-status="paid" class="chip">Paid</button>
-          </div>
-          <div class="filter-selects">
-            <label>Borrower
-              <select id="ownerBorrowerFilter"><option value="">All borrowers</option></select>
-            </label>
-            <label>Loan
-              <select id="ownerLoanFilter"><option value="">All loans</option></select>
-            </label>
-            <label>Month
-              <select id="ownerMonthFilter"><option value="">All months</option></select>
-            </label>
-            <label>Sort by
-              <select id="ownerSort">
-                <option value="date">Due date (earliest first)</option>
-                <option value="date-desc">Due date (latest first)</option>
-                <option value="loan-asc">Loan name A–Z</option>
-                <option value="loan-desc">Loan name Z–A</option>
-                <option value="status">Status (overdue first)</option>
-                <option value="left-desc">Amount left (highest first)</option>
-                <option value="amount-desc">Amount (highest first)</option>
-              </select>
-            </label>
-            <button type="button" id="ownerClearFilters" class="linkish" hidden>Clear filters</button>
-          </div>
-          <p id="ownerFilterSummary" class="filter-summary"></p>
+        <div id="addBorrowerPanel" class="toolbar-panel" hidden>
+          <form id="addBorrower" class="inline-form" autocomplete="off">
+            <label>Name <input id="borrowerName" class="grow" maxlength="60" required></label>
+            <label class="check"><input type="checkbox" id="customCode"> I'll choose the code</label>
+            <button type="submit" class="primary">Add &amp; create code</button>
+            <button type="button" id="addBorrowerCancel">Cancel</button>
+          </form>
+        </div>
+
+        <div id="filterPanel" class="toolbar-panel filter-selects" hidden>
+          <label>Borrower
+            <select id="ownerBorrowerFilter"><option value="">All borrowers</option></select>
+          </label>
+          <label>Loan
+            <select id="ownerLoanFilter"><option value="">All loans</option></select>
+          </label>
+          <label>Month
+            <select id="ownerMonthFilter"><option value="">All months</option></select>
+          </label>
+          <label>Sort by
+            <select id="ownerSort">
+              <option value="date">Due date (earliest first)</option>
+              <option value="date-desc">Due date (latest first)</option>
+              <option value="loan-asc">Loan name A–Z</option>
+              <option value="loan-desc">Loan name Z–A</option>
+              <option value="status">Status (overdue first)</option>
+              <option value="left-desc">Amount left (highest first)</option>
+              <option value="amount-desc">Amount (highest first)</option>
+            </select>
+          </label>
+          <button type="button" id="ownerClearFilters" class="linkish" hidden>Clear filters</button>
+        </div>
+
+        <div class="active-filters" id="activeFilters" hidden>
+          <span id="filterTags" class="filter-tags"></span>
+          <span id="ownerFilterSummary" class="filter-summary"></span>
         </div>
       </section>
 
@@ -175,9 +183,9 @@
     </div>
   </main>
 
-  <script src="lib/icons.js?v=8e9328fb69"></script>
-  <script src="lib/account.js?v=8e9328fb69"></script>
-  <script src="lib/core.js?v=8e9328fb69"></script>
-  <script src="lend.js?v=8e9328fb69"></script>
+  <script src="lib/icons.js?v=3bf5166213"></script>
+  <script src="lib/account.js?v=3bf5166213"></script>
+  <script src="lib/core.js?v=3bf5166213"></script>
+  <script src="lend.js?v=3bf5166213"></script>
 </body>
 </html>

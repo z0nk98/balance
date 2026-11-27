@@ -612,3 +612,32 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 @media (max-width: 720px) {
   #viewToggle.view-toggle { width: 100%; margin: 0 0 12px; }
 }
+
+/* Lending: one compact toolbar (Add borrower, status chips, Filter) with panels below. */
+.lend-toolbar { padding: 12px 14px; }
+.toolbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.toolbar-filters { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; justify-content: space-between; }
+.toolbar-filters[hidden] { display: none; }
+.toolbar-filters .chips { margin: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.toolbar-filters .chips::-webkit-scrollbar { display: none; }
+.toolbar-filters .chip { flex: none; }
+.add-borrower-btn { white-space: nowrap; padding: 8px 14px; }
+.filter-btn { white-space: nowrap; padding: 6px 14px; border-radius: 999px; font-size: var(--fs-sm); flex: none; }
+.filter-btn.has-filters { color: var(--accent); border-color: var(--accent); }
+.toolbar-panel { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.toolbar-panel[hidden] { display: none; }
+.active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 10px; }
+.active-filters[hidden] { display: none; }
+.filter-tags { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.filter-tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px 3px 10px; border-radius: 999px; font-size: var(--fs-sm); min-height: 0; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--text); box-shadow: none; }
+.filter-tag .tag-x { font-size: var(--fs-xs); color: var(--muted); }
+.active-filters .filter-summary { margin: 0; font-size: var(--fs-sm); }
+@media (max-width: 720px) {
+  /* Phones: Add borrower and Filter on the first line, the status chips on their own line. */
+  .toolbar-row { gap: 8px; }
+  .toolbar-filters:not([hidden]) { display: contents; }
+  .add-borrower-btn { order: 0; }
+  .toolbar-filters .filter-btn { order: 1; margin-left: auto; }
+  .toolbar-filters .chips { order: 2; flex: 1 1 100%; }
+  .active-filters .filter-summary { flex-basis: 100%; }
+}
