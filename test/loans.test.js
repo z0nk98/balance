@@ -224,3 +224,15 @@ test('payments logged for other months show up so the month adds up', () => {
   other = Loans.loggedForOtherMonths(st, '2026-12', '2026-12', 5);
   assert.deepEqual(other.map((o) => [o.payment.id, o.kind]), [['x', 'earlier'], ['z', 'ahead'], ['w', 'partial']]);
 });
+
+test('payments made on time but logged later can go in each term\'s own month', () => {
+  const loanO = { id: 'O', name: 'Olango', termAmount: 1100, terms: 3, firstMonth: '2026-08' };
+  const parts = Loans.paymentsPerTerm(loanO, 1, 3, 3300.01, 'logged late');
+  assert.deepEqual(parts.map((p) => [p.month, p.amount, p.terms]), [['2026-08', 1100, 1], ['2026-09', 1100, 1], ['2026-10', 1100.01, 1]]);
+  assert.equal(parts[0].note, 'logged late');
+  // Spending per month then follows when each was paid, not when it was logged.
+  const st = { loans: [loanO], payments: parts.map((p, i) => ({ id: 'p' + i, loanId: 'O', ...p })) };
+  assert.equal(Loans.paidInMonth(st, '2026-09').amount, 1100);
+  assert.equal(Loans.paidInMonth(st, '2026-11').amount, 0);
+  assert.equal(Loans.summary(loanO, st.payments, '2026-11').termsPaid, 3);
+});

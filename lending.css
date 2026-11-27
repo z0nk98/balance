@@ -689,3 +689,11 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .code-panel { margin: 10px 0 4px; }
 .code-panel .portal-url { display: block; overflow-wrap: anywhere; font-size: var(--fs-sm); margin: 4px 0 10px; }
 .code-panel .code { overflow-wrap: anywhere; }
+
+/* Spending: "When did you pay?" in the payment form, and editing a logged payment. */
+.when-paid { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
+.when-paid[hidden] { display: none; }
+.when-paid legend { font-size: var(--fs-sm); color: var(--muted); margin-bottom: 4px; padding: 0; }
+.when-paid .check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
+.pay-terms-form label[hidden] { display: none; }
+.payment-editor-row { list-style: none; border-top: 0 !important; padding: 0 0 8px !important; }

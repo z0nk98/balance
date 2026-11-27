@@ -158,6 +158,34 @@
 
   function paymentForm(loan, s) {
     const month = el('input', { type: 'month', value: thisMonth(), required: true });
+    // When the terms being paid were due in earlier months, ask when they were
+    // actually paid: each in its own month (logged later), or all in one month.
+    const whenOwn = el('input', { type: 'radio', name: `when-${loan.id}`, value: 'own' });
+    const whenOne = el('input', { type: 'radio', name: `when-${loan.id}`, value: 'one' });
+    const ownLabel = el('span');
+    const when = el('fieldset', { className: 'when-paid wide', hidden: true }, [
+      el('legend', { textContent: 'When did you pay?' }),
+      el('label', { className: 'check' }, [whenOwn, ownLabel]),
+      el('label', { className: 'check' }, [whenOne, document.createTextNode('All in one month (paid late, or together)')]),
+    ]);
+    const monthField = field('Month paid', month);
+    const coveredMonths = () => {
+      const n = Number(terms.value) || 0;
+      const from = s.termsPaid + 1;
+      return Array.from({ length: Math.min(n, s.termsLeft) }, (_, k) => Loans.addMonths(loan.firstMonth, from - 1 + k));
+    };
+    const updateWhen = () => {
+      const months = coveredMonths();
+      const past = months.length > 0 && months[0] < thisMonth();
+      when.hidden = !past;
+      if (past) {
+        const range = months.length === 1 ? monthLabel(months[0]) : `${monthLabel(months[0], true)} – ${monthLabel(months[months.length - 1], true)}`;
+        ownLabel.textContent = months.length === 1 ? `In ${range}, when it was due` : `Each term in its own month (${range})`;
+      }
+      monthField.hidden = past && !whenOne.checked;
+    };
+    whenOwn.addEventListener('change', updateWhen);
+    whenOne.addEventListener('change', updateWhen);
     const terms = el('input', { type: 'number', min: '0', max: String(s.termsLeft), step: '1', value: String(Math.min(Math.max(1, s.behind), s.termsLeft)), required: true, inputMode: 'numeric' });
     const amount = el('input', { type: 'number', min: '0.01', step: '0.01', inputMode: 'decimal' });
     const note = el('input', { maxLength: 120, placeholder: 'Optional', className: 'grow' });
@@ -172,7 +200,7 @@
         ? `This pays off ${loan.name}: it moves to Paid off and stops showing in later months.`
         : (n > 0 ? `Covers term${n === 1 ? '' : 's'} ${from}${n > 1 ? `–${Math.min(from + n - 1, loan.terms)}` : ''} of ${loan.terms}.` : 'Enter 0 terms for a partial payment that doesn’t complete a term.');
     };
-    terms.addEventListener('input', update);
+    terms.addEventListener('input', () => { update(); updateWhen(); });
     amount.addEventListener('input', () => { amountEdited = amount.value !== ''; update(); });
     // Paying the whole balance in advance, instead of term by term.
     const payOff = el('button', {
@@ -190,8 +218,9 @@
     });
     update();
     const form = el('form', { className: 'inline-form pay-terms-form', autocomplete: 'off' }, [
-      field('Month paid', month),
       field('Terms paid', terms),
+      when,
+      monthField,
       field('Amount', amount),
       field('Note', note),
       el('button', { type: 'submit', className: 'primary', textContent: 'Save payment' }),
@@ -199,11 +228,19 @@
       s.termsLeft > 1 ? payOff : '',
       hint,
     ]);
+    updateWhen();
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       try {
+        if (!when.hidden && !whenOwn.checked && !whenOne.checked) throw new Error('Choose when you paid: in each term’s own month, or all in one month.');
         const p = Loans.cleanPayment({ month: month.value, terms: terms.value, amount: amount.value, note: note.value }, loan);
-        state.payments.push({ id: newId(), loanId: loan.id, ...p, created: Date.now() });
+        if (!when.hidden && whenOwn.checked && p.terms >= 1) {
+          for (const one of Loans.paymentsPerTerm(loan, s.termsPaid + 1, p.terms, p.amount, p.note)) {
+            state.payments.push({ id: newId(), loanId: loan.id, ...one, created: Date.now() });
+          }
+        } else {
+          state.payments.push({ id: newId(), loanId: loan.id, ...p, created: Date.now() });
+        }
       } catch (err) {
         alert(err.message);
         return;
@@ -214,6 +251,47 @@
       render();
     });
     return form;
+  }
+
+  // Changing a logged payment: its month and amount, or splitting a payment
+  // that covered several terms into one per term, each in its own month.
+  let editingPayment = null;
+  function paymentEditor(loan, p) {
+    const month = el('input', { type: 'month', value: p.month, required: true });
+    const amount = el('input', { type: 'number', min: '0.01', step: '0.01', inputMode: 'decimal', value: String(p.amount), required: true });
+    const form = el('form', { className: 'inline-form pay-terms-form payment-editor', autocomplete: 'off' }, [
+      field('Month paid', month),
+      field('Amount', amount),
+      el('button', { type: 'submit', className: 'primary', textContent: 'Save' }),
+      el('button', { type: 'button', textContent: 'Cancel', onclick: () => { editingPayment = null; render(); } }),
+      p.terms > 1 ? el('button', {
+        type: 'button',
+        className: 'linkish',
+        textContent: `Split into ${p.terms} payments, one per term in its own month`,
+        onclick: () => {
+          const parts = Loans.paymentsPerTerm(loan, p.fromTerm, p.terms, p.amount, p.note);
+          const i = state.payments.findIndex((x) => x.id === p.id);
+          if (i < 0) return;
+          state.payments.splice(i, 1, ...parts.map((x) => ({ id: newId(), loanId: loan.id, ...x, created: p.created || Date.now() })));
+          editingPayment = null;
+          save(`Split into ${p.terms} payments`);
+          render();
+        },
+      }) : '',
+    ]);
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const v = Math.round(Number(amount.value) * 100) / 100;
+      if (!/^\d{4}-\d{2}$/.test(month.value) || !(v > 0)) { alert('Enter a month and an amount.'); return; }
+      const target = state.payments.find((x) => x.id === p.id);
+      if (!target) return;
+      target.month = month.value;
+      target.amount = v;
+      editingPayment = null;
+      save('Payment changed');
+      render();
+    });
+    return el('li', { className: 'payment-editor-row' }, [form]);
   }
 
   function historyList(loan, s) {
@@ -230,6 +308,7 @@
           }),
         ]),
         el('div', { className: 'amt', textContent: money(p.amount) }),
+        iconButton('edit', `Change the ${monthLabel(p.month)} payment`, () => { editingPayment = editingPayment === p.id ? null : p.id; render(); }),
         iconButton('delete', `Delete the ${monthLabel(p.month)} payment`, () => {
           if (!confirm(`Delete the ${money(p.amount)} payment from ${monthLabel(p.month)}?`)) return;
           state.payments = state.payments.filter((x) => x.id !== p.id);
@@ -237,6 +316,10 @@
           render();
         }, 'danger'),
       ]));
+    // The payment being changed gets its editor right under its row.
+    const ordered = [...s.history].reverse();
+    const at = ordered.findIndex((p) => p.id === editingPayment);
+    if (at >= 0) rows.splice(at + 1, 0, paymentEditor(loan, ordered[at]));
     // Months with more than one payment get a total.
     const byMonth = new Map();
     for (const p of s.history) byMonth.set(p.month, (byMonth.get(p.month) || 0) + p.terms);
@@ -623,14 +706,19 @@
   const amountOf = (item) => (item.amount === null ? 'Varies' : (item.estimated ? `~${money(item.amount)}` : money(item.amount)));
 
   // Fixed: one payment covering the term(s) up to this one.
-  function payFixed(loan, cover, firstTerm, paidMonth) {
+  // perTerm: record one payment per term, each in its own month.
+  function payFixed(loan, cover, firstTerm, paidMonth, perTerm = false) {
     const last = firstTerm + cover - 1;
     const terms = cover === 1 ? `term ${firstTerm}` : `terms ${firstTerm}–${last}`;
     const input = prompt(`Amount paid for ${loan.name}, ${terms} of ${loan.terms}${cover > 1 ? ` (${cover} terms)` : ''}:`, (Math.round(cover * loan.termAmount * 100) / 100).toFixed(2));
     if (input === null) return;
     try {
       const p = Loans.cleanPayment({ month: paidMonth, terms: cover, amount: input, note: '' }, loan);
-      state.payments.push({ id: newId(), loanId: loan.id, ...p, created: Date.now() });
+      if (perTerm) {
+        for (const one of Loans.paymentsPerTerm(loan, firstTerm, p.terms, p.amount)) state.payments.push({ id: newId(), loanId: loan.id, ...one, created: Date.now() });
+      } else {
+        state.payments.push({ id: newId(), loanId: loan.id, ...p, created: Date.now() });
+      }
     } catch (err) {
       alert(err.message);
       return;
@@ -687,7 +775,8 @@
         title: item.cover > 1 ? `Terms are paid in order, so this also covers ${plural(item.cover - 1, 'earlier unpaid term')}` : '',
         onclick: () => (item.variable
           ? payVariable(loan, item.month, item.amount)
-          : payFixed(loan, item.cover, item.termNo - item.cover + 1, item.month < thisMonth() ? item.month : thisMonth())),
+          // Paying a past month's row: each term goes in its own month.
+          : payFixed(loan, item.cover, item.termNo - item.cover + 1, item.month < thisMonth() ? item.month : thisMonth(), item.month < thisMonth())),
       });
     } else {
       action = el('button', {
@@ -740,7 +829,11 @@
     const months = e.months.length > 4 ? `${monthList(e.months.slice(0, 3))} and ${e.months.length - 3} more` : monthList(e.months);
     const pay = e.variable
       ? el('button', { type: 'button', className: 'primary', textContent: `Pay ${monthLabel(e.months[0], true)}`, onclick: () => payVariable(loan, e.months[0], Loans.variableSummary(loan, state.payments, thisMonth()).guess) })
-      : el('button', { type: 'button', className: 'primary', textContent: e.months.length > 1 ? `Pay ${e.months.length} terms` : 'Pay', onclick: () => payFixed(loan, e.months.length, Loans.summary(loan, state.payments, thisMonth()).termsPaid + 1, thisMonth()) });
+      : el('button', { type: 'button', className: 'primary', textContent: e.months.length > 1 ? `Pay ${e.months.length} terms` : 'Pay', onclick: () => {
+        const range = e.months.length === 1 ? monthLabel(e.months[0]) : `${monthLabel(e.months[0], true)} – ${monthLabel(e.months[e.months.length - 1], true)}`;
+        const onTime = confirm(`Did you already pay ${e.months.length === 1 ? 'this' : 'these'} when ${e.months.length === 1 ? 'it was' : 'they were'} due (${range})?\n\nOK: record ${e.months.length === 1 ? 'it in its own month' : 'each in its own month'}.\nCancel: record ${e.months.length === 1 ? 'it' : 'them'} as paid this month (paying late).`);
+        payFixed(loan, e.months.length, Loans.summary(loan, state.payments, thisMonth()).termsPaid + 1, thisMonth(), onTime);
+      } });
     return el('div', { className: 'bill-item compact status-overdue' }, [
       iconFor(loan),
       el('div', { className: 'bill-main' }, [
