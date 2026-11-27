@@ -172,6 +172,10 @@ To test it, open **Actions → Payment reminders → Run workflow**. The log onl
 
 GitHub pauses scheduled jobs in repos with no activity for 60 days. Saving a change on the owner page counts as activity.
 
+## Text sizes
+
+All pages share one type scale, set once at the top of `style.css`: extra small (12px) for tags and badges, small (14px) for secondary text, base (16px) for body text and names, large (18px) for section titles, extra large (22px) for figures and page titles, and a hero size for Overview's big number. Form boxes stay at 16px so iPhones don't zoom in when you tap them. To change a size everywhere, change its step there.
+
 ## Development
 
 ```sh
