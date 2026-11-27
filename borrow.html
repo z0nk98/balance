@@ -6,13 +6,13 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob:; script-src 'self'; style-src 'self'; connect-src 'self' https://ntfy.sh">
   <meta name="referrer" content="no-referrer">
   <title>My Balance</title>
-  <script src="lib/update.js?v=0bc6941a2c"></script>
-  <script src="lib/theme.js?v=0bc6941a2c"></script>
-  <script src="lib/privacy.js?v=0bc6941a2c"></script>
-  <script src="lib/minibar.js?v=0bc6941a2c"></script>
-  <link rel="stylesheet" href="style.css?v=0bc6941a2c">
-  <link rel="stylesheet" href="lending.css?v=0bc6941a2c">
-  <link rel="stylesheet" href="theme.css?v=0bc6941a2c">
+  <script src="lib/update.js?v=2e707c628e"></script>
+  <script src="lib/theme.js?v=2e707c628e"></script>
+  <script src="lib/privacy.js?v=2e707c628e"></script>
+  <script src="lib/minibar.js?v=2e707c628e"></script>
+  <link rel="stylesheet" href="style.css?v=2e707c628e">
+  <link rel="stylesheet" href="lending.css?v=2e707c628e">
+  <link rel="stylesheet" href="theme.css?v=2e707c628e">
 </head>
 <body>
   <header class="topbar">
@@ -33,29 +33,24 @@
     </section>
 
     <div id="mainView" hidden>
-      <p id="greeting"></p>
-      <section class="stats four">
-        <div class="stat">
-          <span class="stat-label">Total remaining</span>
-          <span class="stat-value" id="remaining"></span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Overdue</span>
-          <span class="stat-value" id="overdue"></span>
-        </div>
-        <div class="stat">
-          <span class="stat-label" id="dueSoonLabel">Due soon</span>
-          <span class="stat-value" id="dueSoon"></span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Next payment</span>
-          <span class="stat-value" id="nextDue"></span>
-          <span class="stat-sub" id="nextDueDate"></span>
+      <section class="card borrower-hero" id="heroCard">
+        <p id="greeting" class="hero-greeting"></p>
+        <span class="hero-label" id="nextLabel">Next payment</span>
+        <strong class="hero-value" id="nextDue"></strong>
+        <p class="hero-when" id="nextDueDate"></p>
+        <p class="hero-status" id="heroStatus"></p>
+        <button type="button" class="primary how-to-pay-btn" id="howToPayBtn" aria-expanded="false" aria-controls="paySection" hidden>How to pay</button>
+        <div class="hero-progress">
+          <div class="progress" aria-hidden="true"><div class="progress-fill" id="heroBar"></div></div>
+          <span class="hint" id="heroTotal"></span>
         </div>
       </section>
 
       <section class="card" id="paySection" hidden>
-        <h2>How to pay</h2>
+        <div class="list-head">
+          <h2>How to pay</h2>
+          <button type="button" class="linkish" id="payClose">Close</button>
+        </div>
         <div id="payMethods" class="pay-list"></div>
       </section>
 
@@ -119,32 +114,36 @@
         </div>
       </section>
 
-      <section class="card">
-        <h2>Payment reminders</h2>
-        <p id="reminderStatus"></p>
-        <p class="hint" id="reminderHint"></p>
-        <form id="contactForm" class="contact-form" autocomplete="on" hidden>
-          <label>Email
-            <input id="contactEmail" type="email" maxlength="254" placeholder="you@example.com" autocomplete="email">
-          </label>
-          <label>Mobile number
-            <input id="contactPhone" type="tel" maxlength="20" placeholder="0917 123 4567" autocomplete="tel">
-          </label>
-          <div class="btn-row wide">
-            <label class="check"><input type="checkbox" id="wantEmail"> Email me</label>
-            <label class="check"><input type="checkbox" id="wantSms"> Text me</label>
-          </div>
-          <div class="wide">
-            <button type="submit" class="primary" id="contactSend">Send to <span id="contactOwner">lender</span></button>
-          </div>
-        </form>
+      <section class="card reminders-card">
+        <div class="reminder-line">
+          <span id="reminderStatus"></span>
+          <button type="button" class="linkish" id="reminderChange" aria-expanded="false" aria-controls="reminderBody" hidden>Change</button>
+        </div>
+        <div id="reminderBody" hidden>
+          <p class="hint" id="reminderHint"></p>
+          <form id="contactForm" class="contact-form" autocomplete="on" hidden>
+            <label>Email
+              <input id="contactEmail" type="email" maxlength="254" placeholder="you@example.com" autocomplete="email">
+            </label>
+            <label>Mobile number
+              <input id="contactPhone" type="tel" maxlength="20" placeholder="0917 123 4567" autocomplete="tel">
+            </label>
+            <div class="btn-row wide">
+              <label class="check"><input type="checkbox" id="wantEmail"> Email me</label>
+              <label class="check"><input type="checkbox" id="wantSms"> Text me</label>
+            </div>
+            <div class="wide">
+              <button type="submit" class="primary" id="contactSend">Send to <span id="contactOwner">lender</span></button>
+            </div>
+          </form>
+        </div>
         <p id="contactMsg" hidden></p>
       </section>
     </div>
   </main>
 
-  <script src="lib/icons.js?v=0bc6941a2c"></script>
-  <script src="lib/core.js?v=0bc6941a2c"></script>
-  <script src="borrow.js?v=0bc6941a2c"></script>
+  <script src="lib/icons.js?v=2e707c628e"></script>
+  <script src="lib/core.js?v=2e707c628e"></script>
+  <script src="borrow.js?v=2e707c628e"></script>
 </body>
 </html>

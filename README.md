@@ -137,6 +137,10 @@ Money in and your expenses on Spending are saved in each browser. To see the sam
 - Each browser counts as its own device. Safari, Chrome and in-app browsers (like Messenger's) each keep their own storage, so set up sync in each one you use.
 - **Remember passphrase on this device** (on any of the three pages) saves it in that browser, so the pages open and sync without asking. Without it, you're asked again once you close the tab. *Lock* on Lending, or *Forget passphrase* in the sync bar, removes it. Only use it on your own devices.
 
+## Borrower page
+
+A borrower's page (`borrow.html`) opens with one summary card: the next payment (or the overdue one, in red, with how many days ago it was due), what comes after it, a **How to pay** button that opens your payment methods and QR codes, and a progress bar with what's left in total and how many payments are paid. When everything is paid it says so. Reminders are one line (*🔔 Reminders: text to •••0578*) with **Change** to open the form; if reminders are off, the form is open so they can turn them on.
+
 ## Borrower page privacy
 
 On a borrower's page (`borrow.html`), **My loans** and **My payments** start collapsed every time it opens, showing only how many loans and payments there are. The borrower taps **Show** to expand either one. The totals at the top stay visible, and the eye button in the header hides every amount.

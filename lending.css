@@ -669,3 +669,18 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   .loan-row-head { grid-template-columns: minmax(0, 1fr) auto auto; }
   .loan-row-head .row-chevron { display: none; }
 }
+
+/* Borrower page: the summary card, How to pay on demand, reminders as one line. */
+.borrower-hero { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.hero-greeting { margin: 0 0 8px; color: var(--muted); font-size: var(--fs-sm); }
+.hero-when { margin: 0; font-size: var(--fs-md); color: var(--muted); }
+.hero-status { margin: 8px 0 0; font-size: var(--fs-md); }
+.hero-status.is-over { color: var(--danger); }
+.hero-value.over { color: var(--danger); }
+.how-to-pay-btn { margin-top: 12px; padding: 9px 18px; }
+.hero-progress { width: 100%; margin-top: 14px; display: grid; gap: 6px; }
+.hero-progress .progress { height: 8px; }
+.hero-progress .hint { margin: 0; font-size: var(--fs-sm); }
+.reminders-card { padding-top: 14px; padding-bottom: 14px; }
+.reminder-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: var(--fs-sm); }
+#reminderBody { margin-top: 12px; }

@@ -265,7 +265,8 @@
 
   function renderPayMethods() {
     const methods = me.paymentMethods || [];
-    $('paySection').hidden = methods.length === 0;
+    $('howToPayBtn').hidden = methods.length === 0;
+    if (!methods.length) $('paySection').hidden = true;
     $('payMethods').replaceChildren(
       ...methods.map((m) => {
         const lines = [el('div', { className: 'pay-label', textContent: m.label })];
@@ -349,18 +350,62 @@
     $('loansCount').textContent = `(${loans.size})`;
   }
 
+  // ---- Summary card ----------------------------------------------------
+  // The next payment, whether anything is overdue, How to pay, and progress.
+  function renderHero(t) {
+    $('greeting').textContent = `Hi ${me.name}!` + (me.ownerName ? ` Here's where you are with ${me.ownerName}.` : '');
+    const today = Core.todayISO();
+    const days = (iso) => Math.round((new Date(iso + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5);
+    const overdue = me.items.filter((i) => i.status === 'overdue' && i.remaining > 0);
+    const upcoming = me.items.filter((i) => i.remaining > 0 && i.status !== 'overdue').sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0];
+    const next = t.nextDue;
+    if (next) {
+      const d = days(next.dueDate);
+      $('nextLabel').textContent = d < 0 ? 'Payment overdue' : 'Next payment';
+      $('nextDue').textContent = maskedMoney(next.remaining);
+      $('nextDueDate').textContent = d < 0
+        ? `was due ${dateLabel(next.dueDate)} · ${-d} day${d === -1 ? '' : 's'} ago`
+        : d === 0 ? `due today, ${dateLabel(next.dueDate)}` : `due ${dateLabel(next.dueDate)} · in ${d} day${d === 1 ? '' : 's'}`;
+    } else {
+      $('nextLabel').textContent = 'Next payment';
+      $('nextDue').textContent = 'None';
+      $('nextDueDate').textContent = '';
+    }
+    $('nextDue').classList.toggle('over', Boolean(next) && days(next.dueDate) < 0 && !amountsHidden());
+    let status;
+    if (overdue.length) {
+      const sum = overdue.reduce((s, i) => s + i.remaining, 0);
+      const after = upcoming ? `After that: ${maskedMoney(upcoming.remaining)} on ${dateLabel(upcoming.dueDate)}.` : '';
+      // One overdue payment is already the big number above; just say what's next.
+      status = overdue.length === 1 ? (after || 'Please pay it as soon as you can.')
+        : `${overdue.length} payments are overdue (${maskedMoney(sum)} in all). ${after}`.trim();
+    } else {
+      status = t.remaining > 0 ? "You're all caught up 🎉" : 'Everything is paid off 🎉';
+    }
+    $('heroStatus').textContent = status;
+    $('heroStatus').classList.toggle('is-over', overdue.length > 0);
+    const paidCount = me.items.filter((i) => i.remaining <= 0).length;
+    $('heroBar').style.width = `${me.items.length ? Math.round((paidCount / me.items.length) * 100) : 0}%`;
+    $('heroTotal').textContent = `${maskedMoney(t.remaining)} left in total · ${paidCount} of ${me.items.length} paid`;
+  }
+
+  function setPayOpen(open) {
+    $('paySection').hidden = !open;
+    $('howToPayBtn').setAttribute('aria-expanded', String(open));
+    $('howToPayBtn').textContent = open ? 'Hide how to pay' : 'How to pay';
+    if (open) $('paySection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('howToPayBtn').addEventListener('click', () => setPayOpen($('paySection').hidden));
+  $('payClose').addEventListener('click', () => { setPayOpen(false); $('heroCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+  // Reminders: one line; the form opens with Change (or straight away when off).
+  let reminderOpen = null;
+  $('reminderChange').addEventListener('click', () => { reminderOpen = $('reminderBody').hidden; render(); });
+
   function render() {
     renderPayMethods();
     const t = me.totals;
-    $('greeting').textContent = `Hi ${me.name}! Here's your payment summary` + (me.ownerName ? ` with ${me.ownerName}.` : '.');
-    $('remaining').textContent = maskedMoney(t.remaining);
-    $('overdue').textContent = maskedMoney(t.overdue);
-    $('overdue').classList.toggle('danger', !amountsHidden() && t.overdue > 0);
-    $('dueSoon').textContent = maskedMoney(t.dueSoon);
-    $('dueSoon').classList.toggle('warn', !amountsHidden() && t.dueSoon > 0);
-    $('dueSoonLabel').textContent = Core.dueSoonLabel(me.items, me.reminderDays);
-    $('nextDue').textContent = t.nextDue ? maskedMoney(t.nextDue.remaining) : '—';
-    $('nextDueDate').textContent = t.nextDue ? `due ${dateLabel(t.nextDue.dueDate)}` : 'All paid up';
+    renderHero(t);
 
     for (const chip of $('statusFilter').children) {
       chip.classList.toggle('active', chip.dataset.status === filters.status);
@@ -392,11 +437,18 @@
 
     const who = me.ownerName || 'your lender';
     const canSend = Boolean(me.inbox && me.id);
-    $('reminderStatus').textContent = me.reminders.length
-      ? `Reminders are on: ${me.reminders.join(' and ')}.`
+    const on = me.reminders.length > 0;
+    $('reminderStatus').textContent = on
+      ? `🔔 Reminders: ${me.reminders.join(' and ')}`
       : canSend
-        ? 'Reminders are off. Add your email or mobile number below to get them.'
-        : `Reminders are off. To get them, send your email address or phone number to ${who}.`;
+        ? '🔕 Reminders are off. Add your email or mobile number to get them.'
+        : `🔕 Reminders are off. To get them, send your email address or phone number to ${who}.`;
+    // On: just the line, with Change. Off: the form is open so they can turn them on.
+    const open = reminderOpen === null ? (!on && canSend) : reminderOpen;
+    $('reminderBody').hidden = !open;
+    $('reminderChange').hidden = !(on && canSend);
+    $('reminderChange').textContent = open ? 'Done' : 'Change';
+    $('reminderChange').setAttribute('aria-expanded', String(open));
     $('reminderHint').textContent =
       `Reminders go out ${me.reminderDays} day${me.reminderDays === 1 ? '' : 's'} before a payment is due, ` +
       `on the due date, and the day after if it's still unpaid.` +
