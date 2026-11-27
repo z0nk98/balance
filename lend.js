@@ -194,6 +194,9 @@
 
     if (revealFiltered && active) for (const r of shownRows) openPanels.add(r.b.id);
     revealFiltered = false;
+    // Borrowers with something overdue first, then by their next payment.
+    shownRows.sort((x, y) => (y.totals.overdue > 0) - (x.totals.overdue > 0)
+      || String(x.totals.nextDue ? x.totals.nextDue.dueDate : '9999').localeCompare(String(y.totals.nextDue ? y.totals.nextDue.dueDate : '9999')));
     $('borrowers').replaceChildren(...shownRows.map((r) => borrowerCard(r, active)));
     $('borrowersEmpty').hidden = rows.length > 0;
     $('viewFilters').hidden = rows.length === 0;
@@ -328,51 +331,138 @@
   $('addBorrowerCancel').addEventListener('click', () => { $('borrowerName').value = ''; setAddOpen(false); });
   $('filterBtn').addEventListener('click', () => setFilterOpen($('filterPanel').hidden));
 
+  // ---- Borrower cards --------------------------------------------------
+  // Each borrower is a summary card: name, what's left and status, the next
+  // payment, Record payment and a ⋯ menu. Opening it lists their loans, one
+  // row each with a progress bar; tap a loan for its payments.
+
+  const openLoans = new Set(); // `${borrowerId}|${loan name}` with payments shown
+
+  // +63 ••• 0578: enough to recognise, not enough to copy.
+  function maskPhone(p) {
+    const d = String(p || '');
+    return d.length > 7 ? `${d.slice(0, 3)} ••• ${d.slice(-4)}` : d;
+  }
+
+  // A small ⋯ menu of actions; closes on an outside tap or Escape.
+  let openMenu = null;
+  function closeMenu() { if (openMenu) openMenu.hidden = true; openMenu = null; }
+  document.addEventListener('click', (ev) => { if (openMenu && !ev.target.closest('.row-menu')) closeMenu(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeMenu(); });
+  function actionMenu(label, items) {
+    const list = el('div', { className: 'row-menu-list', hidden: true }, items.map(([text, fn, danger]) =>
+      el('button', { type: 'button', className: danger ? 'danger-text' : '', textContent: text, onclick: (ev) => { ev.stopPropagation(); closeMenu(); fn(); } })));
+    const btn = el('button', { type: 'button', className: 'icon-btn row-menu-btn', textContent: '⋯', title: label });
+    btn.setAttribute('aria-label', label);
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const was = openMenu === list;
+      closeMenu();
+      if (!was) { list.hidden = false; openMenu = list; }
+    });
+    return el('span', { className: 'row-menu' }, [btn, list]);
+  }
+
+  function borrowerStatus(t) {
+    if (t.overdue > 0) return { cls: 'overdue', text: 'Overdue' };
+    if (t.dueSoon > 0) return { cls: 'due-soon', text: 'Due soon' };
+    if (t.remaining <= 0) return { cls: 'paid', text: 'Paid off' };
+    return { cls: 'upcoming', text: 'Up to date' };
+  }
+
+  // One loan: total, payments, progress; tap to show its payments.
+  function loanRow(b, name, items) {
+    const total = items.reduce((s, i) => s + i.amount, 0);
+    const paidCount = items.filter((i) => i.remaining <= 0).length;
+    const left = items.reduce((s, i) => s + i.remaining, 0);
+    const key = `${b.id}|${name}`;
+    const open = openLoans.has(key);
+    const editing = editingLoan && editingLoan.borrowerId === b.id && editingLoan.name === name;
+    const bar = el('div', { className: 'progress' }, [el('div', { className: 'progress-fill' })]);
+    bar.querySelector('.progress-fill').style.width = `${Math.round((paidCount / items.length) * 100)}%`;
+    bar.setAttribute('aria-hidden', 'true');
+    const next = items.filter((i) => i.remaining > 0).sort((x, y) => x.dueDate.localeCompare(y.dueDate))[0];
+    const head = el('div', { className: 'loan-row-head', tabIndex: 0 }, [
+      el('div', { className: 'loan-row-main' }, [
+        el('div', { className: 'loan-row-name', textContent: name }),
+        el('div', { className: 'sub', textContent: `${money(total)} · ${items.length} payment${items.length === 1 ? '' : 's'}${next ? ` · next ${dateLabel(next.dueDate)}` : ''}` }),
+      ]),
+      el('div', { className: 'loan-row-side' }, [
+        el('div', { className: 'amt', textContent: left > 0 ? `${money(left)} left` : 'Paid off' }),
+        el('div', { className: 'sub', textContent: `${paidCount} of ${items.length} paid` }),
+      ]),
+      actionMenu(`More for loan ${name}`, [
+        ['Edit loan', () => { editingLoan = { borrowerId: b.id, name }; openLoans.add(key); render(); }],
+        ['Rename loan', () => renameLoan(b, name)],
+        ['Delete loan', () => deleteLoan(b, name), true],
+      ]),
+      el('span', { className: 'row-chevron', 'aria-hidden': 'true', textContent: open ? '⌃' : '›' }),
+    ]);
+    const toggle = () => { if (open) openLoans.delete(key); else openLoans.add(key); render(); };
+    head.addEventListener('click', (ev) => { if (!ev.target.closest('button')) toggle(); });
+    head.addEventListener('keydown', (ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target === head) { ev.preventDefault(); toggle(); } });
+    head.setAttribute('aria-expanded', String(open));
+    return el('div', { className: `loan-row${open ? ' open' : ''}${editing ? ' editing' : ''}` }, [
+      head,
+      bar,
+      editing ? loanEditor(b, name) : '',
+      open ? installmentTable(sortPayments(items)) : '',
+    ]);
+  }
+
   function borrowerCard({ b, installments, totals: t, shown }, filtered) {
     const c = b.contact;
-    const reminders = [c.notifyEmail && `email ${c.email}`, c.notifySms && `text ${c.phone}`].filter(Boolean);
-    const summary = [
-      `${maskedMoney(t.remaining)} outstanding`,
-      t.overdue > 0 ? `${maskedMoney(t.overdue)} overdue` : null,
-      t.dueSoon > 0 ? `${maskedMoney(t.dueSoon)} due soon` : null,
-      t.nextDue ? `next ${maskedMoney(t.nextDue.remaining)} on ${dateLabel(t.nextDue.dueDate)}` : 'nothing due',
-    ].filter(Boolean).join(' · ');
+    const reminders = [c.notifyEmail && `email ${c.email}`, c.notifySms && `text ${maskPhone(c.phone)}`].filter(Boolean);
+    const st = borrowerStatus(t);
 
-    // With a filter on, show only matching payments and open the list.
-    const ft = filtered ? Core.totals(shown) : null;
-    // Loans paid in full move to a collapsed "Paid off loans" section.
     const byLoan = new Map();
     for (const i of installments) {
       const name = Core.loanName(i.note);
       if (!byLoan.has(name)) byLoan.set(name, []);
       byLoan.get(name).push(i);
     }
-    const paidOff = new Set([...byLoan].filter(([, items]) => items.every((i) => i.remaining <= 0)).map(([name]) => name));
-    const isPaidOff = (i) => paidOff.has(Core.loanName(i.note));
-    const list = filtered ? shown : installments;
-    const current = list.filter((i) => !isPaidOff(i));
-    const archived = list.filter(isPaidOff);
+    const loans = [...byLoan];
+    const active = loans.filter(([, items]) => items.some((i) => i.remaining > 0));
+    const done = loans.filter(([, items]) => items.every((i) => i.remaining <= 0));
+    const paidCount = installments.filter((i) => i.remaining <= 0).length;
+    const next = t.nextDue;
+
+    // Summary line: next payment, loans, progress.
+    const line = [
+      next ? `Next ${money(next.remaining)} · ${dateLabel(next.dueDate)}` : 'Nothing due',
+      `${active.length} loan${active.length === 1 ? '' : 's'}`,
+      installments.length ? `${paidCount} of ${installments.length} paid` : '',
+    ].filter(Boolean).join(' · ');
+
     let archive = '';
-    if (archived.length) {
+    if (done.length) {
       archive = el('details', { className: 'archive', open: archiveOpen.has(b.id) || ownerFilters.status === 'paid' }, [
-        el('summary', { textContent: `Paid off loans (${paidOff.size})` }),
-        loansRow(b, installments.filter(isPaidOff)),
-        installmentTable(sortPayments(archived)),
+        el('summary', { textContent: `Paid off loans (${done.length})` }),
+        el('div', { className: 'loan-list' }, done.map(([name, items]) => loanRow(b, name, items))),
       ]);
       archive.addEventListener('toggle', () => {
         if (archive.open) archiveOpen.add(b.id);
         else archiveOpen.delete(b.id);
       });
     }
+
+    // With a filter on, the matching payments are listed instead of the loans.
+    const ft = filtered ? Core.totals(shown) : null;
+    const body = filtered
+      ? [
+        el('div', { className: 'filter-summary', textContent: `Filtered: ${shown.length} payment${shown.length === 1 ? '' : 's'} · ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` }),
+        installmentTable(sortPayments(shown)),
+      ]
+      : [
+        active.length ? el('div', { className: 'loan-list' }, active.map(([name, items]) => loanRow(b, name, items)))
+          : el('p', { className: 'empty', textContent: installments.length ? 'Every loan is paid off.' : 'No loans yet. Add one below.' }),
+        archive,
+      ];
+
     const details = el('details', { className: 'payments-panel', open: openPanels.has(b.id) }, [
-      el('summary', { textContent: filtered
-        ? `Payments & reminders (showing ${shown.length} of ${installments.length})`
-        : `Payments & reminders (${installments.length})` }),
+      el('summary', { textContent: filtered ? `Payments (showing ${shown.length} of ${installments.length})` : `Loans & payments (${loans.length} loan${loans.length === 1 ? '' : 's'})` }),
+      ...body,
       addSection(b, installments.length),
-      loansRow(b, installments.filter((i) => !isPaidOff(i))),
-      filtered ? el('div', { className: 'filter-summary', textContent: `Filtered: ${maskedMoney(ft.owed)} total · ${maskedMoney(ft.paid)} paid · ${maskedMoney(ft.remaining)} left` }) : '',
-      current.length || !archived.length ? installmentTable(sortPayments(current)) : (filtered ? '' : el('p', { className: 'empty', textContent: 'Every loan is paid off.' })),
-      archive,
       contactForm(b),
     ]);
     details.addEventListener('toggle', () => {
@@ -380,18 +470,28 @@
       else openPanels.delete(b.id);
     });
 
-    return el('section', { className: 'card' }, [
+    // Record payment goes to the earliest payment still owed.
+    const nextItem = installments.filter((i) => i.remaining > 0).sort((x, y) => x.dueDate.localeCompare(y.dueDate))[0];
+    const pay = nextItem ? el('button', { type: 'button', className: 'primary', textContent: 'Record payment', title: `${nextItem.note}, due ${dateLabel(nextItem.dueDate)}`, onclick: () => recordPayment(nextItem) }) : '';
+    return el('section', { className: `card borrower-card status-${st.cls}` }, [
       el('div', { className: 'borrower-head' }, [
-        el('div', {}, [
+        el('div', { className: 'borrower-main' }, [
           el('h3', { textContent: b.name }),
-          el('div', { className: 'sub', textContent: summary }),
-          el('div', { className: 'sub', textContent: reminders.length ? `Reminders: ${reminders.join(', ')}` : 'Reminders: off (add their email or phone below)' }),
+          el('div', { className: 'sub', textContent: line }),
+          el('div', { className: 'sub', textContent: reminders.length ? `Reminders: ${reminders.join(', ')}` : 'Reminders: off' }),
         ]),
-        el('div', { className: 'btn-row row-actions' }, [
-          iconButton('key', `Show code for ${b.name}`, () => showCode(b)),
-          iconButton('newKey', `Change code for ${b.name}`, () => newCode(b)),
-          iconButton('edit', `Rename ${b.name}`, () => rename(b)),
-          iconButton('delete', `Delete ${b.name}`, () => removeBorrower(b), 'danger'),
+        el('div', { className: 'borrower-side' }, [
+          el('div', { className: 'amt', textContent: t.remaining > 0 ? `${maskedMoney(t.remaining)} left` : '' }),
+          el('span', { className: `badge ${st.cls}`, textContent: t.overdue > 0 ? `Overdue · ${maskedMoney(t.overdue)}` : st.text }),
+        ]),
+      ]),
+      el('div', { className: 'borrower-actions' }, [
+        pay,
+        actionMenu(`More for ${b.name}`, [
+          ['Show code & invite', () => showCode(b)],
+          ['Change code', () => newCode(b)],
+          ['Rename', () => rename(b)],
+          ['Delete borrower', () => removeBorrower(b), true],
         ]),
       ]),
       details,
@@ -407,7 +507,7 @@
   function addSection(b, count) {
     const open = addPanels.has(b.id) ? addPanels.get(b.id) : count === 0;
     const section = el('details', { className: 'add-panel', open }, [
-      el('summary', { textContent: 'Add a loan or payment' }),
+      el('summary', { textContent: '+ Add a loan or payment' }),
       scheduleForm(b),
       installmentForm(b),
     ]);
@@ -516,31 +616,6 @@
   }
 
   // One entry per loan, with a button to rename all of its payments at once.
-  function loansRow(b, items) {
-    const loans = new Map();
-    for (const i of items) {
-      const name = Core.loanName(i.note);
-      loans.set(name, (loans.get(name) || 0) + 1);
-    }
-    if (!loans.size) return el('div');
-    const editing = editingLoan?.borrowerId === b.id && loans.has(editingLoan.name) ? editingLoan.name : null;
-    return el('div', {}, [
-      el('div', { className: 'loans-row' }, [
-        el('span', { className: 'hint', textContent: 'Loans:' }),
-        ...[...loans].map(([name, count]) =>
-          el('span', { className: `loan-tag${editing === name ? ' editing' : ''}` }, [
-            document.createTextNode(`${name} (${count} payment${count === 1 ? '' : 's'})`),
-            el('span', { className: 'loan-actions' }, [
-              iconButton('edit', `Edit loan ${name}`, () => { editingLoan = { borrowerId: b.id, name }; render(); }),
-              iconButton('rename', `Rename loan ${name}`, () => renameLoan(b, name)),
-              iconButton('delete', `Delete loan ${name}`, () => deleteLoan(b, name), 'danger'),
-            ]),
-          ])),
-      ]),
-      editing ? loanEditor(b, editing) : '',
-    ]);
-  }
-
   // ---- Whole-loan edit / delete ---------------------------------------
 
   let editingLoan = null; // { borrowerId, name }

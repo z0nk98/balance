@@ -641,3 +641,31 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
   .toolbar-filters .chips { order: 2; flex: 1 1 100%; }
   .active-filters .filter-summary { flex-basis: 100%; }
 }
+
+/* Lending: borrower summary cards and loan rows. */
+.borrower-card { position: relative; }
+.borrower-card.status-overdue { box-shadow: inset 3px 0 0 var(--danger); }
+.borrower-head { display: flex; align-items: flex-start; gap: 12px; }
+.borrower-main { flex: 1 1 auto; min-width: 0; }
+.borrower-main h3 { margin: 0 0 2px; font-size: var(--fs-lg); }
+.borrower-main .sub { color: var(--muted); font-size: var(--fs-sm); }
+.borrower-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.borrower-side .amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.borrower-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 10px 0 2px; }
+.borrower-actions .primary { padding: 7px 14px; }
+.loan-list { display: grid; gap: 8px; margin: 10px 0; }
+.loan-row { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.loan-row.open { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.loan-row-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; cursor: pointer; }
+.loan-row-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+.loan-row-name { font-weight: 600; overflow-wrap: anywhere; }
+.loan-row-main .sub, .loan-row-side .sub { color: var(--muted); font-size: var(--fs-sm); }
+.loan-row-side { text-align: right; font-variant-numeric: tabular-nums; }
+.loan-row-side .amt { font-weight: 600; white-space: nowrap; }
+.loan-row .row-chevron { display: block; color: var(--muted); font-size: var(--fs-lg); width: 14px; text-align: center; }
+.loan-row .progress { height: 6px; }
+@media (max-width: 600px) {
+  .borrower-head { flex-wrap: wrap; }
+  .loan-row-head { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .loan-row-head .row-chevron { display: none; }
+}
