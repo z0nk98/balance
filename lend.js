@@ -473,7 +473,7 @@
     // Record payment goes to the earliest payment still owed.
     const nextItem = installments.filter((i) => i.remaining > 0).sort((x, y) => x.dueDate.localeCompare(y.dueDate))[0];
     const pay = nextItem ? el('button', { type: 'button', className: 'primary', textContent: 'Record payment', title: `${nextItem.note}, due ${dateLabel(nextItem.dueDate)}`, onclick: () => recordPayment(nextItem) }) : '';
-    return el('section', { className: `card borrower-card status-${st.cls}` }, [
+    return el('section', { className: `card borrower-card status-${st.cls}`, id: `borrower-${b.id}` }, [
       el('div', { className: 'borrower-head' }, [
         el('div', { className: 'borrower-main' }, [
           el('h3', { textContent: b.name }),
@@ -494,6 +494,7 @@
           ['Delete borrower', () => removeBorrower(b), true],
         ]),
       ]),
+      codeShownFor === b.id ? codePanel(b) : '',
       details,
     ]);
   }
@@ -800,12 +801,39 @@
     return new URL('borrow.html', location.href).href;
   }
 
+  // The access code opens inside that borrower's card (see codePanel).
+  let codeShownFor = null;
   function showCode(b) {
-    $('codeFor').textContent = `Access code for ${b.name}:`;
-    $('codeValue').textContent = b.code;
-    $('portalUrl').textContent = portalUrl();
-    $('codeBanner').hidden = false;
-    $('codeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    codeShownFor = b.id;
+    openPanels.add(b.id);
+    render();
+    const card = document.getElementById(`borrower-${b.id}`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function codePanel(b) {
+    const url = portalUrl();
+    const copy = el('button', { type: 'button', textContent: 'Copy invite' });
+    copy.addEventListener('click', async () => {
+      const text = `See your payment schedule and due dates at ${url}\nYour access code: ${b.code}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        copy.textContent = 'Copied!';
+        setTimeout(() => { copy.textContent = 'Copy invite'; }, 1500);
+      } catch {
+        prompt('Copy this:', text);
+      }
+    });
+    return el('div', { className: 'banner code-panel' }, [
+      el('strong', { textContent: `Access code for ${b.name}` }),
+      el('div', { className: 'code', textContent: b.code }),
+      el('p', { className: 'hint', textContent: 'Send them the code and this link. You can see it again anytime from ⋯ → Show code & invite.' }),
+      el('code', { className: 'portal-url', textContent: url }),
+      el('div', { className: 'row' }, [
+        copy,
+        el('button', { type: 'button', textContent: 'Done', onclick: () => { codeShownFor = null; render(); } }),
+      ]),
+    ]);
   }
 
   // Ask for an owner-chosen code. Returns the code, '' for a random one, or
@@ -1385,21 +1413,6 @@
     showCode(b);
   });
 
-  $('copyInvite').addEventListener('click', async () => {
-    const text = `See your payment schedule and due dates at ${$('portalUrl').textContent}\nYour access code: ${$('codeValue').textContent}`;
-    try {
-      await navigator.clipboard.writeText(text);
-      $('copyInvite').textContent = 'Copied!';
-      setTimeout(() => { $('copyInvite').textContent = 'Copy invite'; }, 1500);
-    } catch {
-      prompt('Copy this:', text);
-    }
-  });
-
-  $('dismissCode').addEventListener('click', () => {
-    $('codeBanner').hidden = true;
-    $('codeValue').textContent = '';
-  });
 
   $('settingsForm').addEventListener('submit', (ev) => {
     ev.preventDefault();

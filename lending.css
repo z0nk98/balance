@@ -684,3 +684,8 @@ html.hide-amounts #budgetInput:not(:focus) { -webkit-text-security: disc; }
 .reminders-card { padding-top: 14px; padding-bottom: 14px; }
 .reminder-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: var(--fs-sm); }
 #reminderBody { margin-top: 12px; }
+
+/* Lending: a borrower's access code, shown inside their card. */
+.code-panel { margin: 10px 0 4px; }
+.code-panel .portal-url { display: block; overflow-wrap: anywhere; font-size: var(--fs-sm); margin: 4px 0 10px; }
+.code-panel .code { overflow-wrap: anywhere; }
