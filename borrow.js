@@ -114,8 +114,9 @@
   const filters = { status: 'unpaid', loan: '', month: '', text: '' };
 
   // Open on "Due soon"; if nothing is due soon, show everything unpaid instead.
+  // The payment list always starts on Unpaid (overdue, due soon and upcoming).
   function defaultStatus() {
-    return me && me.items.some((i) => i.status === 'due-soon') ? 'due-soon' : 'unpaid';
+    return 'unpaid';
   }
 
   function loanName(i) {
